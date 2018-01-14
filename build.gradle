@@ -1,0 +1,26 @@
+plugins {
+  id "com.jfrog.bintray" version "1.7"
+}
+
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+subprojects {
+  apply plugin: 'java'
+
+  version = "${version_flak}" // see gradle.properties
+
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    testCompile "junit:junit:4.11"
+  }
+
+  eclipse {
+    classpath {
+      defaultOutputDir = file('classes')
+    }
+  }
+}

@@ -1,0 +1,10 @@
+version version_flak
+
+sourceCompatibility = 1.7
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+}

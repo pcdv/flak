@@ -1,0 +1,7 @@
+include 'flak-api'
+include "flak-jdk"
+include 'flak-jackson'
+include 'flak-tests'
+include "webapp"
+include 'flak-util'
+

@@ -1,0 +1,27 @@
+dependencies {
+  compile project(':flak-api')
+  runtime project(':flak-jdk')
+}
+
+// consider app as resource so it is automatically included in jar and copied
+// in classes dir (allows to run the server from the project dir)
+sourceSets {
+  main {
+    resources {
+      srcDir projectDir
+      include 'app/**'
+    }
+  }
+}
+
+// make an executable jar
+jar {
+  from "$buildDir/classes/main"
+  from {
+    // TODO: is there a way to include only required classes?
+    configurations.compile.collect {
+      it.isDirectory() ? it : project.zipTree(it)
+    }
+  }
+  manifest { attributes 'Main-Class': 'Main' }
+}

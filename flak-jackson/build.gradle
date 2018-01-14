@@ -1,0 +1,12 @@
+version version_flak
+
+sourceCompatibility = 1.7
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile project(":flak-api")
+  compile "com.fasterxml.jackson.core:jackson-databind:${version_jackson}"
+}
