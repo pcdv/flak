@@ -9,7 +9,7 @@ bintray {
 
   pkg {
     repo = 'maven'
-    name = 'flak-jdk'
+    name = 'flak-backend-jdk'
     userOrg = System.getenv('BINTRAY_USER')
     licenses = ['MIT']
     vcsUrl = 'https://github.com/pcdv/flak.git'
@@ -27,7 +27,7 @@ publishing {
     MyPublication(MavenPublication) {
       from components.java
       groupId 'net.jflask'
-      artifactId 'flak-jdk'
+      artifactId 'flak-backend-jdk'
       version "${version}"
 
       artifact sourceJar {

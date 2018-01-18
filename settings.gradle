@@ -1,5 +1,5 @@
 include 'flak-api'
-include "flak-jdk"
+include "flak-backend-jdk"
 include 'flak-jackson'
 include 'flak-tests'
 include "webapp"

@@ -1,6 +1,6 @@
 dependencies {
   compile project(':flak-api')
-  runtime project(':flak-jdk')
+  runtime project(':flak-backend-jdk')
 }
 
 // consider app as resource so it is automatically included in jar and copied

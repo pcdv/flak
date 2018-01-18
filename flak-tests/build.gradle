@@ -9,5 +9,5 @@ repositories {
 dependencies {
   compile project(":flak-api")
   compile project(":flak-jackson")
-  runtime project(":flak-jdk")
+  runtime project(":flak-backend-jdk")
 }
