@@ -96,9 +96,13 @@ public class JdkWebServer implements WebServer {
   }
 
   public void start() throws IOException {
-    this.srv = HttpServer.create(address, 0);
     if (pool == null)
       pool = Executors.newCachedThreadPool();
+
+    if (address == null)
+      throw new IllegalStateException("Address not set. Call AppFactory.setHttpPort()");
+
+    this.srv = HttpServer.create(address, 0);
     this.srv.setExecutor(pool);
     for (Map.Entry<String, RequestHandler> e : handlers.entrySet()) {
       String path = e.getKey();

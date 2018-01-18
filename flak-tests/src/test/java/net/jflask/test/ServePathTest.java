@@ -31,6 +31,7 @@ public class ServePathTest {
   @Test
   public void testStartServerBeforeServePath() throws Exception {
     AppFactory fac = Flak.getFactory();
+    fac.setHttpPort(9191);
     WebServer ws = fac.getServer();
     ws.start();
     app = fac.createApp("/app");
@@ -38,7 +39,7 @@ public class ServePathTest {
     app.start();
 
     SimpleClient client = new SimpleClient(app.getRootUrl());
-    Assert.assertEquals("FOO", client.get("/app/static/foo.html"));
+    Assert.assertEquals("FOO", client.get("/static/foo.html"));
   }
 
   @Test
@@ -54,9 +55,8 @@ public class ServePathTest {
     app.scan(this);
     app.start();
 
-    // FIXME: /.. ?
     SimpleClient client = new SimpleClient(app.getRootUrl());
-    Assert.assertEquals("Please login", client.get("/app/test"));
+    Assert.assertEquals("Please login", client.get("/test"));
   }
 
   @Test

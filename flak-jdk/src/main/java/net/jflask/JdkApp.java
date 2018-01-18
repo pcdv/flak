@@ -118,7 +118,7 @@ public class JdkApp implements App {
   }
 
   public String getRootUrl() {
-    String path = rootUrl == null ? "/" : rootUrl;
+    String path = rootUrl == null ? "" : rootUrl;
     // FIXME!
     return "http://localhost:" + getServer().getPort() + path;
   }
