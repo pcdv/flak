@@ -1,4 +1,4 @@
-package net.jflask.sun;
+package flak.spi;
 
 import flak.ContentTypeProvider;
 

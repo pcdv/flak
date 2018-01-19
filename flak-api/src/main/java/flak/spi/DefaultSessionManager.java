@@ -1,4 +1,4 @@
-package net.jflask;
+package flak.spi;
 
 import java.util.Hashtable;
 import java.util.Map;

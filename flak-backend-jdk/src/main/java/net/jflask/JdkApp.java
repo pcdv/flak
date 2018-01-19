@@ -7,28 +7,20 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.Vector;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
-import flak.App;
 import flak.ContentTypeProvider;
 import flak.ErrorHandler;
 import flak.Request;
 import flak.RequestHandler;
 import flak.Response;
-import flak.ResponseConverter;
-import flak.SessionManager;
-import flak.SuccessHandler;
-import flak.UnknownPageHandler;
 import flak.annotations.Route;
+import flak.spi.AbstractApp;
 import flak.util.Log;
 import net.jflask.sun.AbstractResourceHandler;
-import net.jflask.sun.DefaultContentTypeProvider;
 import net.jflask.sun.FileHandler;
 import net.jflask.sun.JdkWebServer;
 import net.jflask.sun.ResourceHandler;
@@ -69,86 +61,30 @@ import net.jflask.sun.ResourceHandler;
  *
  * @author pcdv
  */
-public class JdkApp implements App {
+public class JdkApp extends AbstractApp {
 
   protected final JdkWebServer srv;
 
-  /**
-   * Optional URL where the app is plugged.
-   */
-  private final String rootUrl;
-
-  private String sessionTokenCookie = "sessionToken";
-
-  private final Map<String, RequestHandler> handlers = new Hashtable<>();
-
-  private ContentTypeProvider mime = new DefaultContentTypeProvider();
-
   private final ThreadLocal<SunRequest> localRequest = new ThreadLocal<>();
-
-  private final Map<String, ResponseConverter<?>> converters =
-    new Hashtable<>();
-
-  private String loginPage;
-
-  private boolean requireLoggedInByDefault;
 
   private List<MethodHandler> allHandlers = new ArrayList<>(256);
 
-  private SessionManager sessionManager = new DefaultSessionManager();
-
   private boolean started;
 
-  private Vector<ErrorHandler> errorHandlers = new Vector<>();
-
-  private Vector<SuccessHandler> successHandlers = new Vector<>();
-
-  private UnknownPageHandler unknownPageHandler;
-
-  public JdkApp(JdkWebServer server) {
+  JdkApp(JdkWebServer server) {
     this(null, server);
   }
 
-  public JdkApp(String rootUrl, JdkWebServer server) {
+  JdkApp(String rootUrl, JdkWebServer server) {
+    super(rootUrl);
     this.srv = server;
-    this.rootUrl = rootUrl;
 
     // in case we are extended by a subclass with annotations
     scan(this);
   }
 
-  public String getRootUrl() {
-    String path = rootUrl == null ? "" : rootUrl;
-    // FIXME!
-    return "http://localhost:" + getServer().getPort() + path;
-  }
-
-  /**
-   * Changes the name of the cookie in which the session token is stored. This
-   * allows to have several web apps sharing a same host address (eg. using a
-   * different port).
-   */
-  public void setSessionTokenCookie(String cookie) {
-    this.sessionTokenCookie = cookie;
-  }
-
-  /**
-   * Scans specified object for route handlers, i.e. public methods with @Route
-   * annotation.
-   *
-   * @see Route
-   */
-  public App scan(Object obj) {
-    for (Method method : obj.getClass().getMethods()) {
-      Route route = method.getAnnotation(Route.class);
-      if (route != null) {
-        addHandler(route, method, obj);
-      }
-    }
-    return this;
-  }
-
-  private void addHandler(Route route, Method m, Object obj) {
+  @Override
+  protected void addHandler(Route route, Method m, Object obj) {
     String[] tok = route.value().split("/+");
 
     // split the static and dynamic part of the route (i.e. /app/hello/:name =>
@@ -168,9 +104,6 @@ public class JdkApp implements App {
     for (; i < tok.length; i++) {
       rest.append('/').append(tok[i]);
     }
-
-//    if (rest.length() == 0)
-//      rest.append('/');
 
     MethodHandler handler =
       getContext(root.toString()).addHandler(rest.toString(), route, m, obj);
@@ -199,16 +132,6 @@ public class JdkApp implements App {
     return (Context) c;
   }
 
-  public App addConverter(String name, ResponseConverter<?> conv) {
-    converters.put(name, conv);
-    reconfigureHandlers();
-    return this;
-  }
-
-  public ResponseConverter<?> getConverter(String name) {
-    return converters.get(name);
-  }
-
   /**
    * Registers all handlers in server and starts the server if not already
    * running.
@@ -227,19 +150,6 @@ public class JdkApp implements App {
         path = "/";
       addHandlerInServer(path, e.getValue());
     }
-  }
-
-  /**
-   * @deprecated The port is now set in the WebServer instance, that may be
-   * shared between multiple App instances. Either set the port
-   * at App/WebServer creation:
-   * <code>new App(new WebServer(port, executor))</code>
-   * or set it directly on the server:
-   * <code>app.getServer().setPort()</code>
-   */
-  @Deprecated
-  public void setPort(int port) {
-    srv.setPort(port);
   }
 
   public int getPort() {
@@ -297,16 +207,6 @@ public class JdkApp implements App {
     srv.addHandler(makeAbsoluteUrl(uri), h);
   }
 
-  private String makeAbsoluteUrl(String uri) {
-    if (rootUrl != null) {
-      if (uri.startsWith("/"))
-        uri = rootUrl + uri;
-      else
-        uri = rootUrl + "/" + uri;
-    }
-    return uri;
-  }
-
   /**
    * WARNING: if rootURI == "/" beware of conflicts with other handlers
    * with root URLs like "/foo": they will conflict with the resource handler.
@@ -343,14 +243,6 @@ public class JdkApp implements App {
   }
 
   /**
-   * Returns true if in DEBUG mode. When in debug mode, server stack traces are
-   * sent to clients as body of the 500 response.
-   */
-  public boolean isDebugEnabled() {
-    return Log.DEBUG;
-  }
-
-  /**
    * Dumps all registered URLs/methods in a readable way into specified buffer.
    * This can be useful to generate reports or to document an API.
    */
@@ -377,26 +269,6 @@ public class JdkApp implements App {
   }
 
   /**
-   * Marks current session as logged in (by setting a cookie).
-   */
-  public void loginUser(String login) {
-    loginUser(login, false, makeRandomToken(login));
-  }
-
-  /**
-   * Marks current session as logged in (by setting a cookie).
-   */
-  public void loginUser(String login, boolean rememberMe, String token) {
-    sessionManager.createToken(token, login, rememberMe);
-    getResponse().addHeader("Set-Cookie",
-                            sessionTokenCookie + "=" + token + "; path=/;");
-  }
-
-  public void setSessionManager(SessionManager mgr) {
-    this.sessionManager = mgr;
-  }
-
-  /**
    * Returns the login bound with current request (i.e. the one that has been
    * associated with session using {@link #loginUser(String)}.
    *
@@ -410,10 +282,6 @@ public class JdkApp implements App {
 
     // method below will fail if we have a token BUT user is unknown or logged out
     return sessionManager.getLogin(token);
-  }
-
-  public String makeRandomToken(String login) {
-    return (new Random().nextLong() ^ login.hashCode()) + "";
   }
 
   /**
@@ -430,10 +298,6 @@ public class JdkApp implements App {
   public void redirect(HttpExchange r, String location) throws IOException {
     r.getResponseHeaders().add("Location", location);
     r.sendResponseHeaders(HttpURLConnection.HTTP_MOVED_TEMP, 0);
-  }
-
-  public Response redirectToLogin() {
-    return redirect(loginPage);
   }
 
   /**
@@ -498,30 +362,6 @@ public class JdkApp implements App {
   }
 
   /**
-   * Sets the path of the login page, to which redirect all URLs that require a
-   * logged in user. This method can be called directly, or otherwise one of
-   * the URL handler methods can be annotated with @LoginPage.
-   *
-   * @param path the path of the login page
-   */
-  public void setLoginPage(String path) {
-    this.loginPage = makeAbsoluteUrl(path);
-  }
-
-  /**
-   * Sets the default policy for checking whether user must be logged in to
-   * access all URLs by default.
-   *
-   * @param flag if true, all URL handlers require the user to be logged in
-   * except when annotated with @LoginNotRequired. If false, only handlers
-   * annotated with @LoginRequired will be protected
-   */
-  public void setRequireLoggedInByDefault(boolean flag) {
-    this.requireLoggedInByDefault = flag;
-    reconfigureHandlers();
-  }
-
-  /**
    * Returns the default policy for checking whether user must be logged in to
    * access all URLs by default.
    */
@@ -533,7 +373,7 @@ public class JdkApp implements App {
    * Reconfigures existing handlers after a change of configuration (converted
    * added etc.).
    */
-  private void reconfigureHandlers() {
+  protected void reconfigureHandlers() {
     for (MethodHandler h : allHandlers)
       h.configure();
   }
@@ -561,32 +401,7 @@ public class JdkApp implements App {
   public void addErrorHandler(ErrorHandler hook) {
     // force presence of root context to detect unknown URLs
     getContext("/");
-    errorHandlers.add(hook);
-  }
-
-  /**
-   * Adds a handler that will be notified whenever a request is successful
-   */
-  public void addSuccessHandler(SuccessHandler hook) {
-    successHandlers.add(hook);
-  }
-
-  void fireError(int status, Request req, Throwable t) {
-    for (ErrorHandler errorHandler : errorHandlers) {
-      try {
-        errorHandler.onError(status, req, t);
-      }
-      catch (Exception e) {
-        Log.error(e, e);
-      }
-    }
-  }
-
-  public void fireSuccess(Method method, Object[] args, Object res) {
-    Request r = getRequest();
-    for (SuccessHandler successHandler : successHandlers) {
-      successHandler.onSuccess(r, method, args, res);
-    }
+    super.addErrorHandler(hook);
   }
 
   void on404(SunRequest r) throws IOException {
@@ -604,12 +419,4 @@ public class JdkApp implements App {
     }
   }
 
-  /**
-   * Experimental. Allows to handle a request for an URL with no handler.
-   * Requires
-   * a root handler to be set somewhere (i.e. Route("/").
-   */
-  public void setUnknownPageHandler(UnknownPageHandler unknownPageHandler) {
-    this.unknownPageHandler = unknownPageHandler;
-  }
 }
