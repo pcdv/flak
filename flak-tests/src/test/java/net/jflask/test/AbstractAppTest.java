@@ -2,7 +2,6 @@ package net.jflask.test;
 
 import flak.App;
 import flak.Flak;
-import flak.AppFactory;
 import net.jflask.test.util.SimpleClient;
 import net.jflask.test.util.ThreadState;
 import org.junit.After;
@@ -24,9 +23,7 @@ public class AbstractAppTest {
 
   @Before
   public void setUp() throws Exception {
-    AppFactory fac = Flak.getFactory();
-    fac.setHttpPort(9191);
-    app = fac.createApp();
+    app = Flak.createHttpApp(9191);
 
     preScan();
     app.scan(this);
@@ -34,7 +31,7 @@ public class AbstractAppTest {
     preStart();
     app.start();
 
-    client = new SimpleClient("localhost", fac.getHttpPort());
+    client = new SimpleClient(app.getRootUrl());
   }
 
   /**
