@@ -3,10 +3,10 @@ package net.jflask.test;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.annotations.InputFormat;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.jackson.JsonInputParser;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,9 +28,7 @@ public class InputFormatTest extends AbstractAppTest {
 
   @Test
   public void testPostPojo() throws IOException, URISyntaxException {
-    app.addInputParser("JSON",
-                       (r, type) -> new ObjectMapper().readValue(r.getInputStream(),
-                                                                 type));
+    app.addInputParser("JSON", new JsonInputParser());
     Assert.assertEquals("foo42", client.post("/pojo/42", "{\"name\":\"foo\"}"));
   }
 }

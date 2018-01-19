@@ -6,7 +6,7 @@ import flak.annotations.OutputFormat;
 import flak.annotations.Route;
 import flak.Response;
 import flak.OutputFormatter;
-import flak.jackson.JsonOutputConverter;
+import flak.jackson.JsonOutputFormatter;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -62,7 +62,7 @@ public class OutputFormatTest extends AbstractAppTest {
 
   @Test
   public void testJSON() throws IOException {
-    app.addOutputFormatter("JSON", new JsonOutputConverter<>());
+    app.addOutputFormatter("JSON", new JsonOutputFormatter<>());
 
     String s = client.get("/json/getFoo");
     assertEquals("{\"stuff\":42}", s);
