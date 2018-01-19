@@ -1,6 +1,6 @@
 package flak;
 
-public interface ResponseConverter<T> {
+public interface OutputFormatter<T> {
 
   void convert(T data, Response resp) throws Exception;
 }

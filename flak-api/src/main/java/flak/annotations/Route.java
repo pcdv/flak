@@ -68,5 +68,5 @@ public @interface Route {
    * to the response stream. The given value must correspond to the name of a
    * converter registered in the App.
    */
-  String converter() default "";
+  String outputFormat() default "";
 }

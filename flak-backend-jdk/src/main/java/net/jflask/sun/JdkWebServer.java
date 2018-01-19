@@ -8,6 +8,7 @@ import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import flak.RequestHandler;
 import flak.WebServer;
@@ -67,7 +68,7 @@ public class JdkWebServer implements WebServer {
 
     handlers.put(path, handler);
     if (srv != null)
-      srv.createContext(path, handler.asHttpHandler());
+      srv.createContext(path, (HttpHandler) handler);
     return this;
   }
 
@@ -87,8 +88,10 @@ public class JdkWebServer implements WebServer {
    * sleep()). No problem with JDK 1.7.0_40.
    */
   public void stop() {
+    if (srv != null)
     this.srv.stop(0);
-    pool.shutdownNow();
+    if (pool != null)
+      pool.shutdownNow();
   }
 
   public int getPort() {
@@ -108,7 +111,7 @@ public class JdkWebServer implements WebServer {
       String path = e.getKey();
       if (path.isEmpty())
         path = "/";
-      srv.createContext(path, e.getValue().asHttpHandler());
+      srv.createContext(path, (HttpHandler) e.getValue());
     }
 
     this.srv.start();

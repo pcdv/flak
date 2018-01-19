@@ -65,7 +65,7 @@ public class Context implements HttpHandler, RequestHandler {
     try {
       String[] tok = (uri.isEmpty() || uri.equals("/")) ? EMPTY
                                                         : trimLeftSlash(uri).split(
-                                                            "/");
+                                                          "/");
       for (MethodHandler h : handlers) {
         if (h.handle(r, tok, req)) {
           return;
@@ -129,10 +129,5 @@ public class Context implements HttpHandler, RequestHandler {
   @Override
   public JdkApp getApp() {
     return app;
-  }
-
-  @Override
-  public HttpHandler asHttpHandler() {
-    return this;
   }
 }

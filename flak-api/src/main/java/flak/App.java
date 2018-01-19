@@ -35,7 +35,9 @@ public interface App {
 
   App servePath(String rootURI, String path);
 
-  App addConverter(String name, ResponseConverter<?> responseConverter);
+  App addOutputFormatter(String name, OutputFormatter<?> outputFormatter);
+
+  App addInputParser(String name, InputParser inputParser);
 
   void start() throws IOException;
 
@@ -68,4 +70,6 @@ public interface App {
   void setUnknownPageHandler(UnknownPageHandler handler);
 
   String getRootUrl();
+
+  WebServer getServer();
 }

@@ -8,4 +8,5 @@ import java.io.IOException;
 public interface WebServer {
   void start() throws IOException;
   void stop();
+  int getPort();
 }

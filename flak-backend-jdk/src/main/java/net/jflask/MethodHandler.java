@@ -5,13 +5,15 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import com.sun.net.httpserver.HttpExchange;
+import flak.InputParser;
+import flak.OutputFormatter;
 import flak.Response;
-import flak.ResponseConverter;
-import flak.annotations.Convert;
 import flak.annotations.Delete;
+import flak.annotations.InputFormat;
 import flak.annotations.LoginNotRequired;
 import flak.annotations.LoginPage;
 import flak.annotations.LoginRequired;
+import flak.annotations.OutputFormat;
 import flak.annotations.Patch;
 import flak.annotations.Post;
 import flak.annotations.Put;
@@ -55,7 +57,9 @@ public class MethodHandler implements Comparable<MethodHandler> {
    */
   private final int[] idx;
 
-  private final String converterName;
+  private final String outputFormatName;
+
+  private final InputFormat inputFormat;
 
   private boolean loginRequired;
 
@@ -66,7 +70,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
   private final Context ctx;
 
   @SuppressWarnings("rawtypes")
-  private ResponseConverter converter;
+  private OutputFormatter converter;
 
   private final String uri;
 
@@ -75,7 +79,8 @@ public class MethodHandler implements Comparable<MethodHandler> {
     this.uri = uri;
     this.rootURI = uri;
     this.requestMethod = initHttpRequest(method);
-    this.converterName = initConverterName(method);
+    this.outputFormatName = getOutputFormat(method);
+    this.inputFormat = getInputFormat(method);
     this.method = method;
     this.target = target;
     this.tok = uri.isEmpty() ? EMPTY : uri.substring(1).split("/");
@@ -91,23 +96,38 @@ public class MethodHandler implements Comparable<MethodHandler> {
     if (!method.isAccessible())
       method.setAccessible(true);
 
-    for (Class<?> c : method.getParameterTypes()) {
-      if (c != String.class)
-        throw new RuntimeException//
-                  ("Only String supported in method arguments (for now): " +
-                   method);
+    Class<?>[] types = method.getParameterTypes();
+    for (int i = 0; i < types.length; i++) {
+      if (types[i] != String.class) {
+        if (i != types.length - 1)
+          throw new IllegalArgumentException(
+            "Only the last argument of method can be another type than String in " + method);
+
+        if (inputFormat == null)
+          throw new IllegalArgumentException(
+            "No @InputFormat specified in method " + method);
+
+        if (!inputFormat.type().isAssignableFrom(types[i]))
+          throw new IllegalArgumentException("Last argument is not of type " + inputFormat
+                                                                                 .type()
+                                                                                 .getName() + " in " + method);
+      }
     }
   }
 
-  private static String initConverterName(Method m) {
-    Convert c = m.getAnnotation(Convert.class);
+  private static String getOutputFormat(Method m) {
+    OutputFormat c = m.getAnnotation(OutputFormat.class);
     if (c != null)
       return c.value();
 
     Route route = m.getAnnotation(Route.class);
-    if (route.converter().isEmpty())
+    if (route.outputFormat().isEmpty())
       return null;
-    return route.converter();
+    return route.outputFormat();
+  }
+
+  private static InputFormat getInputFormat(Method m) {
+    return m.getAnnotation(InputFormat.class);
   }
 
   private static String initHttpRequest(Method m) {
@@ -130,14 +150,14 @@ public class MethodHandler implements Comparable<MethodHandler> {
   public void configure() {
     if (method.getAnnotation(LoginRequired.class) != null)
       loginRequired = true;
-    else if (method.getAnnotation(LoginNotRequired.class) != null ||
-             method.getAnnotation(LoginPage.class) != null)
+    else if (method.getAnnotation(LoginNotRequired.class) != null || method.getAnnotation(
+      LoginPage.class) != null)
       loginRequired = false;
     else
       loginRequired = ctx.app.getRequireLoggedInByDefault();
 
-    if (this.converter == null && converterName != null)
-      this.converter = ctx.app.getConverter(converterName);
+    if (this.converter == null && outputFormatName != null)
+      this.converter = ctx.app.getOutputFormatter(outputFormatName);
   }
 
   private int[] calcIndexes(String[] tok) {
@@ -178,9 +198,19 @@ public class MethodHandler implements Comparable<MethodHandler> {
     Object[] args = extractArgs(uri);
 
     if (Log.DEBUG)
-      Log.debug("Invoking " + target.getClass().getSimpleName() + "." +
-                method.getName() +
-                Arrays.toString(args));
+      Log.debug("Invoking " + target.getClass()
+                                    .getSimpleName() + "." + method.getName() + Arrays
+                                                                                  .toString(
+                                                                                    args));
+
+    if (inputFormat != null) {
+      InputParser parser = ctx.app.getInputParser(inputFormat.name());
+      if (parser == null) {
+        throw new IllegalArgumentException("Unknown input parser: " + inputFormat
+                                                                        .name());
+      }
+      args[args.length - 1] = parser.parse(ctx.app.getRequest(), inputFormat.type());
+    }
 
     Object res = method.invoke(target, args);
 
@@ -195,9 +225,8 @@ public class MethodHandler implements Comparable<MethodHandler> {
     if (converter != null) {
       converter.convert(res, resp);
     }
-    else if (converterName != null) {
-      throw new IllegalStateException("Converter '" + converterName +
-                                      "' not registered in App.");
+    else if (outputFormatName != null) {
+      throw new IllegalStateException("Converter '" + outputFormatName + "' not registered in App.");
     }
     else if (res instanceof Response) {
       // do nothing: status and headers should already be set
@@ -215,8 +244,8 @@ public class MethodHandler implements Comparable<MethodHandler> {
       IO.pipe((InputStream) res, r.getResponseBody(), false);
     }
     else
-      throw new RuntimeException("Unexpected return value: " + res + " from " +
-                                 method.toGenericString());
+      throw new RuntimeException("Unexpected return value: " + res + " from " + method
+                                                                                  .toGenericString());
 
     return true;
   }
@@ -224,9 +253,10 @@ public class MethodHandler implements Comparable<MethodHandler> {
   /**
    * Computes the list of arguments to pass to the decorated method.
    */
-  private String[] extractArgs(String[] uri) {
-    String[] args = new String[idx.length];
-    for (int i = 0; i < args.length; i++) {
+  private Object[] extractArgs(String[] uri) {
+    int length = idx.length + (inputFormat != null ? 1 : 0);
+    Object[] args = new Object[length];
+    for (int i = 0; i < idx.length; i++) {
       args[i] = uri[idx[i]];
     }
     if (splat != -1) {
@@ -250,8 +280,8 @@ public class MethodHandler implements Comparable<MethodHandler> {
     }
 
     for (int i = 0; i < tok.length; i++) {
-      if (tok[i].charAt(0) != ':' && tok[i].charAt(0) != '*' &&
-          !tok[i].equals(uri[i]))
+      if (tok[i].charAt(0) != ':' && tok[i].charAt(0) != '*' && !tok[i].equals(
+        uri[i]))
         return false;
     }
 

@@ -1,14 +1,13 @@
 package net.jflask.sun;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
 import java.io.IOException;
 import java.io.PrintStream;
 
-import net.jflask.JdkApp;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import flak.RequestHandler;
 import flak.util.Log;
+import net.jflask.JdkApp;
 
 public class DefaultHandler implements HttpHandler, RequestHandler {
 
@@ -23,11 +22,6 @@ public class DefaultHandler implements HttpHandler, RequestHandler {
     return app;
   }
 
-  @Override
-  public HttpHandler asHttpHandler() {
-    return this;
-  }
-
   public void handle(HttpExchange r) throws IOException {
     try {
       doHandle(r);
@@ -38,8 +32,7 @@ public class DefaultHandler implements HttpHandler, RequestHandler {
       r.getResponseBody().write("Internal Server Error".getBytes());
       if (Log.DEBUG)
         t.printStackTrace(new PrintStream(r.getResponseBody()));
-    }
-    finally {
+    } finally {
       r.getResponseBody().close();
     }
   }

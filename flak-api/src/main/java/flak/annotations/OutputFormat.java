@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
  * you can use
  * <pre>
  *   &#64;Post
- *   &#64;Convert("JSON")
+ *   &#64;OutputFormat("JSON")
  *   &#64;Route("/some/path")
  * </pre>
  *
@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Convert {
+public @interface OutputFormat {
   /**
    * Specifies how the value returned by method must be converted and written
    * to the response stream. The given value must correspond to the name of a
