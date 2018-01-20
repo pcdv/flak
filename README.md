@@ -24,7 +24,7 @@ Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
 ## Hello world
 
 Here is the obligatory
- [HelloWorld](https://github.com/pcdv/jflask/tree/master/flak/flak-examples/src/main/java/flak/examples/HelloWorld.java) application.
+ [HelloWorld](https://github.com/pcdv/flak/blob/master/flak-examples/src/main/java/flak/examples/HelloWorld.java) application.
 
 ```java
 public class HelloWorld {
