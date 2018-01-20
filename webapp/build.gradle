@@ -19,9 +19,9 @@ jar {
   from "$buildDir/classes/main"
   from {
     // TODO: is there a way to include only required classes?
-    configurations.compile.collect {
+    configurations.runtime.collect {
       it.isDirectory() ? it : project.zipTree(it)
     }
   }
-  manifest { attributes 'Main-Class': 'Main' }
+  manifest { attributes 'Main-Class': 'samples.WebApp' }
 }
