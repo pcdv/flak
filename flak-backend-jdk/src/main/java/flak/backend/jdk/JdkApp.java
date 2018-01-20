@@ -1,4 +1,4 @@
-package net.jflask;
+package flak.backend.jdk;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,12 +18,11 @@ import flak.Request;
 import flak.RequestHandler;
 import flak.Response;
 import flak.annotations.Route;
+import flak.backend.jdk.resource.AbstractResourceHandler;
+import flak.backend.jdk.resource.FileHandler;
+import flak.backend.jdk.resource.ResourceHandler;
 import flak.spi.AbstractApp;
 import flak.util.Log;
-import net.jflask.sun.AbstractResourceHandler;
-import net.jflask.sun.FileHandler;
-import net.jflask.sun.JdkWebServer;
-import net.jflask.sun.ResourceHandler;
 
 /**
  * Encapsulates the server side of a web app: an HTTP server and some route
@@ -65,7 +64,7 @@ public class JdkApp extends AbstractApp {
 
   protected final JdkWebServer srv;
 
-  private final ThreadLocal<SunRequest> localRequest = new ThreadLocal<>();
+  private final ThreadLocal<JdkRequest> localRequest = new ThreadLocal<>();
 
   private List<MethodHandler> allHandlers = new ArrayList<>(256);
 
@@ -230,7 +229,7 @@ public class JdkApp extends AbstractApp {
     this.mime = mime;
   }
 
-  void setThreadLocalRequest(SunRequest req) {
+  void setThreadLocalRequest(JdkRequest req) {
     localRequest.set(req);
   }
 
@@ -276,7 +275,7 @@ public class JdkApp extends AbstractApp {
    */
   public String getCurrentLogin() {
     String token =
-      getCookie(((SunRequest) getRequest()).getExchange(), sessionTokenCookie);
+      getCookie(((JdkRequest) getRequest()).getExchange(), sessionTokenCookie);
     if (token == null)
       return null;
 
@@ -289,7 +288,7 @@ public class JdkApp extends AbstractApp {
    * location.
    */
   public Response redirect(String location) {
-    SunRequest r = (SunRequest) getResponse();
+    JdkRequest r = (JdkRequest) getResponse();
     r.addHeader("Location", location);
     r.setStatus(HttpURLConnection.HTTP_MOVED_TEMP);
     return r;
@@ -334,7 +333,7 @@ public class JdkApp extends AbstractApp {
    * session is authenticated.
    */
   public boolean isLoggedIn() {
-    HttpExchange r = ((SunRequest) getRequest()).getExchange();
+    HttpExchange r = ((JdkRequest) getRequest()).getExchange();
     return isLoggedIn(r);
   }
 
@@ -385,7 +384,7 @@ public class JdkApp extends AbstractApp {
    * @see flak.annotations.LoginRequired
    */
   public void logoutUser() {
-    HttpExchange x = ((SunRequest) getRequest()).getExchange();
+    HttpExchange x = ((JdkRequest) getRequest()).getExchange();
     String token = getCookie(x, sessionTokenCookie);
     if (token != null)
       sessionManager.removeToken(token);
@@ -404,7 +403,7 @@ public class JdkApp extends AbstractApp {
     super.addErrorHandler(hook);
   }
 
-  void on404(SunRequest r) throws IOException {
+  void on404(JdkRequest r) throws IOException {
 
     if (unknownPageHandler != null)
       unknownPageHandler.handle(r);

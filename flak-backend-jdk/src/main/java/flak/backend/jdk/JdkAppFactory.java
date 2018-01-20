@@ -1,8 +1,7 @@
-package net.jflask;
+package flak.backend.jdk;
 
 import flak.App;
 import flak.AppFactory;
-import net.jflask.sun.JdkWebServer;
 
 /**
  * @author pcdv

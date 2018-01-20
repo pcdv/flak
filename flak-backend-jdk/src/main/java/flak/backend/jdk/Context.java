@@ -1,4 +1,4 @@
-package net.jflask;
+package flak.backend.jdk;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -59,7 +59,7 @@ public class Context implements HttpHandler, RequestHandler {
   }
 
   public void handle(HttpExchange r) throws IOException {
-    SunRequest req = new SunRequest(r);
+    JdkRequest req = new JdkRequest(r);
     app.setThreadLocalRequest(req);
     String uri = makeRelativeURI(req.getRequestURI());
     try {

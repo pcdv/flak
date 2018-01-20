@@ -1,4 +1,4 @@
-package net.jflask.sun;
+package flak.backend.jdk.resource;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -6,8 +6,8 @@ import java.io.PrintStream;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import flak.RequestHandler;
+import flak.backend.jdk.JdkApp;
 import flak.util.Log;
-import net.jflask.JdkApp;
 
 public class DefaultHandler implements HttpHandler, RequestHandler {
 

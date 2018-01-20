@@ -1,4 +1,4 @@
-package net.jflask.sun;
+package flak.backend.jdk.resource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 
 import flak.ContentTypeProvider;
-import net.jflask.JdkApp;
+import flak.backend.jdk.JdkApp;
 
 public class FileHandler extends AbstractResourceHandler {
 

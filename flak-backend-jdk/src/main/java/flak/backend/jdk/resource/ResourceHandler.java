@@ -1,10 +1,10 @@
-package net.jflask.sun;
+package flak.backend.jdk.resource;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import flak.ContentTypeProvider;
-import net.jflask.JdkApp;
+import flak.backend.jdk.JdkApp;
 import flak.util.Log;
 
 /**

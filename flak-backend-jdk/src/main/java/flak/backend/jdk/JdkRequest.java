@@ -1,4 +1,4 @@
-package net.jflask;
+package flak.backend.jdk;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +10,7 @@ import flak.Request;
 import flak.Response;
 import flak.util.IO;
 
-public class SunRequest implements Request, Response {
+public class JdkRequest implements Request, Response {
 
   private final HttpExchange exchange;
 
@@ -20,7 +20,7 @@ public class SunRequest implements Request, Response {
 
   private String form;
 
-  public SunRequest(HttpExchange r) {
+  public JdkRequest(HttpExchange r) {
     this.exchange = r;
     this.uri = r.getRequestURI().toString();
     this.qsMark = uri.indexOf('?');

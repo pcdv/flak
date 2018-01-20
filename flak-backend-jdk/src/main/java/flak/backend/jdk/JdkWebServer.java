@@ -1,4 +1,4 @@
-package net.jflask.sun;
+package flak.backend.jdk;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -12,7 +12,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import flak.RequestHandler;
 import flak.WebServer;
-import net.jflask.JdkApp;
 
 /**
  * Wrapper for the HTTP server embedded in the JDK. It may be shared by several
