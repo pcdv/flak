@@ -10,7 +10,7 @@ public interface AppFactory {
 
   App createApp(String appRootPath);
 
-  void setHttpPort(int httpPort);
+  void setPort(int port);
 
-  int getHttpPort();
+  int getPort();
 }

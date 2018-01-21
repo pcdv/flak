@@ -9,7 +9,7 @@ public class WebApp {
 
   public static void main(String[] args) throws Exception {
     AppFactory fac = Flak.getFactory();
-    fac.setHttpPort(Integer.getInteger("port", 8080));
+    fac.setPort(Integer.getInteger("port", 8080));
     App app = fac.createApp();
 
     // NB: it is cleaner to define route handler in dedicated classes
@@ -25,6 +25,6 @@ public class WebApp {
     app.servePath("/", "app/", WebApp.class.getClassLoader(), false);
 
     app.start();
-    System.out.println("Listening on http://0.0.0.0:" + fac.getHttpPort());
+    System.out.println("Listening on " + app.getRootUrl());
   }
 }

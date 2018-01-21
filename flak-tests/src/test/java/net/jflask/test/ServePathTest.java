@@ -31,7 +31,7 @@ public class ServePathTest {
   @Test
   public void testStartServerBeforeServePath() throws Exception {
     AppFactory fac = Flak.getFactory();
-    fac.setHttpPort(9191);
+    fac.setPort(9191);
     WebServer ws = fac.getServer();
     ws.start();
     app = fac.createApp("/app");
@@ -45,7 +45,7 @@ public class ServePathTest {
   @Test
   public void testRedirectLoginToResource() throws Exception {
     AppFactory factory = Flak.getFactory();
-    factory.setHttpPort(9191);
+    factory.setPort(9191);
     WebServer ws = factory.getServer();
     ws.start();
     app = factory.createApp("/app");
@@ -94,7 +94,7 @@ public class ServePathTest {
 
   private App createApp() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
     AppFactory factory = Flak.getFactory();
-    factory.setHttpPort(9191);
+    factory.setPort(9191);
     return factory.createApp();
   }
 

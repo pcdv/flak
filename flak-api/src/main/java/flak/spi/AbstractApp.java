@@ -17,6 +17,7 @@ import flak.Response;
 import flak.SessionManager;
 import flak.SuccessHandler;
 import flak.UnknownPageHandler;
+import flak.WebServer;
 import flak.annotations.Route;
 import flak.util.Log;
 
@@ -56,8 +57,8 @@ public abstract class AbstractApp implements App {
 
   public String getRootUrl() {
     String path = rootUrl == null ? "" : rootUrl;
-    // FIXME!
-    return "http://localhost:" + getServer().getPort() + path;
+    WebServer srv = getServer();
+    return srv.getProtocol() + "://" + srv.getHostName() + ":" + srv.getPort() + path;
   }
 
   /**

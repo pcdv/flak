@@ -35,7 +35,7 @@ public class TwoAppsTest {
   @Before
   public void setUp() throws Exception {
     AppFactory fac = Flak.getFactory();
-    fac.setHttpPort(9191);
+    fac.setPort(9191);
     ws = fac.getServer();
 
     app1 = fac.createApp("/app1").scan(new Object() {
@@ -60,7 +60,7 @@ public class TwoAppsTest {
     app1.start();
     app2.start();
 
-    client = new SimpleClient("localhost", fac.getHttpPort());
+    client = new SimpleClient("localhost", fac.getPort());
   }
 
   @After

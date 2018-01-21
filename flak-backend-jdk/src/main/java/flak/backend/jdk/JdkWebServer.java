@@ -8,8 +8,13 @@ import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.net.ssl.SSLContext;
+
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import flak.RequestHandler;
 import flak.WebServer;
 
@@ -34,13 +39,16 @@ public class JdkWebServer implements WebServer {
 
   private Vector<JdkApp> apps = new Vector<>();
 
-  public JdkWebServer(int port, ExecutorService pool) {
-    this.pool = pool;
-    this.address = new InetSocketAddress(port);
-  }
+  private SSLContext sslContext;
+
+  private String hostName = "localhost";
 
   public JdkWebServer() {
-    // TODO: allow to set port and pool later
+  }
+
+  @Override
+  public void setSSLContext(SSLContext context) {
+    this.sslContext = context;
   }
 
   public void addApp(JdkApp app) {
@@ -58,9 +66,9 @@ public class JdkWebServer implements WebServer {
     if (old != null) {
       if (old.getApp() != handler.getApp())
         throw new RuntimeException(String.format(
-            "Path %s already used by app %s",
-            path,
-            old.getApp()));
+          "Path %s already used by app %s",
+          path,
+          old.getApp()));
       else
         throw new RuntimeException("Path already used: " + path);
     }
@@ -72,6 +80,7 @@ public class JdkWebServer implements WebServer {
   }
 
   public void setPort(int port) {
+    checkNotStarted();
     this.address = new InetSocketAddress(port);
   }
 
@@ -88,13 +97,28 @@ public class JdkWebServer implements WebServer {
    */
   public void stop() {
     if (srv != null)
-    this.srv.stop(0);
+      this.srv.stop(0);
     if (pool != null)
       pool.shutdownNow();
   }
 
   public int getPort() {
-    return srv.getAddress().getPort();
+    return address.getPort();
+  }
+
+  @Override
+  public String getProtocol() {
+    return sslContext == null ? "http" : "https";
+  }
+
+  @Override
+  public String getHostName() {
+    return hostName;
+  }
+
+  @Override
+  public void setHostName(String hostName) {
+    this.hostName = hostName;
   }
 
   public void start() throws IOException {
@@ -102,10 +126,12 @@ public class JdkWebServer implements WebServer {
       pool = Executors.newCachedThreadPool();
 
     if (address == null)
-      throw new IllegalStateException("Address not set. Call AppFactory.setHttpPort()");
+      throw new IllegalStateException(
+        "Address not set. Call AppFactory.setHttpPort()");
 
-    this.srv = HttpServer.create(address, 0);
+    this.srv = createServer();
     this.srv.setExecutor(pool);
+
     for (Map.Entry<String, RequestHandler> e : handlers.entrySet()) {
       String path = e.getKey();
       if (path.isEmpty())
@@ -114,6 +140,27 @@ public class JdkWebServer implements WebServer {
     }
 
     this.srv.start();
+  }
+
+  private HttpServer createServer() throws IOException {
+    if (sslContext != null)
+      return createHttpsServer();
+    else
+      return HttpServer.create(address, 0);
+  }
+
+  private HttpServer createHttpsServer() throws IOException {
+    final HttpsServer server = HttpsServer.create(address, 5);
+
+    final HttpsConfigurator configurator = new HttpsConfigurator(sslContext) {
+      @Override
+      public void configure(HttpsParameters params) {
+        final SSLContext context = this.getSSLContext();
+        params.setSSLParameters(context.getDefaultSSLParameters());
+      }
+    };
+    server.setHttpsConfigurator(configurator);
+    return server;
   }
 
   public boolean isStarted() {

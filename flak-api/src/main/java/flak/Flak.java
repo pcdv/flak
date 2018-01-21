@@ -14,7 +14,7 @@ public abstract class Flak {
    */
   public static App createHttpApp(int port) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
     AppFactory factory = Flak.getFactory();
-    factory.setHttpPort(port);
+    factory.setPort(port);
     return factory.createApp();
   }
 

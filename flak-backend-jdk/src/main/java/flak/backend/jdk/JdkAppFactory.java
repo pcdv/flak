@@ -8,15 +8,14 @@ import flak.AppFactory;
  */
 public class JdkAppFactory implements AppFactory {
 
-  private JdkWebServer server;
+  private final JdkWebServer server;
 
   public JdkAppFactory() {
+    server = new JdkWebServer();
   }
 
   @Override
   public JdkWebServer getServer() {
-    if (server == null)
-      server = new JdkWebServer();
     return server;
   }
 
@@ -35,12 +34,12 @@ public class JdkAppFactory implements AppFactory {
   }
 
   @Override
-  public void setHttpPort(int httpPort) {
-    getServer().setPort(httpPort);
+  public void setPort(int port) {
+    getServer().setPort(port);
   }
 
   @Override
-  public int getHttpPort() {
+  public int getPort() {
     return getServer().getPort();
   }
 }
