@@ -49,8 +49,16 @@ public class LoginTest3 extends AbstractAppTest {
   @Test
   public void testLogin() throws Exception {
 
+    // this is not needed but without it the test sometimes fails due to a
+    // probable bug in HttpUrlConnection ...
+    client.get("/app");
+
     // good login/password redirects to app
     assertEquals("Welcome", client.post("/login", "login=foo&password=bar"));
+
+    // NB: the above sometimes fails with a "400 Bad Request" error. Looks
+    // like HttpUrlConnection sometimes sends an invalid HTTP request without
+    // the leading GET => see workaround at beginning of test
 
     // app remains accessible thanks to session cookie
     assertEquals("Welcome", client.get("/app"));
