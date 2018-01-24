@@ -36,6 +36,21 @@ public class HelloWorld {
 }
 ```
 
+Or if you like it 
+[compact](https://github.com/pcdv/flak/blob/master/flak-examples/src/main/java/flak/examples/HelloWorldCompact.java):
+```java
+public class HelloWorldCompact {
+  public static void main(String[] args) throws Exception {
+    Flak.createHttpApp(8080).scan(new Object() {
+      @Route("/")
+      public String helloWorld() {
+        return "Hello world!";
+      }
+    }).start();
+  }
+}
+```
+
 ## Why Flak?
 
 I'm a big fan of lightweight and simple. I've always liked the simplicity
