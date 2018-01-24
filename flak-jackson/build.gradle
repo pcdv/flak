@@ -1,10 +1,4 @@
-version version_flak
-
-sourceCompatibility = 1.7
-
-repositories {
-  mavenCentral()
-}
+description = "JSON converters using jackson-databind"
 
 dependencies {
   compile project(":flak-api")

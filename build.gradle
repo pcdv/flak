@@ -1,9 +1,12 @@
 plugins {
-  id "com.jfrog.bintray" version "1.7"
+  id "com.jfrog.bintray" version "1.8.0"
 }
 
 apply plugin: 'eclipse'
-apply plugin: 'idea'
+
+def PUBLISH_PROJECTS = [
+  'flak-api', 'flak-backend-jdk', 'flak-jackson'
+]
 
 subprojects {
   apply plugin: 'java'
@@ -18,9 +21,51 @@ subprojects {
     testCompile "junit:junit:4.11"
   }
 
-  eclipse {
-    classpath {
-      defaultOutputDir = file('classes')
+  if (PUBLISH_PROJECTS.contains(project.name)) {
+    apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'maven-publish'
+
+    bintray {
+      user = System.getenv('BINTRAY_USER')
+      key = System.getenv('BINTRAY_KEY')
+      publications = ['MyPublication']
+      publish = true
+
+      pkg {
+        repo = 'maven'
+        name = project.name
+        userOrg = System.getenv('BINTRAY_USER')
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/pcdv/flak.git'
+        websiteUrl = 'https://github.com/pcdv/flak'
+        issueTrackerUrl = 'https://github.com/pcdv/flak/issues'
+        description = project.description
+        version {
+          name = "${version_flak}"
+          desc = project.description
+          released = new Date()
+        }
+      }
     }
+
+
+    publishing {
+      publications {
+        MyPublication(MavenPublication) {
+          from components.java
+          groupId 'com.github.pcdv.flak'
+          artifactId project.name
+          version "${version}"
+
+          artifact sourceJar {
+            classifier "sources"
+          }
+        }
+      }
+    }
+  }
+
+  task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
   }
 }

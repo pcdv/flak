@@ -1,10 +1,1 @@
-version version_flak
-
-sourceCompatibility = 1.7
-
-repositories {
-  mavenCentral()
-}
-
-dependencies {
-}
+description = "Generic API for the Flak micro web framework"

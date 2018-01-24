@@ -1,45 +1,4 @@
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'maven-publish'
-
-bintray {
-  user = System.getenv('BINTRAY_USER')
-  key = System.getenv('BINTRAY_KEY')
-  publications = ['MyPublication']
-  publish = true
-
-  pkg {
-    repo = 'maven'
-    name = 'flak-backend-jdk'
-    userOrg = System.getenv('BINTRAY_USER')
-    licenses = ['MIT']
-    vcsUrl = 'https://github.com/pcdv/flak.git'
-    version {
-      name = "${version_flak}"
-      desc = "JFlask micro web framework ${version_flak}"
-      released = new Date()
-    }
-  }
-}
-
-
-publishing {
-  publications {
-    MyPublication(MavenPublication) {
-      from components.java
-      groupId 'net.jflask'
-      artifactId 'flak-backend-jdk'
-      version "${version}"
-
-      artifact sourceJar {
-        classifier "sources"
-      }
-    }
-  }
-}
-
-task sourceJar(type: Jar) {
-  from sourceSets.main.allJava
-}
+description = "Flak backend using the HTTP server included in JDK"
 
 dependencies {
   compile project(":flak-api")

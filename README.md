@@ -12,11 +12,11 @@ Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
  * provide optional plugins for user management, JSON serialization, SSL 
  support etc.
  
-## Status
+## Migration status
  ```diff
  + All features and tests have been ported
  + A minimal JSON plugin is available
- - Artifacts have not yet been published on JCenter
+ + Artifacts have been published on JCenter
  - Documentation to be written
  - More plugins to be written
  ```
