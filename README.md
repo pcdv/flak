@@ -19,7 +19,7 @@ Here is the obligatory
 
 ```groovy
 repositories {
-    jcenter()
+  jcenter()
 }
 
 dependencies {
