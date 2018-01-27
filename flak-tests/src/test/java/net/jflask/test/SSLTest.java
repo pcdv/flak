@@ -61,7 +61,7 @@ public class SSLTest {
     // initialise the keystore
     char[] password = "simulator".toCharArray();
     KeyStore ks = KeyStore.getInstance("JKS");
-    InputStream fis = getClass().getResourceAsStream("/lig.keystore");
+    InputStream fis = getClass().getResourceAsStream("/test-resources/lig.keystore");
     ks.load(fis, password);
 
     // setup the key manager factory

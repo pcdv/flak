@@ -1,6 +1,6 @@
 package net.jflask.test;
 
-import flak.HttpError;
+import flak.HttpException;
 import flak.annotations.Route;
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,12 +12,12 @@ public class HttpErrorTest extends AbstractAppTest {
 
   @Route("/200")
   public String gen200() {
-    throw new HttpError(200, "Works");
+    throw new HttpException(200, "Works");
   }
 
   @Route("/204")
   public String gen204() {
-    throw new HttpError(204, "No content");
+    throw new HttpException(204, "No content");
   }
 
   @Test

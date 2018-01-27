@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -105,7 +104,7 @@ public class JdkApp extends AbstractApp {
     }
 
     MethodHandler handler =
-      getContext(root.toString()).addHandler(rest.toString(), route, m, obj);
+      getContext(root.toString()).addHandler(rest.toString(), m, obj);
 
     allHandlers.add(handler);
   }
@@ -239,32 +238,6 @@ public class JdkApp extends AbstractApp {
 
   public Response getResponse() {
     return localRequest.get();
-  }
-
-  /**
-   * Dumps all registered URLs/methods in a readable way into specified buffer.
-   * This can be useful to generate reports or to document an API.
-   */
-  public StringBuilder dumpRoutes(StringBuilder b) {
-
-    ArrayList<Context> contexts = new ArrayList<>();
-    for (RequestHandler h : handlers.values()) {
-      if (h instanceof Context)
-        contexts.add((Context) h);
-    }
-
-    Collections.sort(contexts, new Comparator<Context>() {
-      public int compare(Context o1, Context o2) {
-        return o1.getRootURI().compareTo(o2.getRootURI());
-      }
-    });
-
-    for (Context c : contexts) {
-      c.dumpUrls(b);
-      b.append('\n');
-    }
-
-    return b;
   }
 
   /**
@@ -418,4 +391,7 @@ public class JdkApp extends AbstractApp {
     }
   }
 
+  public Collection<RequestHandler> getHandlers() {
+    return handlers.values();
+  }
 }

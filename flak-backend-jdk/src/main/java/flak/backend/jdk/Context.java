@@ -5,14 +5,12 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import flak.HttpError;
+import flak.HttpException;
 import flak.RequestHandler;
-import flak.annotations.Route;
 import flak.util.Log;
 
 /**
@@ -25,15 +23,22 @@ public class Context implements HttpHandler, RequestHandler {
 
   private static final String[] EMPTY = {};
 
-  private final String rootURI;
+  final String rootURI;
 
-  private final List<MethodHandler> handlers = new ArrayList<>();
+  final List<MethodHandler> handlers = new ArrayList<>();
 
   final JdkApp app;
+
+  /**
+   * Helps converting an absolute path to a relative path.
+   */
+  private final int rootURIOffset;
 
   public Context(JdkApp app, String rootURI) {
     this.app = app;
     this.rootURI = rootURI;
+    this.rootURIOffset =
+      rootURI.endsWith("/") ? rootURI.length() - 1 : rootURI.length();
   }
 
   /**
@@ -41,15 +46,11 @@ public class Context implements HttpHandler, RequestHandler {
    * specified URI (relative to rootURI).
    *
    * @param uri URI schema relative to rootURI (eg. "/:name")
-   * @param m a java method
+   * @param method a java method
    * @param obj the object on which the method must be invoked
    */
-  public MethodHandler addHandler(String uri,
-                                  Route route,
-                                  Method m,
-                                  Object obj) {
-    Log.debug("Add handler for " + route.method() + " on " + rootURI + uri);
-    MethodHandler handler = new MethodHandler(this, uri, m, obj);
+  public MethodHandler addHandler(String uri, Method method, Object obj) {
+    MethodHandler handler = new MethodHandler(this, uri, method, obj);
     handlers.add(handler);
     return handler;
   }
@@ -79,8 +80,8 @@ public class Context implements HttpHandler, RequestHandler {
       if (t instanceof InvocationTargetException) {
         t = ((InvocationTargetException) t).getTargetException();
 
-        if (t instanceof HttpError) {
-          r.sendResponseHeaders(((HttpError) t).getStatus(), 0);
+        if (t instanceof HttpException) {
+          r.sendResponseHeaders(((HttpException) t).getResponseCode(), 0);
           r.getResponseBody().write(t.getMessage().getBytes("UTF-8"));
           return;
         }
@@ -98,10 +99,7 @@ public class Context implements HttpHandler, RequestHandler {
   }
 
   private String makeRelativeURI(String uri) {
-    if (rootURI.endsWith("/"))
-      return uri.substring(rootURI.length() - 1);
-    else
-      return uri.substring(rootURI.length());
+    return uri.substring(rootURIOffset);
   }
 
   private String trimLeftSlash(String uri) {
@@ -109,21 +107,6 @@ public class Context implements HttpHandler, RequestHandler {
       return uri.substring(1);
     else
       return uri;
-  }
-
-  public void dumpUrls(StringBuilder b) {
-    b.append(rootURI).append(":\n");
-
-    ArrayList<MethodHandler> list = new ArrayList<>(handlers);
-    Collections.sort(list);
-
-    for (MethodHandler mh : list) {
-      b.append(String.format("%-50s  %-8s  %-15s %s\n",
-                             rootURI + mh.getURI(),
-                             mh.getVerb(),
-                             mh.getMethod().getName(),
-                             mh.getMethod().getDeclaringClass().getName()));
-    }
   }
 
   @Override
