@@ -4,9 +4,9 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-import com.sun.net.httpserver.HttpExchange;
 import flak.InputParser;
 import flak.OutputFormatter;
+import flak.Request;
 import flak.Response;
 import flak.annotations.Delete;
 import flak.annotations.InputFormat;
@@ -18,6 +18,11 @@ import flak.annotations.Patch;
 import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.Route;
+import flak.backend.jdk.extractor.ArgExtractor;
+import flak.backend.jdk.extractor.InputExtractor;
+import flak.backend.jdk.extractor.RequestExtractor;
+import flak.backend.jdk.extractor.SplatExtractor;
+import flak.backend.jdk.extractor.StringExtractor;
 import flak.util.IO;
 import flak.util.Log;
 
@@ -29,8 +34,6 @@ import flak.util.Log;
  */
 @SuppressWarnings("unchecked")
 public class MethodHandler implements Comparable<MethodHandler> {
-
-  private static final String[] EMPTY = {};
 
   /**
    * The HTTP method
@@ -52,15 +55,9 @@ public class MethodHandler implements Comparable<MethodHandler> {
    */
   private final String[] tok;
 
-  /**
-   * The indexes of variables in split URI, eg. { 1 } to extract "world" from
-   * "/hello/world" if URI schema is "/hello/:name"
-   */
-  private final int[] idx;
-
   private final String outputFormatName;
 
-  private final InputFormat inputFormat;
+  private final int argc;
 
   private boolean loginRequired;
 
@@ -75,17 +72,26 @@ public class MethodHandler implements Comparable<MethodHandler> {
 
   private final String uri;
 
+  private static final String[] EMPTY = {};
+
+  private ArgExtractor[] extractors;
+
   public MethodHandler(Context ctx, String uri, Method method, Object target) {
     this.ctx = ctx;
     this.uri = uri;
     this.rootURI = uri;
     this.httpMethod = getHttpMethod(method);
     this.outputFormatName = getOutputFormat(method);
-    this.inputFormat = getInputFormat(method);
     this.javaMethod = method;
     this.target = target;
     this.tok = uri.isEmpty() ? EMPTY : uri.substring(1).split("/");
-    this.idx = calcIndexes(tok);
+
+    /*
+    The indexes of variables in split URI, eg. { 1 } to extract "world" from
+    "/hello/world" if URI schema is "/hello/:name"
+    */
+    int[] idx = calcIndexes(tok);
+    this.argc = method.getParameterTypes().length;
 
     if (method.getAnnotation(LoginPage.class) != null)
       ctx.app.setLoginPage(ctx.getRootURI() + uri);
@@ -98,20 +104,37 @@ public class MethodHandler implements Comparable<MethodHandler> {
       method.setAccessible(true);
 
     Class<?>[] types = method.getParameterTypes();
+    extractors = new ArgExtractor[types.length];
+    int index = 0;
     for (int i = 0; i < types.length; i++) {
-      if (types[i] != String.class) {
+      if (types[i] == Request.class) {
+        extractors[i] = new RequestExtractor(i);
+      }
+      else if (types[i] == String.class) {
+        // TODO: handle splat case
+        int tokenIndex = idx[index++];
+        if (splat == tokenIndex)
+          extractors[i] = new SplatExtractor(i, tokenIndex);
+        else
+          extractors[i] = new StringExtractor(i, tokenIndex);
+      }
+      else {
         if (i != types.length - 1)
           throw new IllegalArgumentException(
             "Only the last argument of method can be another type than String in " + method);
+
+        InputFormat inputFormat = method.getAnnotation(InputFormat.class);
 
         if (inputFormat == null)
           throw new IllegalArgumentException(
             "No @InputFormat specified in method " + method);
 
         if (!inputFormat.type().isAssignableFrom(types[i]))
-          throw new IllegalArgumentException("Last argument is not of type " + inputFormat
-                                                                                 .type()
-                                                                                 .getName() + " in " + method);
+          throw new IllegalArgumentException //
+                  ("Last argument is not of type " + inputFormat.type()
+                                                                .getName() + " in " + method);
+        extractors[i] =
+          new InputExtractor(i, getInputParser(method, ctx.app), types[i]);
       }
     }
   }
@@ -127,8 +150,9 @@ public class MethodHandler implements Comparable<MethodHandler> {
     return route.outputFormat();
   }
 
-  private static InputFormat getInputFormat(Method m) {
-    return m.getAnnotation(InputFormat.class);
+  private static InputParser getInputParser(Method m, JdkApp app) {
+    InputFormat annotation = m.getAnnotation(InputFormat.class);
+    return annotation == null ? null : app.getInputParser(annotation.name());
   }
 
   private static String getHttpMethod(Method m) {
@@ -187,18 +211,16 @@ public class MethodHandler implements Comparable<MethodHandler> {
    * applicable)
    */
   @SuppressWarnings("unchecked")
-  public boolean handle(HttpExchange r,
-                        String[] uri,
-                        Response resp) throws Exception {
+  public boolean handle(JdkRequest req) throws Exception {
 
-    if (!isApplicable(r, uri))
+    if (!isApplicable(req))
       return false;
 
-    if (loginRequired && !ctx.app.checkLoggedIn(r)) {
+    if (loginRequired && !ctx.app.checkLoggedIn(req.getExchange())) {
       return true;
     }
 
-    Object[] args = extractArgs(uri);
+    Object[] args = extractArgs(req);
 
     if (Log.DEBUG)
       Log.debug(String.format("Invoking %s.%s%s",
@@ -206,27 +228,16 @@ public class MethodHandler implements Comparable<MethodHandler> {
                               javaMethod.getName(),
                               Arrays.toString(args)));
 
-    if (inputFormat != null) {
-      InputParser parser = ctx.app.getInputParser(inputFormat.name());
-      if (parser == null) {
-        throw new IllegalArgumentException("Unknown input parser: " + inputFormat
-                                                                        .name());
-      }
-      args[args.length - 1] = parser.parse(ctx.app.getRequest(), inputFormat.type());
-    }
-
     Object res = javaMethod.invoke(target, args);
 
     ctx.app.fireSuccess(javaMethod, args, res);
 
-    return processResponse(r, resp, res);
+    return processResponse(req, res);
   }
 
-  private boolean processResponse(HttpExchange r,
-                                  Response resp,
-                                  Object res) throws Exception {
+  private boolean processResponse(JdkRequest r, Object res) throws Exception {
     if (outputFormatter != null) {
-      outputFormatter.convert(res, resp);
+      outputFormatter.convert(res, r);
     }
     else if (outputFormatName != null) {
       throw new IllegalStateException("Converter '" + outputFormatName + "' not registered in App.");
@@ -235,16 +246,16 @@ public class MethodHandler implements Comparable<MethodHandler> {
       // do nothing: status and headers should already be set
     }
     else if (res instanceof String) {
-      r.sendResponseHeaders(200, 0);
-      r.getResponseBody().write(((String) res).getBytes("UTF-8"));
+      r.setStatus(200);
+      r.getOutputStream().write(((String) res).getBytes("UTF-8"));
     }
     else if (res instanceof byte[]) {
-      r.sendResponseHeaders(200, 0);
-      r.getResponseBody().write((byte[]) res);
+      r.setStatus(200);
+      r.getOutputStream().write((byte[]) res);
     }
     else if (res instanceof InputStream) {
-      r.sendResponseHeaders(200, 0);
-      IO.pipe((InputStream) res, r.getResponseBody(), false);
+      r.setStatus(200);
+      IO.pipe((InputStream) res, r.getOutputStream(), false);
     }
     else
       throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod
@@ -256,16 +267,10 @@ public class MethodHandler implements Comparable<MethodHandler> {
   /**
    * Computes the list of arguments to pass to the decorated method.
    */
-  private Object[] extractArgs(String[] uri) {
-    int length = idx.length + (inputFormat != null ? 1 : 0);
-    Object[] args = new Object[length];
-    for (int i = 0; i < idx.length; i++) {
-      args[i] = uri[idx[i]];
-    }
-    if (splat != -1) {
-      for (int i = splat + 1; i < uri.length; i++) {
-        args[args.length - 1] += "/" + uri[i];
-      }
+  private Object[] extractArgs(JdkRequest r) throws Exception {
+    Object[] args = new Object[argc];
+    for (int i = 0; i < args.length; i++) {
+      args[i] = extractors[i].extract(r);
     }
     return args;
   }
@@ -273,10 +278,11 @@ public class MethodHandler implements Comparable<MethodHandler> {
   /**
    * Checks whether current handler should respond to specified request.
    */
-  private boolean isApplicable(HttpExchange r, String[] uri) {
-    if (!r.getRequestMethod().equals(this.httpMethod))
+  private boolean isApplicable(JdkRequest r) {
+    if (!r.getHttpMethod().equals(this.httpMethod))
       return false;
 
+    String[] uri = r.split;
     if (uri.length != tok.length) {
       if (splat == -1 || uri.length < tok.length)
         return false;

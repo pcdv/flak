@@ -21,8 +21,6 @@ import flak.util.Log;
  */
 public class Context implements HttpHandler, RequestHandler {
 
-  private static final String[] EMPTY = {};
-
   final String rootURI;
 
   final List<MethodHandler> handlers = new ArrayList<>();
@@ -60,15 +58,11 @@ public class Context implements HttpHandler, RequestHandler {
   }
 
   public void handle(HttpExchange r) throws IOException {
-    JdkRequest req = new JdkRequest(r);
+    JdkRequest req = new JdkRequest(this, r);
     app.setThreadLocalRequest(req);
-    String uri = makeRelativeURI(req.getRequestURI());
     try {
-      String[] tok = (uri.isEmpty() || uri.equals("/")) ? EMPTY
-                                                        : trimLeftSlash(uri).split(
-                                                          "/");
       for (MethodHandler h : handlers) {
-        if (h.handle(r, tok, req)) {
+        if (h.handle(req)) {
           return;
         }
       }
@@ -98,15 +92,12 @@ public class Context implements HttpHandler, RequestHandler {
     }
   }
 
-  private String makeRelativeURI(String uri) {
+  /**
+   * Returns the URI relative to the current app. E.g. if app root is "/app1"
+   * and URI is "/app1/foo", this will return "/foo".
+   */
+  String makeRelativePath(String uri) {
     return uri.substring(rootURIOffset);
-  }
-
-  private String trimLeftSlash(String uri) {
-    if (uri.startsWith("/"))
-      return uri.substring(1);
-    else
-      return uri;
   }
 
   @Override

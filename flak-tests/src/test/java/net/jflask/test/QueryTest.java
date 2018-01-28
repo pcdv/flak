@@ -1,7 +1,9 @@
 package net.jflask.test;
 
+import java.io.IOException;
+
+import flak.Request;
 import flak.annotations.Route;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -13,9 +15,24 @@ public class QueryTest extends AbstractAppTest {
     return "Hello " + name;
   }
 
+  @Test
+  public void testTrimQS() throws Exception {
+    assertEquals("Hello world", client.get("/hello/world?foo=bar"));
+  }
+
   @Route("/hello2")
   public String helloQuery() {
     return "Hello " + app.getRequest().getArg("name", null);
+  }
+
+  @Test
+  public void testGetArgSlash() throws Exception {
+    assertEquals("Hello world", client.get("/hello2/?name=world"));
+  }
+
+  @Test
+  public void testGetArg() throws Exception {
+    assertEquals("Hello world", client.get("/hello2?name=world"));
   }
 
   @Route("/hello_bytearray")
@@ -24,24 +41,20 @@ public class QueryTest extends AbstractAppTest {
   }
 
   @Test
-  public void testTrimQS() throws Exception {
-    assertEquals("Hello world", client.get("/hello/world?foo=bar"));
-  }
-
-  @Test
-  public void testGetArg() throws Exception {
-    assertEquals("Hello world", client.get("/hello2?name=world"));
-  }
-
-  @Test
-  @Ignore // looks like URL does not work with trailing slash
-  public void testGetArgSlash() throws Exception {
-    assertEquals("Hello world", client.get("/hello2/?name=world"));
-  }
-
-  @Test
   public void testReturnByteArray() throws Exception {
     assertEquals("Hello world", client.get("/hello_bytearray?name=world"));
   }
 
+  @Route("/hello/request")
+  public String getApp(Request req) {
+    return "Hello " + req.getArg("name", "???");
+  }
+
+  @Test
+  public void testRequestInjectedInMethodArgs() throws IOException {
+    assertEquals("Hello world", client.get("/hello/request?name=world"));
+    assertEquals("Hello ???", client.get("/hello/request?foo=bar"));
+    assertEquals("Hello ???", client.get("/hello/request?"));
+    assertEquals("Hello ???", client.get("/hello/request"));
+  }
 }

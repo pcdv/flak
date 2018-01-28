@@ -12,26 +12,52 @@ import flak.util.IO;
 
 public class JdkRequest implements Request, Response {
 
+  private static final String[] EMPTY = {};
+
   private final HttpExchange exchange;
 
-  private final int qsMark;
+  public final String[] split;
 
-  private final String uri;
+  private final String qs;
 
   private String form;
 
-  public JdkRequest(HttpExchange r) {
+  public JdkRequest(Context ctx, HttpExchange r) {
     this.exchange = r;
-    this.uri = r.getRequestURI().toString();
-    this.qsMark = uri.indexOf('?');
+    this.qs = r.getRequestURI().getQuery();
+    String path = ctx.makeRelativePath(r.getRequestURI().getPath());
+    split = (path.isEmpty() || path.equals("/")) ? EMPTY
+                                                 : trimLeftSlash(path).split("/");
+  }
+
+  public String getSplit(int tokenIndex) {
+    return split[tokenIndex];
+  }
+
+  public String getSplat(int tokenIndex) {
+    // TODO directly return a substring of the path
+    StringBuilder b = new StringBuilder(64);
+    for (int i = tokenIndex; i < split.length; i++) {
+      if (b.length() > 0)
+        b.append('/');
+      b.append(split[i]);
+    }
+    return b.toString();
+  }
+
+  private static String trimLeftSlash(String uri) {
+    if (uri.startsWith("/"))
+      return uri.substring(1);
+    else
+      return uri;
   }
 
   public String getRequestURI() {
-    return qsMark >= 0 ? uri.substring(0, qsMark) : uri;
+    return exchange.getRequestURI().getPath();
   }
 
   public String getQueryString() {
-    return qsMark >= 0 ? uri.substring(qsMark + 1) : null;
+    return qs;
   }
 
   public HttpExchange getExchange() {
@@ -43,7 +69,7 @@ public class JdkRequest implements Request, Response {
   }
 
   public String getArg(String name, String def) {
-    if (qsMark == -1)
+    if (qs == null)
       return def;
     return parseArg(name, def, getQueryString());
   }
@@ -80,6 +106,11 @@ public class JdkRequest implements Request, Response {
     return exchange.getRequestBody();
   }
 
+  @Override
+  public String getHttpMethod() {
+    return exchange.getRequestMethod();
+  }
+
   // /////////// Response methods
 
   public void addHeader(String header, String value) {
@@ -98,5 +129,4 @@ public class JdkRequest implements Request, Response {
   public OutputStream getOutputStream() {
     return exchange.getResponseBody();
   }
-
 }

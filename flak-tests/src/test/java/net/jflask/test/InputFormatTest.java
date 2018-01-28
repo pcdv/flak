@@ -26,9 +26,13 @@ public class InputFormatTest extends AbstractAppTest {
     public String name;
   }
 
+  @Override
+  protected void preScan() {
+    app.addInputParser("JSON", new JsonInputParser());
+  }
+
   @Test
   public void testPostPojo() throws IOException, URISyntaxException {
-    app.addInputParser("JSON", new JsonInputParser());
     Assert.assertEquals("foo42", client.post("/pojo/42", "{\"name\":\"foo\"}"));
   }
 }

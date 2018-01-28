@@ -49,4 +49,6 @@ public interface Request {
   List<String> getArgs(String name);
 
   InputStream getInputStream();
+
+  String getHttpMethod();
 }
