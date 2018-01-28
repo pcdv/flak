@@ -19,11 +19,10 @@ public interface Request {
    * @return a <code>String</code> containing the query string or
    *         <code>null</code> if the URL contains no query string
    */
-
   String getQueryString();
   
   /**
-   * Returns the HTTP verb (GET, POST, etc.) used in the request.
+   * Returns the HTTP method (GET, POST, etc.) used in the request.
    */
   String getMethod();
 

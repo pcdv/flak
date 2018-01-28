@@ -27,6 +27,7 @@ import flak.util.Log;
  *
  * @author pcdv
  */
+@SuppressWarnings("unchecked")
 public class MethodHandler implements Comparable<MethodHandler> {
 
   private static final String[] EMPTY = {};
@@ -34,12 +35,12 @@ public class MethodHandler implements Comparable<MethodHandler> {
   /**
    * The HTTP method
    */
-  private final String requestMethod;
+  private final String httpMethod;
 
   /**
    * The method to invoke to process requests.
    */
-  private final Method method;
+  private final Method javaMethod;
 
   /**
    * The object to invoke method on.
@@ -70,7 +71,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
   private final Context ctx;
 
   @SuppressWarnings("rawtypes")
-  private OutputFormatter converter;
+  private OutputFormatter outputFormatter;
 
   private final String uri;
 
@@ -78,10 +79,10 @@ public class MethodHandler implements Comparable<MethodHandler> {
     this.ctx = ctx;
     this.uri = uri;
     this.rootURI = uri;
-    this.requestMethod = initHttpRequest(method);
+    this.httpMethod = getHttpMethod(method);
     this.outputFormatName = getOutputFormat(method);
     this.inputFormat = getInputFormat(method);
-    this.method = method;
+    this.javaMethod = method;
     this.target = target;
     this.tok = uri.isEmpty() ? EMPTY : uri.substring(1).split("/");
     this.idx = calcIndexes(tok);
@@ -130,7 +131,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
     return m.getAnnotation(InputFormat.class);
   }
 
-  private static String initHttpRequest(Method m) {
+  private static String getHttpMethod(Method m) {
     if (m.getAnnotation(Post.class) != null)
       return "POST";
     if (m.getAnnotation(Put.class) != null)
@@ -139,8 +140,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
       return "PATCH";
     if (m.getAnnotation(Delete.class) != null)
       return "DELETE";
-    Route route = m.getAnnotation(Route.class);
-    return route.method();
+    return m.getAnnotation(Route.class).method();
   }
 
   /**
@@ -148,16 +148,19 @@ public class MethodHandler implements Comparable<MethodHandler> {
    * require adaptation in handlers.
    */
   public void configure() {
-    if (method.getAnnotation(LoginRequired.class) != null)
-      loginRequired = true;
-    else if (method.getAnnotation(LoginNotRequired.class) != null || method.getAnnotation(
-      LoginPage.class) != null)
-      loginRequired = false;
-    else
-      loginRequired = ctx.app.getRequireLoggedInByDefault();
+    loginRequired = isLoginRequired();
 
-    if (this.converter == null && outputFormatName != null)
-      this.converter = ctx.app.getOutputFormatter(outputFormatName);
+    if (this.outputFormatter == null && outputFormatName != null)
+      this.outputFormatter = ctx.app.getOutputFormatter(outputFormatName);
+  }
+
+  private boolean isLoginRequired() {
+    if (javaMethod.getAnnotation(LoginRequired.class) != null)
+      return true;
+
+    return javaMethod.getAnnotation(LoginNotRequired.class) == null && //
+             javaMethod.getAnnotation(LoginPage.class) == null && //
+             ctx.app.getRequireLoggedInByDefault();
   }
 
   private int[] calcIndexes(String[] tok) {
@@ -198,10 +201,10 @@ public class MethodHandler implements Comparable<MethodHandler> {
     Object[] args = extractArgs(uri);
 
     if (Log.DEBUG)
-      Log.debug("Invoking " + target.getClass()
-                                    .getSimpleName() + "." + method.getName() + Arrays
-                                                                                  .toString(
-                                                                                    args));
+      Log.debug(String.format("Invoking %s.%s%s",
+                              target.getClass().getSimpleName(),
+                              javaMethod.getName(),
+                              Arrays.toString(args)));
 
     if (inputFormat != null) {
       InputParser parser = ctx.app.getInputParser(inputFormat.name());
@@ -212,9 +215,9 @@ public class MethodHandler implements Comparable<MethodHandler> {
       args[args.length - 1] = parser.parse(ctx.app.getRequest(), inputFormat.type());
     }
 
-    Object res = method.invoke(target, args);
+    Object res = javaMethod.invoke(target, args);
 
-    ctx.app.fireSuccess(method, args, res);
+    ctx.app.fireSuccess(javaMethod, args, res);
 
     return processResponse(r, resp, res);
   }
@@ -222,8 +225,8 @@ public class MethodHandler implements Comparable<MethodHandler> {
   private boolean processResponse(HttpExchange r,
                                   Response resp,
                                   Object res) throws Exception {
-    if (converter != null) {
-      converter.convert(res, resp);
+    if (outputFormatter != null) {
+      outputFormatter.convert(res, resp);
     }
     else if (outputFormatName != null) {
       throw new IllegalStateException("Converter '" + outputFormatName + "' not registered in App.");
@@ -244,7 +247,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
       IO.pipe((InputStream) res, r.getResponseBody(), false);
     }
     else
-      throw new RuntimeException("Unexpected return value: " + res + " from " + method
+      throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod
                                                                                   .toGenericString());
 
     return true;
@@ -271,7 +274,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
    * Checks whether current handler should respond to specified request.
    */
   private boolean isApplicable(HttpExchange r, String[] uri) {
-    if (!r.getRequestMethod().equals(this.requestMethod))
+    if (!r.getRequestMethod().equals(this.httpMethod))
       return false;
 
     if (uri.length != tok.length) {
@@ -290,7 +293,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
 
   public int compareTo(MethodHandler o) {
     if (Arrays.equals(tok, o.tok))
-      return requestMethod.compareTo(o.requestMethod);
+      return httpMethod.compareTo(o.httpMethod);
     return uri.compareTo(o.uri);
   }
 
@@ -298,12 +301,12 @@ public class MethodHandler implements Comparable<MethodHandler> {
     return uri;
   }
 
-  public String getVerb() {
-    return requestMethod;
+  public String getHttpMethod() {
+    return httpMethod;
   }
 
-  public Method getMethod() {
-    return method;
+  public Method getJavaMethod() {
+    return javaMethod;
   }
 
 }
