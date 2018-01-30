@@ -1,6 +1,5 @@
 package flak.howto;
 
-import flak.App;
 import flak.Request;
 import flak.annotations.Route;
 
@@ -11,16 +10,8 @@ import flak.annotations.Route;
  */
 public class AccessQueryParameters {
 
-  private final App app;
-
-  public AccessQueryParameters(App app) {
-    this.app = app;
-  }
-
   @Route("/api/stuff")
-  public String getStuff() {
-    Request req = app.getRequest();
-    String param1 = req.getArg("param1", null);
-    return "You submitted param1=" + param1;
+  public String getStuff(Request req) {
+    return "You submitted param1=" + req.getArg("param1", null);
   }
 }

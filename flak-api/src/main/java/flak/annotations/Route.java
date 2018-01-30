@@ -62,11 +62,4 @@ public @interface Route {
    * Specifies the HTTP method. Defaults to "GET".
    */
   String method() default "GET";
-
-  /**
-   * Specifies how the value returned by method must be converted and written
-   * to the response stream. The given value must correspond to the name of a
-   * converter registered in the App.
-   */
-  String outputFormat() default "";
 }

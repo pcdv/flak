@@ -1,12 +1,11 @@
 package flak.backend.jdk.extractor;
 
 import flak.backend.jdk.JdkRequest;
-import flak.backend.jdk.extractor.ArgExtractor;
 
 /**
  * @author pcdv
  */
-public class SplatExtractor extends ArgExtractor {
+public class SplatExtractor extends ArgExtractor<String> {
   private int tokenIndex;
 
   public SplatExtractor(int index, int tokenIndex) {
@@ -15,7 +14,7 @@ public class SplatExtractor extends ArgExtractor {
   }
 
   @Override
-  public Object extract(JdkRequest request) {
+  public String extract(JdkRequest request) {
     return request.getSplat(tokenIndex);
   }
 }

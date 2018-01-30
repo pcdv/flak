@@ -11,6 +11,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
+ * Check that an {@link ErrorHandler} can intercept an exception in a
+ * route handler and reply anything to the client.
+ *
  * @author pcdv
  */
 public class ErrorHandlerTest extends AbstractAppTest {
@@ -29,11 +32,10 @@ public class ErrorHandlerTest extends AbstractAppTest {
       @Override
       public void onError(int status, Request request, Throwable t) {
         // this is a hack (future version should allow to do it in a clean way)
-        Response ex = app.getResponse();
+        Response r = app.getResponse();
         try {
-          ex.setStatus(555);
-          ex.getOutputStream().write("hello".getBytes());
-//          ex.close();
+          r.setStatus(555);
+          r.getOutputStream().write("hello".getBytes());
         }
         catch (IOException ignored) {
         }

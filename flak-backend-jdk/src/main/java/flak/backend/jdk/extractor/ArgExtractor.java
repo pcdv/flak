@@ -5,7 +5,7 @@ import flak.backend.jdk.JdkRequest;
 /**
  * @author pcdv
  */
-public abstract class ArgExtractor {
+public abstract class ArgExtractor<T> {
 
   protected int index;
 
@@ -13,5 +13,5 @@ public abstract class ArgExtractor {
     this.index = index;
   }
 
-  public abstract Object extract(JdkRequest request) throws Exception;
+  public abstract T extract(JdkRequest request) throws Exception;
 }

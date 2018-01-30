@@ -16,7 +16,7 @@ import org.junit.Test;
 public class InputFormatTest extends AbstractAppTest {
 
   @Post
-  @InputFormat(name = "JSON", type = Pojo.class)
+  @InputFormat("JSON")
   @Route("/pojo/:id")
   public String postJsonObject(String id, Pojo obj) {
     return obj.name + id;

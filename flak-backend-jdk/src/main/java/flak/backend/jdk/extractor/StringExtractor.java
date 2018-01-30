@@ -5,7 +5,7 @@ import flak.backend.jdk.JdkRequest;
 /**
  * @author pcdv
  */
-public class StringExtractor extends ArgExtractor {
+public class StringExtractor extends ArgExtractor<String> {
   private int tokenIndex;
 
   public StringExtractor(int index, int tokenIndex) {
@@ -14,7 +14,7 @@ public class StringExtractor extends ArgExtractor {
   }
 
   @Override
-  public Object extract(JdkRequest request) {
+  public String extract(JdkRequest request) {
     return request.getSplit(tokenIndex);
   }
 }

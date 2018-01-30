@@ -16,7 +16,7 @@ import flak.InputParser;
  * Example
  * <pre>
  *   &#64;Put
- *   &#64;InputFormat("JSON", Foo.class)
+ *   &#64;InputFormat("JSON")
  *   &#64;Route("/api/foo/:id")
  *   public String putFoo(String id, Foo obj) {
  * </pre>
@@ -32,11 +32,5 @@ public @interface InputFormat {
    *
    * @see flak.App#addInputParser(String, InputParser)
    */
-  String name();
-
-  /**
-   * Specifies the type of the element that must be decoded and passed
-   * to the handler as last argument.
-   */
-  Class type();
+  String value();
 }

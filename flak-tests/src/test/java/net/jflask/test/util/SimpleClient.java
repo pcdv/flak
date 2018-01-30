@@ -57,6 +57,10 @@ public class SimpleClient {
     return toString(doHTTP(path, data, "POST", null));
   }
 
+  public String put(String path, String data) throws IOException {
+    return toString(doHTTP(path, data, "PUT", null));
+  }
+
   public void addCookie(String name, String value) {
     HttpCookie cookie = new HttpCookie(name, value);
     cookie.setPath("/");

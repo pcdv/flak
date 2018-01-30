@@ -2,6 +2,7 @@ package flak.backend.jdk;
 
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
 import java.util.Arrays;
 
 import flak.InputParser;
@@ -10,6 +11,7 @@ import flak.Request;
 import flak.Response;
 import flak.annotations.Delete;
 import flak.annotations.InputFormat;
+import flak.annotations.JSON;
 import flak.annotations.LoginNotRequired;
 import flak.annotations.LoginPage;
 import flak.annotations.LoginRequired;
@@ -19,8 +21,9 @@ import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.Route;
 import flak.backend.jdk.extractor.ArgExtractor;
-import flak.backend.jdk.extractor.InputExtractor;
+import flak.backend.jdk.extractor.ParsedInputExtractor;
 import flak.backend.jdk.extractor.RequestExtractor;
+import flak.backend.jdk.extractor.ResponseExtractor;
 import flak.backend.jdk.extractor.SplatExtractor;
 import flak.backend.jdk.extractor.StringExtractor;
 import flak.util.IO;
@@ -55,9 +58,11 @@ public class MethodHandler implements Comparable<MethodHandler> {
    */
   private final String[] tok;
 
-  private final String outputFormatName;
+  private final OutputFormatter outputFormat;
 
   private final int argc;
+
+  private final InputParser inputParser;
 
   private boolean loginRequired;
 
@@ -67,22 +72,20 @@ public class MethodHandler implements Comparable<MethodHandler> {
 
   private final Context ctx;
 
-  @SuppressWarnings("rawtypes")
-  private OutputFormatter outputFormatter;
-
   private final String uri;
 
   private static final String[] EMPTY = {};
 
   private ArgExtractor[] extractors;
 
-  public MethodHandler(Context ctx, String uri, Method method, Object target) {
+  public MethodHandler(Context ctx, String uri, Method m, Object target) {
     this.ctx = ctx;
     this.uri = uri;
     this.rootURI = uri;
-    this.httpMethod = getHttpMethod(method);
-    this.outputFormatName = getOutputFormat(method);
-    this.javaMethod = method;
+    this.httpMethod = getHttpMethod(m);
+    this.outputFormat = getOutputFormat(m);
+    this.inputParser = getInputParser(m, ctx.app);
+    this.javaMethod = m;
     this.target = target;
     this.tok = uri.isEmpty() ? EMPTY : uri.substring(1).split("/");
 
@@ -91,24 +94,27 @@ public class MethodHandler implements Comparable<MethodHandler> {
     "/hello/world" if URI schema is "/hello/:name"
     */
     int[] idx = calcIndexes(tok);
-    this.argc = method.getParameterTypes().length;
+    this.argc = m.getParameterTypes().length;
 
-    if (method.getAnnotation(LoginPage.class) != null)
+    if (m.getAnnotation(LoginPage.class) != null)
       ctx.app.setLoginPage(ctx.getRootURI() + uri);
 
     configure();
 
     // hack for being able to call method even if not public or if the class
     // is not public
-    if (!method.isAccessible())
-      method.setAccessible(true);
+    if (!m.isAccessible())
+      m.setAccessible(true);
 
-    Class<?>[] types = method.getParameterTypes();
+    Class<?>[] types = m.getParameterTypes();
     extractors = new ArgExtractor[types.length];
     int index = 0;
     for (int i = 0; i < types.length; i++) {
       if (types[i] == Request.class) {
         extractors[i] = new RequestExtractor(i);
+      }
+      else if (types[i] == Response.class) {
+        extractors[i] = new ResponseExtractor(ctx.app, i);
       }
       else if (types[i] == String.class) {
         // TODO: handle splat case
@@ -121,38 +127,54 @@ public class MethodHandler implements Comparable<MethodHandler> {
       else {
         if (i != types.length - 1)
           throw new IllegalArgumentException(
-            "Only the last argument of method can be another type than String in " + method);
+            "Only the last argument of method can be another type than String in " + m);
 
-        InputFormat inputFormat = method.getAnnotation(InputFormat.class);
-
-        if (inputFormat == null)
+        if (inputParser == null)
           throw new IllegalArgumentException(
-            "No @InputFormat specified in method " + method);
+            "No @InputFormat or @JSON found in method " + m.getName());
 
-        if (!inputFormat.type().isAssignableFrom(types[i]))
-          throw new IllegalArgumentException //
-                  ("Last argument is not of type " + inputFormat.type()
-                                                                .getName() + " in " + method);
         extractors[i] =
-          new InputExtractor(i, getInputParser(method, ctx.app), types[i]);
+          new ParsedInputExtractor(i, getInputParser(m, ctx.app), types[i]);
       }
     }
   }
 
-  private static String getOutputFormat(Method m) {
-    OutputFormat c = m.getAnnotation(OutputFormat.class);
-    if (c != null)
-      return c.value();
+  private OutputFormatter<?> getOutputFormat(Method m) {
+    OutputFormat output = m.getAnnotation(OutputFormat.class);
+    if (output != null) {
+      OutputFormatter<?> format = ctx.app.getOutputFormatter(output.value());
+      if (format == null)
+        throw new IllegalArgumentException("In method " + m.getName() + ": unknown output format: " + output
+                                                                                                        .value());
+      return format;
+    }
 
-    Route route = m.getAnnotation(Route.class);
-    if (route.outputFormat().isEmpty())
-      return null;
-    return route.outputFormat();
+    JSON json = m.getAnnotation(JSON.class);
+    if (json != null) {
+      OutputFormatter<?> fmt = ctx.app.getOutputFormatter("JSON");
+      if (fmt == null)
+        throw new IllegalArgumentException("In method " + m.getName() + ": no OutputFormatter with name JSON was declared");
+      return fmt;
+    }
+
+    return null;
   }
 
-  private static InputParser getInputParser(Method m, JdkApp app) {
-    InputFormat annotation = m.getAnnotation(InputFormat.class);
-    return annotation == null ? null : app.getInputParser(annotation.name());
+  private static boolean isBasic(Class<?> type) {
+    return type == String.class || type == byte[].class || type == InputStream.class || type == Response.class;
+  }
+
+  private InputParser getInputParser(Method m, JdkApp app) {
+    InputFormat input = m.getAnnotation(InputFormat.class);
+    if (input != null)
+      return app.getInputParser(input.value());
+    JSON json = m.getAnnotation(JSON.class);
+    if (json != null) {
+      if (!isBasic(m.getReturnType())) {
+        return ctx.app.getInputParser("JSON");
+      }
+    }
+    return null;
   }
 
   private static String getHttpMethod(Method m) {
@@ -173,9 +195,6 @@ public class MethodHandler implements Comparable<MethodHandler> {
    */
   public void configure() {
     loginRequired = isLoginRequired();
-
-    if (this.outputFormatter == null && outputFormatName != null)
-      this.outputFormatter = ctx.app.getOutputFormatter(outputFormatName);
   }
 
   private boolean isLoginRequired() {
@@ -236,25 +255,25 @@ public class MethodHandler implements Comparable<MethodHandler> {
   }
 
   private boolean processResponse(JdkRequest r, Object res) throws Exception {
-    if (outputFormatter != null) {
-      outputFormatter.convert(res, r);
+    if (outputFormat != null) {
+      outputFormat.convert(res, r);
     }
-    else if (outputFormatName != null) {
-      throw new IllegalStateException("Converter '" + outputFormatName + "' not registered in App.");
+    else if (outputFormat != null) {
+      throw new IllegalStateException("Converter '" + outputFormat + "' not registered in App.");
     }
     else if (res instanceof Response) {
       // do nothing: status and headers should already be set
     }
     else if (res instanceof String) {
-      r.setStatus(200);
+      r.setStatus(HttpURLConnection.HTTP_OK);
       r.getOutputStream().write(((String) res).getBytes("UTF-8"));
     }
     else if (res instanceof byte[]) {
-      r.setStatus(200);
+      r.setStatus(HttpURLConnection.HTTP_OK);
       r.getOutputStream().write((byte[]) res);
     }
     else if (res instanceof InputStream) {
-      r.setStatus(200);
+      r.setStatus(HttpURLConnection.HTTP_OK);
       IO.pipe((InputStream) res, r.getOutputStream(), false);
     }
     else
