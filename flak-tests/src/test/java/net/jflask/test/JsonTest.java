@@ -5,21 +5,16 @@ import java.io.IOException;
 import flak.annotations.JSON;
 import flak.annotations.Put;
 import flak.annotations.Route;
-import flak.jackson.JsonInputParser;
-import flak.jackson.JsonOutputFormatter;
+import flak.jackson.JacksonPlugin;
 import net.jflask.test.OutputFormatTest.Foo;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * @author pcdv
- */
 public class JsonTest extends AbstractAppTest {
 
   @Override
   protected void preScan() {
-    app.addInputParser("JSON", new JsonInputParser());
-    app.addOutputFormatter("JSON", new JsonOutputFormatter<>());
+    JacksonPlugin.install(app);
   }
 
   /**
@@ -32,6 +27,9 @@ public class JsonTest extends AbstractAppTest {
     return foo;
   }
 
+  /**
+   * Check that JSON is correctly decoded and encoded back by route handler.
+   */
   @Test
   public void testJsonBackAndForth() throws IOException {
     Assert.assertEquals("{\"stuff\":1235}",
@@ -39,17 +37,21 @@ public class JsonTest extends AbstractAppTest {
   }
 
   @Test
-  public void checkErrors() {
-    try {
+  public void errorWhenMissingInputFormat() {
+    TestUtil.assertFails(() -> app.scan(new Object() {
+      @Route("/foo1")
+      public String foo(Foo foo) { return null;}
+    }), "No @InputFormat or @JSON found around method foo()");
+  }
+
+  @Test
+  public void errorWhenMissingOutputFormat() {
+    TestUtil.assertFails(() -> {
       app.scan(new Object() {
         @Route("/foo1")
-        public String foo(Foo foo) { return null;}
+        public Foo foo() { return null;}
       });
-      Assert.fail("Should have failed");
-    }
-    catch (Exception e) {
-      Assert.assertEquals("No @InputFormat or @JSON found in method foo",
-                          e.getMessage());
-    }
+      return client.get("/foo1");
+    }, "No @OutputFormat or @JSON around method foo()");
   }
 }

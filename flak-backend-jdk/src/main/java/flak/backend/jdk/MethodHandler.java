@@ -131,11 +131,16 @@ public class MethodHandler implements Comparable<MethodHandler> {
 
         if (inputParser == null)
           throw new IllegalArgumentException(
-            "No @InputFormat or @JSON found in method " + m.getName());
+            "No @InputFormat or @JSON found around method " + m.getName() + "()");
 
         extractors[i] =
           new ParsedInputExtractor(i, getInputParser(m, ctx.app), types[i]);
       }
+    }
+
+    if (!isBasic(m.getReturnType()) && outputFormat == null) {
+      throw new IllegalArgumentException(
+        "No @OutputFormat or @JSON around method " + m.getName() + "()");
     }
   }
 
