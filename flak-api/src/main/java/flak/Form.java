@@ -8,4 +8,6 @@ package flak;
  */
 public interface Form {
   String get(String name);
+
+  String get(String name, String def);
 }

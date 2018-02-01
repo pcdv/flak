@@ -4,11 +4,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 import flak.Form;
+import flak.Query;
 
 /**
  * @author pcdv
  */
-public class FormImpl implements Form {
+public class FormImpl implements Form, Query {
   private String data;
 
   public FormImpl(String data) {
@@ -17,6 +18,8 @@ public class FormImpl implements Form {
 
   @Override
   public String get(String name) {
+    if (data == null)
+      return null;
     String s = data.replaceAll(".*(?:^|&)" + name + "=([^&]*).*", "$1");
     try {
       return URLDecoder.decode(s, "UTF-8");
@@ -24,5 +27,11 @@ public class FormImpl implements Form {
     catch (UnsupportedEncodingException e) {
       return e.toString();
     }
+  }
+
+  @Override
+  public String get(String name, String def) {
+    String res = get(name);
+    return res == null || res.equals(data)? def : res;
   }
 }

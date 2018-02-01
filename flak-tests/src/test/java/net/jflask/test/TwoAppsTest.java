@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import flak.App;
 import flak.AppFactory;
 import flak.Flak;
+import flak.Request;
 import flak.WebServer;
 import flak.annotations.Route;
 import net.jflask.test.util.SimpleClient;
@@ -52,8 +53,8 @@ public class TwoAppsTest {
 
     app2 = fac.createApp("/app2").scan(new Object() {
       @Route("/hello")
-      public String hello() {
-        return "Hello from app2";
+      public String hello(Request req) {
+        return "Hello from app2 - path = "+req.getPath();
       }
     });
 
@@ -71,7 +72,7 @@ public class TwoAppsTest {
   @Test
   public void testMethodHandlers() throws Exception {
     assertEquals("Hello from app1", client.get("/app1/hello"));
-    assertEquals("Hello from app2", client.get("/app2/hello"));
+    assertEquals("Hello from app2 - path = /hello", client.get("/app2/hello"));
   }
 
   @Test

@@ -1,15 +1,13 @@
 package flak;
 
 import java.io.InputStream;
-import java.util.List;
 
 public interface Request {
 
   /**
-   * Returns the part of this request's URL from the protocol name up to the
-   * query string in the first line of the HTTP request.
+   * Returns the request path, relative from the app's root.
    */
-  String getRequestURI();
+  String getPath();
 
   /**
    * Returns the query string contained in request URL after the path. This
@@ -27,21 +25,9 @@ public interface Request {
   String getMethod();
 
   /**
-   * Returns parameter submitted in the query string, eg. if URL =
-   * "...?key=value", getArg("key", null) returns "value".
-   *
-   * @param def the default value to return if specified parameter in unset
-   * @return the parameter found in the query string or specified default value
+   * Returns an object allowing to easily parse the query string.
    */
-  String getArg(String name, String def);
-
-  /**
-   * Returns a list containing all occurrences of a given parameter in query
-   * string, or an empty list if none is found.
-   *
-   * @param name the parameter's name
-   */
-  List<String> getArgs(String name);
+  Query getQuery();
 
   InputStream getInputStream();
 

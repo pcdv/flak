@@ -383,7 +383,7 @@ public class JdkApp extends AbstractApp {
 
     else {
 
-      Log.warn("No handler found for: " + r.getMethod() + " " + r.getRequestURI());
+      Log.warn("No handler found for: " + r.getMethod() + " " + r.getPath());
 
       fireError(404, r, null);
 
@@ -393,5 +393,12 @@ public class JdkApp extends AbstractApp {
 
   public Collection<RequestHandler> getHandlers() {
     return handlers.values();
+  }
+
+  public String relativePath(String path) {
+    if (this.rootUrl == null)
+      return path;
+    else
+      return path.substring(rootUrl.length());
   }
 }

@@ -42,7 +42,7 @@ public class HookTest extends AbstractAppTest {
     app.addErrorHandler(new ErrorHandler() {
       @Override
       public void onError(int status, Request request, Throwable t) {
-        queue.offer(status + " " + request.getMethod() + " " + request.getRequestURI() + " " + t);
+        queue.offer(status + " " + request.getMethod() + " " + request.getPath() + " " + t);
       }
     });
 
@@ -77,7 +77,7 @@ public class HookTest extends AbstractAppTest {
                             Method method,
                             Object[] args,
                             Object result) {
-        queue.offer(r.getMethod() + " " + r.getRequestURI() + " " 
+        queue.offer(r.getMethod() + " " + r.getPath() + " "
                     + method.getName() + Arrays.toString(args) + " " + result);
       }
     });

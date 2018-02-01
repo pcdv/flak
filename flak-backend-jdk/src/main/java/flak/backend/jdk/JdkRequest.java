@@ -3,10 +3,10 @@ package flak.backend.jdk;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
 
 import com.sun.net.httpserver.HttpExchange;
 import flak.Form;
+import flak.Query;
 import flak.Request;
 import flak.Response;
 import flak.util.IO;
@@ -14,6 +14,8 @@ import flak.util.IO;
 public class JdkRequest implements Request, Response {
 
   private static final String[] EMPTY = {};
+
+  private Context ctx;
 
   private final HttpExchange exchange;
 
@@ -24,6 +26,7 @@ public class JdkRequest implements Request, Response {
   private Form form;
 
   public JdkRequest(Context ctx, HttpExchange r) {
+    this.ctx = ctx;
     this.exchange = r;
     this.qs = r.getRequestURI().getQuery();
     String path = ctx.makeRelativePath(r.getRequestURI().getPath());
@@ -53,8 +56,8 @@ public class JdkRequest implements Request, Response {
       return uri;
   }
 
-  public String getRequestURI() {
-    return exchange.getRequestURI().getPath();
+  public String getPath() {
+    return ctx.app.relativePath(exchange.getRequestURI().getPath());
   }
 
   public String getQueryString() {
@@ -69,28 +72,16 @@ public class JdkRequest implements Request, Response {
     return exchange.getRequestMethod();
   }
 
-  public String getArg(String name, String def) {
-    if (qs == null)
-      return def;
-    return parseArg(name, def, getQueryString());
-  }
-
-  private String parseArg(String name, String def, String encoded) {
-    String[] tok = encoded.split("&");
-    for (String s : tok) {
-      if (s.startsWith(name)) {
-        if (s.length() > name.length() && s.charAt(name.length()) == '=')
-          return s.substring(name.length() + 1);
-      }
-    }
-    return def;
+  @Override
+  public Query getQuery() {
+    return new FormImpl(getQueryString());
   }
 
   @Override
   public Form getForm() {
     try {
       if (form == null)
-        form = new FormImpl(new String(IO.readFully(getInputStream())));
+        form = new FormImpl(readData());
     }
     catch (Exception e) {
       throw new RuntimeException(e);
@@ -98,9 +89,8 @@ public class JdkRequest implements Request, Response {
     return form;
   }
 
-  public List<String> getArgs(String name) {
-    // TODO
-    return null;
+  private String readData() throws IOException {
+    return new String(IO.readFully(getInputStream()));
   }
 
   public InputStream getInputStream() {

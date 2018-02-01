@@ -22,7 +22,7 @@ public class QueryTest extends AbstractAppTest {
 
   @Route("/hello2")
   public String helloQuery() {
-    return "Hello " + app.getRequest().getArg("name", null);
+    return "Hello " + app.getRequest().getQuery().get("name", null);
   }
 
   @Test
@@ -36,8 +36,8 @@ public class QueryTest extends AbstractAppTest {
   }
 
   @Route("/hello_bytearray")
-  public byte[] helloByteArray() {
-    return ("Hello " + app.getRequest().getArg("name", null)).getBytes();
+  public byte[] helloByteArray(Request req) {
+    return ("Hello " + req.getQuery().get("name", null)).getBytes();
   }
 
   @Test
@@ -47,7 +47,7 @@ public class QueryTest extends AbstractAppTest {
 
   @Route("/hello/request")
   public String getApp(Request req) {
-    return "Hello " + req.getArg("name", "???");
+    return "Hello " + req.getQuery().get("name", "???");
   }
 
   @Test
