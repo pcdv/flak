@@ -12,6 +12,6 @@ public class AccessQueryParameters {
 
   @Route("/api/stuff")
   public String getStuff(Request req) {
-    return "You submitted param1=" + req.getArg("param1", null);
+    return "You submitted param1=" + req.getQuery().get("param1");
   }
 }
