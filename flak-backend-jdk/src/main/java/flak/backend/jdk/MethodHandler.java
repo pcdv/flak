@@ -4,7 +4,9 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import flak.Form;
 import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Request;
@@ -62,7 +64,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
 
   private final int argc;
 
-  private final InputParser inputParser;
+  private InputParser inputParser;
 
   private boolean loginRequired;
 
@@ -89,11 +91,6 @@ public class MethodHandler implements Comparable<MethodHandler> {
     this.target = target;
     this.tok = uri.isEmpty() ? EMPTY : uri.substring(1).split("/");
 
-    /*
-    The indexes of variables in split URI, eg. { 1 } to extract "world" from
-    "/hello/world" if URI schema is "/hello/:name"
-    */
-    int[] idx = calcIndexes(tok);
     this.argc = m.getParameterTypes().length;
 
     if (m.getAnnotation(LoginPage.class) != null)
@@ -106,41 +103,62 @@ public class MethodHandler implements Comparable<MethodHandler> {
     if (!m.isAccessible())
       m.setAccessible(true);
 
-    Class<?>[] types = m.getParameterTypes();
-    extractors = new ArgExtractor[types.length];
-    int index = 0;
-    for (int i = 0; i < types.length; i++) {
-      if (types[i] == Request.class) {
-        extractors[i] = new RequestExtractor(i);
-      }
-      else if (types[i] == Response.class) {
-        extractors[i] = new ResponseExtractor(ctx.app, i);
-      }
-      else if (types[i] == String.class) {
-        // TODO: handle splat case
-        int tokenIndex = idx[index++];
-        if (splat == tokenIndex)
-          extractors[i] = new SplatExtractor(i, tokenIndex);
-        else
-          extractors[i] = new StringExtractor(i, tokenIndex);
-      }
-      else {
-        if (i != types.length - 1)
-          throw new IllegalArgumentException(
-            "Only the last argument of method can be another type than String in " + m);
-
-        if (inputParser == null)
-          throw new IllegalArgumentException(
-            "No @InputFormat or @JSON found around method " + m.getName() + "()");
-
-        extractors[i] =
-          new ParsedInputExtractor(i, getInputParser(m, ctx.app), types[i]);
-      }
-    }
+    extractors = createExtractors(m);
 
     if (!isBasic(m.getReturnType()) && outputFormat == null) {
       throw new IllegalArgumentException(
         "No @OutputFormat or @JSON around method " + m.getName() + "()");
+    }
+  }
+
+  private ArgExtractor[] createExtractors(Method m) {
+    int[] idx = calcIndexes(tok);
+    Class<?>[] types = m.getParameterTypes();
+    ArgExtractor[] extractors = new ArgExtractor[types.length];
+    AtomicInteger index = new AtomicInteger();
+    for (int i = 0; i < types.length; i++) {
+      extractors[i] = createExtractor(m, types[i], i, index, idx);
+    }
+    return extractors;
+  }
+
+  /**
+   * @param type the type of argument in method
+   * @param i the extractor's index (i.e. index of argument in method)
+   * @param idx indexes of variables in split URI, eg. { 1 } to extract "world" from
+   */
+  private ArgExtractor createExtractor(Method m,
+                                       Class<?> type,
+                                       int i,
+                                       AtomicInteger urlParam,
+                                       int[] idx) {
+    if (type == Request.class) {
+      return new RequestExtractor(i);
+    }
+    else if (type == Response.class) {
+      return new ResponseExtractor(ctx.app, i);
+    }
+    else if (type == String.class) {
+      int tokenIndex = idx[urlParam.getAndIncrement()];
+      if (splat == tokenIndex)
+        return new SplatExtractor(i, tokenIndex);
+      else
+        return new StringExtractor(i, tokenIndex);
+    }
+    else {
+      if (type == Form.class) {
+        inputParser = new FormParser();
+      }
+
+      if (i != m.getParameterCount() - 1)
+        throw new IllegalArgumentException(
+          "Only the last argument of method can be another type than String in " + m);
+
+      if (inputParser == null)
+        throw new IllegalArgumentException(
+          "No @InputFormat or @JSON found around method " + m.getName() + "()");
+
+      return new ParsedInputExtractor(i, inputParser, type);
     }
   }
 
