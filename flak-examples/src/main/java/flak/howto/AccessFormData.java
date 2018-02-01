@@ -1,6 +1,6 @@
 package flak.howto;
 
-import flak.Request;
+import flak.Form;
 import flak.annotations.Post;
 import flak.annotations.Route;
 
@@ -13,7 +13,7 @@ public class AccessFormData {
 
   @Post
   @Route("/api/form")
-  public String postForm(Request req) {
-    return "You submitted param1=" + req.getForm("param1");
+  public String postForm(Form form) {
+    return "You submitted param1=" + form.get("param1");
   }
 }

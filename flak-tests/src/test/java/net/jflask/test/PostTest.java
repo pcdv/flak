@@ -1,5 +1,6 @@
 package net.jflask.test;
 
+import flak.Form;
 import flak.annotations.Post;
 import flak.annotations.Route;
 import org.junit.Test;
@@ -13,8 +14,8 @@ public class PostTest extends AbstractAppTest {
 
   @Post
   @Route("/form")
-  public String postLogin() {
-    return app.getRequest().getForm("login");
+  public String postLogin(Form form) {
+    return app.getRequest().getForm().get("login");
   }
 
   /**

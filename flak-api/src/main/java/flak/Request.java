@@ -36,11 +36,6 @@ public interface Request {
   String getArg(String name, String def);
 
   /**
-   * Returns a field from form data (only valid for POST requests).
-   */
-  String getForm(String field);
-
-  /**
    * Returns a list containing all occurrences of a given parameter in query
    * string, or an empty list if none is found.
    *
@@ -51,4 +46,6 @@ public interface Request {
   InputStream getInputStream();
 
   String getHttpMethod();
+
+  Form getForm();
 }

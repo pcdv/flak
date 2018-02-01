@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.util.List;
 
 import com.sun.net.httpserver.HttpExchange;
+import flak.Form;
 import flak.Request;
 import flak.Response;
 import flak.util.IO;
@@ -20,7 +21,7 @@ public class JdkRequest implements Request, Response {
 
   private final String qs;
 
-  private String form;
+  private Form form;
 
   public JdkRequest(Context ctx, HttpExchange r) {
     this.exchange = r;
@@ -86,15 +87,15 @@ public class JdkRequest implements Request, Response {
   }
 
   @Override
-  public String getForm(String field) {
+  public Form getForm() {
     try {
       if (form == null)
-        form = new String(IO.readFully(getInputStream()));
-      return parseArg(field, null, form);
+        form = new FormImpl(new String(IO.readFully(getInputStream())));
     }
-    catch (IOException e) {
+    catch (Exception e) {
       throw new RuntimeException(e);
     }
+    return form;
   }
 
   public List<String> getArgs(String name) {

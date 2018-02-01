@@ -1,5 +1,6 @@
 package net.jflask.test;
 
+import flak.Form;
 import flak.Response;
 import flak.annotations.LoginPage;
 import flak.annotations.LoginRequired;
@@ -34,9 +35,9 @@ public class LoginTest3 extends AbstractAppTest {
   }
 
   @Route(value = "/login", method = "POST")
-  public Response login() {
-    String login = app.getRequest().getForm("login");
-    String pass = app.getRequest().getForm("password");
+  public Response login(Form form) {
+    String login = form.get("login");
+    String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
       app.loginUser(login);
