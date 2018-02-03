@@ -9,7 +9,7 @@ import flak.RequestHandler;
 import flak.backend.jdk.JdkApp;
 import flak.util.Log;
 
-public class DefaultHandler implements HttpHandler, RequestHandler {
+public abstract class DefaultHandler implements HttpHandler, RequestHandler {
 
   protected final JdkApp app;
 
@@ -45,26 +45,10 @@ public class DefaultHandler implements HttpHandler, RequestHandler {
     case "GET":
       doGet(r);
       break;
-    case "POST":
-      doPost(r);
-      break;
-    case "PUT":
-      doPut(r);
-      break;
     default:
       throw new RuntimeException("Invalid method: " + r.getRequestMethod());
     }
   }
 
-  public void doPut(HttpExchange r) throws Exception {
-    throw new RuntimeException("Invalid method");
-  }
-
-  public void doPost(HttpExchange r) throws Exception {
-    throw new RuntimeException("Invalid method");
-  }
-
-  public void doGet(HttpExchange r) throws Exception {
-    throw new RuntimeException("Invalid method");
-  }
+  public abstract void doGet(HttpExchange r) throws Exception;
 }
