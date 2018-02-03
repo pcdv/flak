@@ -154,10 +154,6 @@ public class MethodHandler implements Comparable<MethodHandler> {
         inputParser = new QueryParser();
       }
 
-      if (i != m.getParameterCount() - 1)
-        throw new IllegalArgumentException(
-          "Only the last argument of method can be another type than String in " + m);
-
       if (inputParser == null)
         throw new IllegalArgumentException(
           "No @InputFormat or @JSON found around method " + m.getName() + "()");
