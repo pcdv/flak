@@ -188,7 +188,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
   }
 
   private static boolean isBasic(Class<?> type) {
-    return type == String.class || type == byte[].class || type == InputStream.class || type == Response.class;
+    return type == String.class || type == byte[].class || type == InputStream.class || type == Response.class || type == void.class;
   }
 
   private InputParser getInputParser(Method m, JdkApp app) {
@@ -302,6 +302,9 @@ public class MethodHandler implements Comparable<MethodHandler> {
     else if (res instanceof InputStream) {
       r.setStatus(HttpURLConnection.HTTP_OK);
       IO.pipe((InputStream) res, r.getOutputStream(), false);
+    }
+    else if (res == null) {
+      r.getOutputStream().close();
     }
     else
       throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod
