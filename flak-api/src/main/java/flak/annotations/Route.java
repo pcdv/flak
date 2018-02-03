@@ -18,7 +18,22 @@ import java.lang.annotation.Target;
  * and written data in response (no more processing will happen) </li>
  * <li> <code>void</code> : sends an empty response</li>
  * </ul>
- *
+ * <p>
+ * They can accept the following argument types:
+ * <ul>
+ * <li>{@link flak.Request} &mdash; if you need to access the request</li>
+ * <li>{@link flak.Response} &mdash; if you need to access the response (in that
+ * case it is often preferable to return <code>void</code>)</li>
+ * <li>{@link flak.Form} &mdash; to easily access the parameters of a POST
+ * request</li>
+ * <li>{@link flak.Query} &mdash; to easily access the query string</li>
+ * <li><code>String</code> or <code>int</code>&mdash; if the route contains
+ * some
+ * "/:var" elements</li>
+ * <li>any other type, provided an {@link InputFormat} annotation is
+ * present</li>
+ * </ul>
+ * <p>
  * To register decorated methods into the App, {@link flak.App#scan(Object)}
  * must be called with an instance of the class containing the method.
  *

@@ -24,6 +24,7 @@ import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.Route;
 import flak.backend.jdk.extractor.ArgExtractor;
+import flak.backend.jdk.extractor.IntExtractor;
 import flak.backend.jdk.extractor.ParsedInputExtractor;
 import flak.backend.jdk.extractor.RequestExtractor;
 import flak.backend.jdk.extractor.ResponseExtractor;
@@ -63,13 +64,9 @@ public class MethodHandler implements Comparable<MethodHandler> {
 
   private final OutputFormatter outputFormat;
 
-  private final int argc;
-
   private boolean loginRequired;
 
   private int splat = -1;
-
-  private final String rootURI;
 
   private final Context ctx;
 
@@ -77,19 +74,16 @@ public class MethodHandler implements Comparable<MethodHandler> {
 
   private static final String[] EMPTY = {};
 
-  private ArgExtractor[] extractors;
+  private final ArgExtractor[] extractors;
 
   public MethodHandler(Context ctx, String uri, Method m, Object target) {
     this.ctx = ctx;
     this.uri = uri;
-    this.rootURI = uri;
     this.httpMethod = getHttpMethod(m);
     this.outputFormat = getOutputFormat(m);
     this.javaMethod = m;
     this.target = target;
     this.tok = uri.isEmpty() ? EMPTY : uri.substring(1).split("/");
-
-    this.argc = m.getParameterTypes().length;
 
     if (m.getAnnotation(LoginPage.class) != null)
       ctx.app.setLoginPage(ctx.getRootURI() + uri);
@@ -143,6 +137,9 @@ public class MethodHandler implements Comparable<MethodHandler> {
         return new SplatExtractor(i, tokenIndex);
       else
         return new StringExtractor(i, tokenIndex);
+    }
+    else if (type == int.class) {
+      return new IntExtractor(i, idx[urlParam.getAndIncrement()]);
     }
     else {
       InputParser inputParser;
@@ -236,12 +233,12 @@ public class MethodHandler implements Comparable<MethodHandler> {
     for (int i = 0; i < tok.length; i++) {
       if (tok[i].charAt(0) == ':') {
         if (splat != -1)
-          throw new IllegalArgumentException("Invalid route: " + rootURI);
+          throw new IllegalArgumentException("Invalid route: " + uri);
         res[j++] = i;
       }
       if (tok[i].charAt(0) == '*') {
         if (i != tok.length - 1)
-          throw new IllegalArgumentException("Invalid route: " + rootURI);
+          throw new IllegalArgumentException("Invalid route: " + uri);
         res[j++] = i;
         splat = i;
       }
@@ -318,7 +315,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
    * Computes the list of arguments to pass to the decorated method.
    */
   private Object[] extractArgs(JdkRequest r) throws Exception {
-    Object[] args = new Object[argc];
+    Object[] args = new Object[extractors.length];
     for (int i = 0; i < args.length; i++) {
       args[i] = extractors[i].extract(r);
     }
