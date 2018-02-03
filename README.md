@@ -92,7 +92,7 @@ This deserves more documentation but here is a list:
  * and more
 
 Until more documentation is available, you can find examples in the 
-[junits](https://github.com/pcdv/flak/tree/master/flak-tests/src/test/java/net/jflask/test).
+[junits](https://github.com/pcdv/flak/tree/master/flak-tests/src/test/java/flask/test).
 
 ## History
 
