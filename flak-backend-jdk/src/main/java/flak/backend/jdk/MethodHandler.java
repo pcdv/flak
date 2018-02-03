@@ -65,8 +65,6 @@ public class MethodHandler implements Comparable<MethodHandler> {
 
   private final int argc;
 
-  private InputParser inputParser;
-
   private boolean loginRequired;
 
   private int splat = -1;
@@ -87,7 +85,6 @@ public class MethodHandler implements Comparable<MethodHandler> {
     this.rootURI = uri;
     this.httpMethod = getHttpMethod(m);
     this.outputFormat = getOutputFormat(m);
-    this.inputParser = getInputParser(m, ctx.app);
     this.javaMethod = m;
     this.target = target;
     this.tok = uri.isEmpty() ? EMPTY : uri.substring(1).split("/");
@@ -126,7 +123,8 @@ public class MethodHandler implements Comparable<MethodHandler> {
   /**
    * @param type the type of argument in method
    * @param i the extractor's index (i.e. index of argument in method)
-   * @param idx indexes of variables in split URI, eg. { 1 } to extract "world" from
+   * @param idx indexes of variables in split URI, eg. { 1 } to extract "world"
+   * from
    */
   private ArgExtractor createExtractor(Method m,
                                        Class<?> type,
@@ -147,12 +145,15 @@ public class MethodHandler implements Comparable<MethodHandler> {
         return new StringExtractor(i, tokenIndex);
     }
     else {
+      InputParser inputParser;
       if (type == Form.class) {
         inputParser = new FormParser();
       }
       else if (type == Query.class) {
         inputParser = new QueryParser();
       }
+      else
+        inputParser = getInputParser(m, ctx.app);
 
       if (inputParser == null)
         throw new IllegalArgumentException(
@@ -277,12 +278,10 @@ public class MethodHandler implements Comparable<MethodHandler> {
     return processResponse(req, res);
   }
 
+  @SuppressWarnings("StatementWithEmptyBody")
   private boolean processResponse(JdkRequest r, Object res) throws Exception {
     if (outputFormat != null) {
       outputFormat.convert(res, r);
-    }
-    else if (outputFormat != null) {
-      throw new IllegalStateException("Converter '" + outputFormat + "' not registered in App.");
     }
     else if (res instanceof Response) {
       // do nothing: status and headers should already be set
@@ -304,7 +303,7 @@ public class MethodHandler implements Comparable<MethodHandler> {
         // will throw if already set
         r.setStatus(200);
       }
-      catch (Exception e) {
+      catch (Exception ignored) {
       }
       r.getOutputStream().close();
     }
