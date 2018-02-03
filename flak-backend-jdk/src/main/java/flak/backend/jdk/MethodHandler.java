@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import flak.Form;
 import flak.InputParser;
 import flak.OutputFormatter;
+import flak.Query;
 import flak.Request;
 import flak.Response;
 import flak.annotations.Delete;
@@ -148,6 +149,9 @@ public class MethodHandler implements Comparable<MethodHandler> {
     else {
       if (type == Form.class) {
         inputParser = new FormParser();
+      }
+      else if (type == Query.class) {
+        inputParser = new QueryParser();
       }
 
       if (i != m.getParameterCount() - 1)
