@@ -304,6 +304,12 @@ public class MethodHandler implements Comparable<MethodHandler> {
       IO.pipe((InputStream) res, r.getOutputStream(), false);
     }
     else if (res == null) {
+      try {
+        // will throw if already set
+        r.setStatus(200);
+      }
+      catch (Exception e) {
+      }
       r.getOutputStream().close();
     }
     else

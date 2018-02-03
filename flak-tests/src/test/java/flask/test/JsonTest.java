@@ -6,6 +6,7 @@ import flak.annotations.JSON;
 import flak.annotations.Put;
 import flak.annotations.Route;
 import flak.jackson.JacksonPlugin;
+import flask.test.OutputFormatTest.Foo;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public class JsonTest extends AbstractAppTest {
   @Put
   @Route("/api/foo")
   @JSON
-  public Object putFoo(OutputFormatTest.Foo foo) {
+  public Foo putFoo(Foo foo) {
     return foo;
   }
 
@@ -39,7 +40,7 @@ public class JsonTest extends AbstractAppTest {
   public void errorWhenMissingInputFormat() {
     TestUtil.assertFails(() -> app.scan(new Object() {
       @Route("/foo1")
-      public String foo(OutputFormatTest.Foo foo) { return null;}
+      public String foo(Foo foo) { return null;}
     }), "No @InputFormat or @JSON found around method foo()");
   }
 
@@ -48,7 +49,7 @@ public class JsonTest extends AbstractAppTest {
     TestUtil.assertFails(() -> {
       app.scan(new Object() {
         @Route("/foo1")
-        public OutputFormatTest.Foo foo() { return null;}
+        public Foo foo() { return null;}
       });
       return client.get("/foo1");
     }, "No @OutputFormat or @JSON around method foo()");

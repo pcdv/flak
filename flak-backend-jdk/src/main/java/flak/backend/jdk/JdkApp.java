@@ -175,10 +175,10 @@ public class JdkApp extends AbstractApp {
    * @return this
    */
   public JdkApp servePath(String rootURI,
-                          String path,
+                          String resourcesPath,
                           ClassLoader loader,
                           boolean requiresAuth) {
-    File file = new File(path);
+    File file = new File(resourcesPath);
     AbstractResourceHandler h;
     if (file.exists() && file.isDirectory())
       h = new FileHandler(this,
@@ -189,8 +189,7 @@ public class JdkApp extends AbstractApp {
     else
       h = new ResourceHandler(this,
                               mime,
-                              makeAbsoluteUrl(rootURI),
-                              path,
+                              makeAbsoluteUrl(rootURI), resourcesPath,
                               loader,
                               requiresAuth);
 
