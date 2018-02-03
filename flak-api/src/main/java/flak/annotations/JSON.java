@@ -9,11 +9,23 @@ import java.lang.annotation.Target;
  * Automatically converts the return type to a JSON string (except if
  * the return type is String, byte[], InputStream ...) and if a non "basic"
  * parameter type is found in method, parse the request's input as JSON.
- *
+ * <p>
+ * Note that this annotation implies the presence of an OutputFormatter with
+ * name "JSON".
+ * <p>
  * This is equivalent to adding one or both of the following annotations:
  * <pre>
- * @OutputFormat("JSON")
- * @InputFormat("JSON")
+ * &#064;OutputFormat("JSON")
+ * &#064;InputFormat("JSON")
+ * </pre>
+ * <b>Example</b>
+ * <pre>
+ * &#064;Put
+ * &#064;Route("/api/foo")
+ * &#064;JSON
+ * public Foo putFoo(Foo foo) {
+ *   return foo;
+ * }
  * </pre>
  *
  * @author pcdv

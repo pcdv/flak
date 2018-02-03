@@ -9,14 +9,18 @@ import java.lang.annotation.Target;
  * The Route annotation binds a method with a route so that it is automatically
  * invoked when a request is submitted with a compatible URI and HTTP method.
  * <p>
- * Notes:
+ * Decorated methods can return the following types:
  * <ul>
- * <li>Decorated methods must return either <code>String</code>,
- * <code>byte[]</code>, <code>InputStream</code> or TODO.
- * <li>to register decorated methods into the App, {@link flak.App#scan(Object)}
- * must be called with an instance of the class containing the method. This
- * step is not necessary if the method exists in a class extending
- * <code>App</code>.
+ * <li> <code>String</code> : directly sent as response</li>
+ * <li> <code>byte[]</code> : directly sent as response</li>
+ * <li> <code>InputStream</code> : piped into response</li>
+ * <li> <code>Response</code> : useful if the handler has already set status
+ * and written data in response (no more processing will happen) </li>
+ * <li> <code>void</code> : sends an empty response</li>
+ * </ul>
+ *
+ * To register decorated methods into the App, {@link flak.App#scan(Object)}
+ * must be called with an instance of the class containing the method.
  *
  * @author pcdv
  */
