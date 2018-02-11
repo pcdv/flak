@@ -17,7 +17,7 @@ public class ResponseExtractor extends ArgExtractor<Response> {
   }
 
   @Override
-  public Response extract(SPRequest request) throws Exception {
+  public Response extract(SPRequest request) {
     return app.getResponse();
   }
 }

@@ -1,7 +1,6 @@
 package flask.test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 
 import flak.annotations.InputFormat;
 import flak.annotations.Post;
@@ -32,7 +31,7 @@ public class InputFormatTest extends AbstractAppTest {
   }
 
   @Test
-  public void testPostPojo() throws IOException, URISyntaxException {
+  public void testPostPojo() throws IOException {
     Assert.assertEquals("foo42", client.post("/pojo/42", "{\"name\":\"foo\"}"));
   }
 }

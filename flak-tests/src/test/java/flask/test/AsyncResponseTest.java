@@ -8,8 +8,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
 /**
  * Misc POST tests.
  */
@@ -28,7 +26,7 @@ public class AsyncResponseTest extends AbstractAppTest {
   }
 
   @Route("/async")
-  public Response replyAsync() throws IOException {
+  public Response replyAsync() {
     final Response r = app.getResponse();
     new Thread() {
       @Override

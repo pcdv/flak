@@ -47,7 +47,7 @@ public class RouteDumper {
 
     for (MethodHandler mh : list) {
       b.append(String.format("%-50s  %-8s  %-15s %s\n",
-                             c.rootURI + mh.getURI(),
+                             c.rootURI + mh.getRoute(),
                              mh.getHttpMethod(),
                              mh.getJavaMethod().getName(),
                              mh.getJavaMethod().getDeclaringClass().getName()));

@@ -20,7 +20,7 @@ public class DefaultSessionManager implements SessionManager {
 
   private Map<String, String> sessions = new Hashtable<>();
 
-  protected String sessionTokenCookie = "sessionToken";
+  protected String sessionCookieName = "sessionToken";
 
   protected String loginPage;
 
@@ -37,31 +37,22 @@ public class DefaultSessionManager implements SessionManager {
    * allows to have several web apps sharing a same host address (eg. using a
    * different port).
    */
-  public void setSessionTokenCookie(String cookie) {
-    this.sessionTokenCookie = cookie;
+  public void setSessionCookieName(String name) {
+    this.sessionCookieName = name;
   }
 
-  @Override
-  public void createToken(String token, String login, boolean rememberMe) {
+  private void createToken(String token, String login, boolean rememberMe) {
     // TODO: store more useful info about the user
     sessions.put(token, login);
   }
 
-  @Override
-  public String getLogin(String token) {
-    return sessions.get(token);
-  }
-
-  @Override
-  public boolean isTokenValid(String token) {
+  private boolean isTokenValid(String token) {
     return sessions.containsKey(token);
   }
 
-  @Override
-  public void removeToken(String token) {
+  private void removeToken(String token) {
     sessions.remove(token);
   }
-
 
   /**
    * Marks current session as logged in (by setting a cookie).
@@ -79,12 +70,12 @@ public class DefaultSessionManager implements SessionManager {
    */
   public void loginUser(String login, boolean rememberMe, String token) {
     createToken(token, login, rememberMe);
-    app.getResponse().addHeader("Set-Cookie",
-                            sessionTokenCookie + "=" + token + "; path=/;");
+    app.getResponse()
+       .addHeader("Set-Cookie", sessionCookieName + "=" + token + "; path=/;");
   }
 
-  public Response redirectToLogin() {
-    return app.redirect(loginPage);
+  public void redirectToLogin(Response resp) {
+    resp.redirect(loginPage);
   }
 
   /**
@@ -110,7 +101,7 @@ public class DefaultSessionManager implements SessionManager {
     this.requireLoggedInByDefault = flag;
 
     // TODO: this will disappear eventually
-    ((AbstractApp)app).reconfigureHandlers();
+    ((AbstractApp) app).reconfigureHandlers();
   }
 
   /**
@@ -120,14 +111,13 @@ public class DefaultSessionManager implements SessionManager {
    * @return current request login, null if none
    */
   public String getCurrentLogin() {
-    String token = app.getRequest().getCookie(sessionTokenCookie);
+    String token = app.getRequest().getCookie(sessionCookieName);
     if (token == null)
       return null;
 
     // method below will fail if we have a token BUT user is unknown or logged out
-    return getLogin(token);
+    return sessions.get(token);
   }
-
 
   /**
    * Returns the default policy for checking whether user must be logged in to
@@ -146,10 +136,9 @@ public class DefaultSessionManager implements SessionManager {
   }
 
   private boolean isLoggedIn(Request r) {
-    String token = r.getCookie(sessionTokenCookie);
+    String token = r.getCookie(sessionCookieName);
     return (token != null && isTokenValid(token));
   }
-
 
   /**
    * Checks that the user is currently logged in. This is performed by looking
@@ -187,7 +176,7 @@ public class DefaultSessionManager implements SessionManager {
    */
   public void logoutUser() {
     Request req = app.getRequest();
-    String token = req.getCookie(sessionTokenCookie);
+    String token = req.getCookie(sessionCookieName);
     if (token != null)
       removeToken(token);
   }

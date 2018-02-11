@@ -65,7 +65,7 @@ public class TwoAppsTest {
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     ws.stop();
   }
 

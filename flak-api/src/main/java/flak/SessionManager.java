@@ -7,14 +7,6 @@ import flak.spi.SPRequest;
  */
 public interface SessionManager {
 
-  void createToken(String login, String token, boolean rememberMe);
-
-  String getLogin(String token);
-
-  boolean isTokenValid(String token);
-
-  void removeToken(String token);
-
   void loginUser(String login);
 
   void logoutUser();
@@ -25,11 +17,11 @@ public interface SessionManager {
 
   boolean getRequireLoggedInByDefault();
 
-  Response redirectToLogin();
+  void redirectToLogin(Response response);
 
   void setLoginPage(String path);
 
-  void setSessionTokenCookie(String name);
+  void setSessionCookieName(String name);
 
   boolean checkLoggedIn(SPRequest r);
 }

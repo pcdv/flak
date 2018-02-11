@@ -262,7 +262,7 @@ public abstract class AbstractMethodHandler
     return route.compareTo(o.route);
   }
 
-  public String getURI() {
+  public String getRoute() {
     return route;
   }
 

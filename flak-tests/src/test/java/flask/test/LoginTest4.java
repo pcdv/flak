@@ -36,7 +36,7 @@ public class LoginTest4 extends AbstractAppTest {
     SessionManager sm = this.app.getSessionManager();
     sm.setRequireLoggedInByDefault(true);
     sm.setLoginPage("/login");
-    sm.setSessionTokenCookie("sesame");
+    sm.setSessionCookieName("sesame");
 
     Assert.assertEquals("Please login", client.get("/hello"));
     Assert.assertEquals("yo", client.post("/auth/login", ""));

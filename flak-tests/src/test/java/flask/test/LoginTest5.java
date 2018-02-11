@@ -28,16 +28,16 @@ public class LoginTest5 extends AbstractAppTest {
 
   @LoginNotRequired
   @Route(value = "/auth/login", method = "POST")
-  public Response login(Form form) {
+  public void login(Response r, Form form) {
     String login = form.get("login");
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
       sm.loginUser(login);
-      return app.redirect("/hello");
+      app.redirect("/hello");
     }
-
-    return sm.redirectToLogin();
+    else
+      sm.redirectToLogin(r);
   }
 
   @Route("/hello")
@@ -51,9 +51,9 @@ public class LoginTest5 extends AbstractAppTest {
   }
 
   @Route("/auth/logout")
-  public Response logout() {
+  public void logout(Response response) {
     sm.logoutUser();
-    return sm.redirectToLogin();
+    sm.redirectToLogin(response);
   }
 
   @Test

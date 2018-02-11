@@ -34,7 +34,7 @@ public class SSLTest {
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     app.stop();
   }
 

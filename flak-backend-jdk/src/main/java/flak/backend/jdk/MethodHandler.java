@@ -138,7 +138,7 @@ public class MethodHandler extends AbstractMethodHandler {
   @Override
   protected boolean isApplicable(SPRequest req) {
 
-    Log.debug("isApplicable ? " + req.getPath() + " vs " + getURI());
+    Log.debug("isApplicable ? " + req.getPath() + " vs " + getRoute());
 
     if (!req.getHttpMethod().equals(getHttpMethod()))
       return false;
