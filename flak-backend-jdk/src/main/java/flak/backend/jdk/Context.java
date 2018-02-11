@@ -60,7 +60,7 @@ public class Context implements HttpHandler, RequestHandler {
   public void handle(HttpExchange r) throws IOException {
     String path = r.getRequestURI().getPath();
     JdkRequest req =
-      new JdkRequest(app.makeRelativePath(path), makeRelativePath(path), r);
+      new JdkRequest(app, app.relativePath(path), makeRelativePath(path), r);
     app.setThreadLocalRequest(req);
     try {
       for (MethodHandler h : handlers) {

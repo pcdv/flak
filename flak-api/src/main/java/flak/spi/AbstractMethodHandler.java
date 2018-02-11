@@ -77,7 +77,7 @@ public abstract class AbstractMethodHandler
     this.target = target;
 
     if (m.getAnnotation(LoginPage.class) != null)
-      app.setLoginPage(app.getPath() + route);
+      app.getSessionManager().setLoginPage(app.getPath() + route);
 
     configure();
 
@@ -175,7 +175,7 @@ public abstract class AbstractMethodHandler
 
     return javaMethod.getAnnotation(LoginNotRequired.class) == null && //
              javaMethod.getAnnotation(LoginPage.class) == null && //
-             app.getRequireLoggedInByDefault();
+             app.getSessionManager().getRequireLoggedInByDefault();
   }
 
   /**
@@ -188,7 +188,7 @@ public abstract class AbstractMethodHandler
     if (!isApplicable(req))
       return false;
 
-    if (loginRequired && !app.checkLoggedIn(req)) {
+    if (loginRequired && !app.getSessionManager().checkLoggedIn(req)) {
       return true;
     }
 

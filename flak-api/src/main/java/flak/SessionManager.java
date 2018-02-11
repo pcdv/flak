@@ -1,5 +1,7 @@
 package flak;
 
+import flak.spi.SPRequest;
+
 /**
  * @author pcdv
  */
@@ -12,4 +14,22 @@ public interface SessionManager {
   boolean isTokenValid(String token);
 
   void removeToken(String token);
+
+  void loginUser(String login);
+
+  void logoutUser();
+
+  String getCurrentLogin();
+
+  void setRequireLoggedInByDefault(boolean b);
+
+  boolean getRequireLoggedInByDefault();
+
+  Response redirectToLogin();
+
+  void setLoginPage(String path);
+
+  void setSessionTokenCookie(String name);
+
+  boolean checkLoggedIn(SPRequest r);
 }

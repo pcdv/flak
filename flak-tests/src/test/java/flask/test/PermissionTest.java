@@ -15,7 +15,7 @@ public class PermissionTest extends AbstractAppTest {
 
   @Route("/api/login")
   public void login(Form form) {
-    app.loginUser(form.get("login"));
+    app.getSessionManager().loginUser(form.get("login"));
   }
 
   @WithPermission("access")

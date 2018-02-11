@@ -2,6 +2,7 @@ package flask.test;
 
 import flak.Form;
 import flak.Response;
+import flak.SessionManager;
 import flak.annotations.LoginNotRequired;
 import flak.annotations.Route;
 import org.junit.Assert;
@@ -17,6 +18,14 @@ import org.junit.Test;
  */
 public class LoginTest5 extends AbstractAppTest {
 
+  private SessionManager sm;
+
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    sm = app.getSessionManager();
+  }
+
   @LoginNotRequired
   @Route(value = "/auth/login", method = "POST")
   public Response login(Form form) {
@@ -24,11 +33,11 @@ public class LoginTest5 extends AbstractAppTest {
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      app.loginUser(login);
+      sm.loginUser(login);
       return app.redirect("/hello");
     }
 
-    return app.redirectToLogin();
+    return sm.redirectToLogin();
   }
 
   @Route("/hello")
@@ -43,14 +52,14 @@ public class LoginTest5 extends AbstractAppTest {
 
   @Route("/auth/logout")
   public Response logout() {
-    app.logoutUser();
-    return app.redirectToLogin();
+    sm.logoutUser();
+    return sm.redirectToLogin();
   }
 
   @Test
   public void testCookieWithInvalidPath() throws Exception {
-    app.setRequireLoggedInByDefault(true);
-    app.setLoginPage("/login");
+    sm.setRequireLoggedInByDefault(true);
+    sm.setLoginPage("/login");
 
     Assert.assertEquals("Please login", client.get("/hello"));
     Assert.assertEquals("yo",

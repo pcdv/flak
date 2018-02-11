@@ -50,8 +50,8 @@ public class ServePathTest {
     ws.start();
     app = factory.createApp("/app");
     app.servePath("/static", "/test-resources");
-    app.setRequireLoggedInByDefault(true);
-    app.setLoginPage("/static/login.html");
+    app.getSessionManager().setRequireLoggedInByDefault(true);
+    app.getSessionManager().setLoginPage("/static/login.html");
     app.scan(this);
     app.start();
 
@@ -63,7 +63,7 @@ public class ServePathTest {
   public void testServePathWithProtectedAccess() throws Exception {
     app = createApp();
     app.servePath("/static", "/test-resources", null, true);
-    app.setLoginPage("/static/login.html");
+    app.getSessionManager().setLoginPage("/static/login.html");
     app.start();
 
     SimpleClient client = new SimpleClient(app.getRootUrl());
@@ -74,7 +74,7 @@ public class ServePathTest {
   public void testServeRootWithProtectedAccess() throws Exception {
     app = createApp();
     app.servePath("/", "/test-resources/", null, true);
-    app.setLoginPage("/login.html");
+    app.getSessionManager().setLoginPage("/login.html");
     app.start();
 
     SimpleClient client = new SimpleClient(app.getRootUrl());
@@ -85,7 +85,7 @@ public class ServePathTest {
   public void testServeRootWithProtectedAccessAndClassLoader() throws Exception {
     app = createApp();
     app.servePath("/", "/test-resources/", getClass().getClassLoader(), true);
-    app.setLoginPage("/login.html");
+    app.getSessionManager().setLoginPage("/login.html");
     app.start();
 
     SimpleClient client = new SimpleClient(app.getRootUrl());

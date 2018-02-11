@@ -8,11 +8,9 @@ import flak.annotations.Route;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
 /**
  * Variant of LoginTest that uses @LoginNotRequired and
- * {@link flak.App#setRequireLoggedInByDefault(boolean)}.
+ * {@link flak.SessionManager#setRequireLoggedInByDefault(boolean)}.
  *
  * @author pcdv
  */
@@ -26,13 +24,13 @@ public class LoginTest2 extends AbstractAppTest {
 
   @Route("/logout")
   public Response logout() {
-    app.logoutUser();
+    app.getSessionManager().logoutUser();
     return app.redirect("/login");
   }
 
   @Route("/app")
   public String appPage() {
-    return "Welcome " + app.getCurrentLogin();
+    return "Welcome " + app.getSessionManager().getCurrentLogin();
   }
 
   @Route(value = "/login", method = "POST")
@@ -42,7 +40,7 @@ public class LoginTest2 extends AbstractAppTest {
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      app.loginUser(login);
+      app.getSessionManager().loginUser(login);
       return app.redirect("/app");
     }
 
@@ -52,7 +50,7 @@ public class LoginTest2 extends AbstractAppTest {
   @Test
   public void testLogin() throws Exception {
 
-    app.setRequireLoggedInByDefault(true);
+    app.getSessionManager().setRequireLoggedInByDefault(true);
 
     // app redirects to login page when not logged in
     Assert.assertEquals("Please login", client.get("/app"));

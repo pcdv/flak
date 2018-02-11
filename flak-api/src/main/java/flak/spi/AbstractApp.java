@@ -1,10 +1,9 @@
 package flak.spi;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Random;
 import java.util.Vector;
 
 import flak.App;
@@ -29,8 +28,6 @@ public abstract class AbstractApp implements App {
    */
   protected final String rootUrl;
 
-  protected String sessionTokenCookie = "sessionToken";
-
   protected final Map<String, RequestHandler> handlers = new Hashtable<>();
 
   protected ContentTypeProvider mime = new DefaultContentTypeProvider();
@@ -40,11 +37,7 @@ public abstract class AbstractApp implements App {
 
   private final Map<String, InputParser> inputParserMap = new Hashtable<>();
 
-  protected String loginPage;
-
-  protected boolean requireLoggedInByDefault;
-
-  protected SessionManager sessionManager = new DefaultSessionManager();
+  protected SessionManager sessionManager;
 
   protected Vector<ErrorHandler> errorHandlers = new Vector<>();
 
@@ -54,6 +47,7 @@ public abstract class AbstractApp implements App {
 
   public AbstractApp(String rootUrl) {
     this.rootUrl = rootUrl;
+    sessionManager = new DefaultSessionManager(this);
   }
 
   public String getRootUrl() {
@@ -63,15 +57,6 @@ public abstract class AbstractApp implements App {
 
   public String getPath() {
     return rootUrl == null ? "" : rootUrl;
-  }
-
-  /**
-   * Changes the name of the cookie in which the session token is stored. This
-   * allows to have several web apps sharing a same host address (eg. using a
-   * different port).
-   */
-  public void setSessionTokenCookie(String cookie) {
-    this.sessionTokenCookie = cookie;
   }
 
   /**
@@ -135,67 +120,26 @@ public abstract class AbstractApp implements App {
     return Log.DEBUG;
   }
 
-  /**
-   * Marks current session as logged in (by setting a cookie).
-   */
-  public void loginUser(String login) {
-    loginUser(login, false, makeRandomToken(login));
-  }
-
-  /**
-   * Marks current session as logged in (by setting a cookie).
-   */
-  public void loginUser(String login, boolean rememberMe, String token) {
-    sessionManager.createToken(token, login, rememberMe);
-    getResponse().addHeader("Set-Cookie",
-                            sessionTokenCookie + "=" + token + "; path=/;");
-  }
-
   public void setSessionManager(SessionManager mgr) {
     this.sessionManager = mgr;
   }
 
-  public String makeRandomToken(String login) {
-    return (new Random().nextLong() ^ login.hashCode()) + "";
-  }
-
-  public Response redirectToLogin() {
-    return redirect(loginPage);
-  }
-
   /**
-   * Sets the path of the login page, to which redirect all URLs that require a
-   * logged in user. This method can be called directly, or otherwise one of
-   * the URL handler methods can be annotated with @LoginPage.
-   *
-   * @param path the path of the login page
+   * Replies to current request with an HTTP redirect response with specified
+   * location.
    */
-  public void setLoginPage(String path) {
-    this.loginPage = makeAbsoluteUrl(path);
+  public Response redirect(String location) {
+    Response r = getResponse();
+    r.addHeader("Location", location);
+    r.setStatus(HttpURLConnection.HTTP_MOVED_TEMP);
+    return r;
   }
 
-  /**
-   * Sets the default policy for checking whether user must be logged in to
-   * access all URLs by default.
-   *
-   * @param flag if true, all URL handlers require the user to be logged in
-   * except when annotated with @LoginNotRequired. If false, only handlers
-   * annotated with @LoginRequired will be protected
-   */
-  public void setRequireLoggedInByDefault(boolean flag) {
-    this.requireLoggedInByDefault = flag;
-    reconfigureHandlers();
+  public void redirect(Response r, String location) {
+    r.redirect(location);
   }
 
   protected abstract void reconfigureHandlers();
-
-  /**
-   * Returns the default policy for checking whether user must be logged in to
-   * access all URLs by default.
-   */
-  public boolean getRequireLoggedInByDefault() {
-    return requireLoggedInByDefault;
-  }
 
   /**
    * Adds a handler that will be notified whenever a request is rejected
@@ -238,10 +182,17 @@ public abstract class AbstractApp implements App {
     this.unknownPageHandler = unknownPageHandler;
   }
 
-  public abstract boolean checkLoggedIn(SPRequest req) throws IOException;
-
-  public String makeRelativePath(String path) {
+  public String relativePath(String path) {
     return rootUrl == null || rootUrl.equals("/") ? path
                                                   : path.substring(rootUrl.length());
+  }
+
+  @Override
+  public String absolutePath(String path) {
+    return rootUrl == null || rootUrl.equals("/") ? path : rootUrl + path;
+  }
+
+  public SessionManager getSessionManager() {
+    return sessionManager;
   }
 }

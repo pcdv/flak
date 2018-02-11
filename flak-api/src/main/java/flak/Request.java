@@ -36,4 +36,6 @@ public interface Request {
   Form getForm();
 
   Response getResponse();
+
+  String getCookie(String name);
 }

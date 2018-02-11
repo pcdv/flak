@@ -82,27 +82,13 @@ public interface App {
 
   void addErrorHandler(ErrorHandler handler);
 
-  Request getRequest();
+  void addSuccessHandler(SuccessHandler handler);
 
-  void loginUser(String login);
+  Request getRequest();
 
   Response redirect(String path);
 
-  void addSuccessHandler(SuccessHandler handler);
-
-  void logoutUser();
-
-  String getCurrentLogin();
-
-  void setRequireLoggedInByDefault(boolean b);
-
-  Response redirectToLogin();
-
-  void setLoginPage(String path);
-
   Response getResponse();
-
-  void setSessionTokenCookie(String name);
 
   void setUnknownPageHandler(UnknownPageHandler handler);
 
@@ -112,5 +98,7 @@ public interface App {
 
   WebServer getServer();
 
-  boolean getRequireLoggedInByDefault();
+  SessionManager getSessionManager();
+
+  String absolutePath(String path);
 }

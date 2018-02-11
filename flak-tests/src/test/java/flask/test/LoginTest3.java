@@ -24,7 +24,7 @@ public class LoginTest3 extends AbstractAppTest {
 
   @Route("/logout")
   public Response logout() {
-    app.logoutUser();
+    app.getSessionManager().logoutUser();
     return app.redirect("/login");
   }
 
@@ -40,7 +40,7 @@ public class LoginTest3 extends AbstractAppTest {
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      app.loginUser(login);
+      app.getSessionManager().loginUser(login);
       return app.redirect("/app");
     }
 

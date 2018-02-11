@@ -7,7 +7,6 @@ import com.sun.net.httpserver.HttpExchange;
 import flak.ContentTypeProvider;
 import flak.backend.jdk.JdkApp;
 import flak.backend.jdk.JdkRequest;
-import flak.spi.SPRequest;
 import flak.util.IO;
 import flak.util.Log;
 
@@ -38,9 +37,12 @@ public abstract class AbstractResourceHandler extends DefaultHandler {
   @Override
   public void doGet(HttpExchange t) throws Exception {
 
-    app.setThreadLocalRequest(new JdkRequest(app.makeRelativePath(rootURI), "", t));
+    JdkRequest r =
+      new JdkRequest(app, app.relativePath(t.getRequestURI().getPath()), "", t);
 
-    if (requiresAuth && !app.checkLoggedIn((SPRequest) app.getRequest()))
+//    app.setThreadLocalRequest(r);
+
+    if (requiresAuth && !app.getSessionManager().checkLoggedIn(r))
       return;
 
     String uri = t.getRequestURI().getPath();
@@ -76,6 +78,5 @@ public abstract class AbstractResourceHandler extends DefaultHandler {
     }
   }
 
-  protected abstract InputStream openPath(String p)
-      throws FileNotFoundException;
+  protected abstract InputStream openPath(String p) throws FileNotFoundException;
 }

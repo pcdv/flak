@@ -1,6 +1,7 @@
 package flask.test;
 
 import flak.Response;
+import flak.SessionManager;
 import flak.annotations.LoginNotRequired;
 import flak.annotations.Route;
 import org.junit.Assert;
@@ -16,7 +17,7 @@ public class LoginTest4 extends AbstractAppTest {
   @LoginNotRequired
   @Route(value = "/auth/login", method = "POST")
   public Response login() {
-    app.loginUser("foo");
+    app.getSessionManager().loginUser("foo");
     return app.redirect("/hello");
   }
 
@@ -32,9 +33,10 @@ public class LoginTest4 extends AbstractAppTest {
 
   @Test
   public void testCookieWithInvalidPath() throws Exception {
-    app.setRequireLoggedInByDefault(true);
-    app.setLoginPage("/login");
-    app.setSessionTokenCookie("sesame");
+    SessionManager sm = this.app.getSessionManager();
+    sm.setRequireLoggedInByDefault(true);
+    sm.setLoginPage("/login");
+    sm.setSessionTokenCookie("sesame");
 
     Assert.assertEquals("Please login", client.get("/hello"));
     Assert.assertEquals("yo", client.post("/auth/login", ""));

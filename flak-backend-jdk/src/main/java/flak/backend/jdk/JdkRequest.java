@@ -3,8 +3,12 @@ package flak.backend.jdk;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.util.List;
 
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import flak.App;
 import flak.Form;
 import flak.Query;
 import flak.Response;
@@ -14,6 +18,8 @@ import flak.util.IO;
 public class JdkRequest implements SPRequest, Response {
 
   private static final String[] EMPTY = {};
+
+  private App app;
 
   private final HttpExchange exchange;
 
@@ -25,9 +31,11 @@ public class JdkRequest implements SPRequest, Response {
 
   private Form form;
 
-  public JdkRequest(String appRelativePath,
+  public JdkRequest(App app,
+                    String appRelativePath,
                     String contextRelativePath,
                     HttpExchange r) {
+    this.app = app;
     this.exchange = r;
     this.qs = r.getRequestURI().getQuery();
     this.appRelativePath = appRelativePath;
@@ -104,6 +112,25 @@ public class JdkRequest implements SPRequest, Response {
     return this;
   }
 
+  @Override
+  public String getCookie(String name) {
+    Headers headers = exchange.getRequestHeaders();
+    if (headers != null) {
+      List<String> cookies = headers.get("Cookie");
+      if (cookies != null) {
+        for (String cookieString : cookies) {
+          String[] tokens = cookieString.split("\\s*;\\s*");
+          for (String token : tokens) {
+            if (token.startsWith(name) && token.charAt(name.length()) == '=') {
+              return token.substring(name.length() + 1);
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   private String readData() throws IOException {
     return new String(IO.readFully(getInputStream()));
   }
@@ -134,5 +161,11 @@ public class JdkRequest implements SPRequest, Response {
 
   public OutputStream getOutputStream() {
     return exchange.getResponseBody();
+  }
+
+  @Override
+  public void redirect(String location) {
+    addHeader("Location", app.absolutePath(location));
+    setStatus(HttpURLConnection.HTTP_MOVED_TEMP);
   }
 }

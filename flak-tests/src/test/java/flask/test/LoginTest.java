@@ -1,14 +1,12 @@
 package flask.test;
 
 import flak.Form;
+import flak.Response;
 import flak.annotations.LoginPage;
 import flak.annotations.LoginRequired;
 import flak.annotations.Route;
-import flak.Response;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Tests basic authentication mechanisms.
@@ -25,7 +23,7 @@ public class LoginTest extends AbstractAppTest {
 
   @Route("/logout")
   public Response logout() {
-    app.logoutUser();
+    app.getSessionManager().logoutUser();
     return app.redirect("/login");
   }
 
@@ -41,7 +39,7 @@ public class LoginTest extends AbstractAppTest {
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      app.loginUser(login);
+      app.getSessionManager().loginUser(login);
       return app.redirect("/app");
     }
 

@@ -16,4 +16,5 @@ public interface Response {
 
   OutputStream getOutputStream();
 
+  void redirect(String path);
 }
