@@ -68,6 +68,8 @@ public interface App {
    */
   App addInputParser(String name, InputParser inputParser);
 
+  InputParser getInputParser(String name);
+
   /**
    * Starts the application.
    */
@@ -104,7 +106,11 @@ public interface App {
 
   void setUnknownPageHandler(UnknownPageHandler handler);
 
+  String getPath();
+
   String getRootUrl();
 
   WebServer getServer();
+
+  boolean getRequireLoggedInByDefault();
 }

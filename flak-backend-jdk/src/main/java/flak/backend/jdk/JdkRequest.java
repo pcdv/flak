@@ -7,31 +7,36 @@ import java.io.OutputStream;
 import com.sun.net.httpserver.HttpExchange;
 import flak.Form;
 import flak.Query;
-import flak.Request;
 import flak.Response;
+import flak.spi.SPRequest;
 import flak.util.IO;
 
-public class JdkRequest implements Request, Response {
+public class JdkRequest implements SPRequest, Response {
 
   private static final String[] EMPTY = {};
 
-  private Context ctx;
-
   private final HttpExchange exchange;
 
-  public final String[] split;
+  private final String[] split;
 
   private final String qs;
 
+  private final String appRelativePath;
+
   private Form form;
 
-  public JdkRequest(Context ctx, HttpExchange r) {
-    this.ctx = ctx;
+  public JdkRequest(String appRelativePath,
+                    String contextRelativePath,
+                    HttpExchange r) {
     this.exchange = r;
     this.qs = r.getRequestURI().getQuery();
-    String path = ctx.makeRelativePath(r.getRequestURI().getPath());
-    split = (path.isEmpty() || path.equals("/")) ? EMPTY
-                                                 : trimLeftSlash(path).split("/");
+    this.appRelativePath = appRelativePath;
+    this.split =
+      (contextRelativePath.isEmpty() || contextRelativePath.equals("/")) ? EMPTY
+                                                                         : trimLeftSlash(
+                                                                           contextRelativePath)
+                                                                             .split(
+                                                                               "/");
   }
 
   public String getSplit(int tokenIndex) {
@@ -49,6 +54,11 @@ public class JdkRequest implements Request, Response {
     return b.toString();
   }
 
+  @Override
+  public String[] getSplitUri() {
+    return split;
+  }
+
   private static String trimLeftSlash(String uri) {
     if (uri.startsWith("/"))
       return uri.substring(1);
@@ -57,7 +67,7 @@ public class JdkRequest implements Request, Response {
   }
 
   public String getPath() {
-    return ctx.app.relativePath(exchange.getRequestURI().getPath());
+    return appRelativePath;
   }
 
   public String getQueryString() {
@@ -87,6 +97,11 @@ public class JdkRequest implements Request, Response {
       throw new RuntimeException(e);
     }
     return form;
+  }
+
+  @Override
+  public Response getResponse() {
+    return this;
   }
 
   private String readData() throws IOException {

@@ -3,7 +3,8 @@ package flak.backend.jdk.extractor;
 import java.util.Objects;
 
 import flak.InputParser;
-import flak.backend.jdk.JdkRequest;
+import flak.spi.ArgExtractor;
+import flak.spi.SPRequest;
 
 /**
  * @author pcdv
@@ -20,7 +21,7 @@ public class ParsedInputExtractor extends ArgExtractor<Object> {
   }
 
   @Override
-  public Object extract(JdkRequest request) throws Exception {
+  public Object extract(SPRequest request) throws Exception {
     return inputParser.parse(request, type);
   }
 }

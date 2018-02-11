@@ -21,6 +21,7 @@ import flak.backend.jdk.resource.AbstractResourceHandler;
 import flak.backend.jdk.resource.FileHandler;
 import flak.backend.jdk.resource.ResourceHandler;
 import flak.spi.AbstractApp;
+import flak.spi.SPRequest;
 import flak.util.Log;
 
 /**
@@ -105,6 +106,7 @@ public class JdkApp extends AbstractApp {
 
     MethodHandler handler =
       getContext(root.toString()).addHandler(rest.toString(), m, obj);
+    handler.init();
 
     allHandlers.add(handler);
   }
@@ -227,7 +229,7 @@ public class JdkApp extends AbstractApp {
     this.mime = mime;
   }
 
-  void setThreadLocalRequest(JdkRequest req) {
+  public void setThreadLocalRequest(JdkRequest req) {
     localRequest.set(req);
   }
 
@@ -271,6 +273,11 @@ public class JdkApp extends AbstractApp {
     r.sendResponseHeaders(HttpURLConnection.HTTP_MOVED_TEMP, 0);
   }
 
+  @Override
+  public boolean checkLoggedIn(SPRequest req) throws IOException {
+    return checkLoggedIn(((JdkRequest) req).getExchange());
+  }
+
   /**
    * Checks that the user is currently logged in. This is performed by looking
    * at the "sessionToken" cookie that has been set in session during last call
@@ -281,7 +288,7 @@ public class JdkApp extends AbstractApp {
    * has been set using @LoginPage or setLoginPage(), the user is redirected to
    * it. Otherwise a 403 error is returned.
    */
-  public boolean checkLoggedIn(HttpExchange r) throws IOException {
+  private boolean checkLoggedIn(HttpExchange r) throws IOException {
     if (isLoggedIn(r)) {
       return true;
     }

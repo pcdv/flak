@@ -34,4 +34,6 @@ public interface Request {
   String getHttpMethod();
 
   Form getForm();
+
+  Response getResponse();
 }

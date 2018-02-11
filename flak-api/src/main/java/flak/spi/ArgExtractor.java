@@ -1,6 +1,4 @@
-package flak.backend.jdk.extractor;
-
-import flak.backend.jdk.JdkRequest;
+package flak.spi;
 
 /**
  * @author pcdv
@@ -13,5 +11,5 @@ public abstract class ArgExtractor<T> {
     this.index = index;
   }
 
-  public abstract T extract(JdkRequest request) throws Exception;
+  public abstract T extract(SPRequest request) throws Exception;
 }

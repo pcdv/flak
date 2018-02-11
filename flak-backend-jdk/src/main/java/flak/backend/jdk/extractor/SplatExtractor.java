@@ -1,6 +1,7 @@
 package flak.backend.jdk.extractor;
 
-import flak.backend.jdk.JdkRequest;
+import flak.spi.ArgExtractor;
+import flak.spi.SPRequest;
 
 /**
  * @author pcdv
@@ -14,7 +15,7 @@ public class SplatExtractor extends ArgExtractor<String> {
   }
 
   @Override
-  public String extract(JdkRequest request) {
+  public String extract(SPRequest request) {
     return request.getSplat(tokenIndex);
   }
 }

@@ -6,6 +6,8 @@ import java.io.InputStream;
 import com.sun.net.httpserver.HttpExchange;
 import flak.ContentTypeProvider;
 import flak.backend.jdk.JdkApp;
+import flak.backend.jdk.JdkRequest;
+import flak.spi.SPRequest;
 import flak.util.IO;
 import flak.util.Log;
 
@@ -17,16 +19,16 @@ import flak.util.Log;
  */
 public abstract class AbstractResourceHandler extends DefaultHandler {
 
-  protected final String rootURI;
+  private final String rootURI;
 
   private final boolean requiresAuth;
 
   private final ContentTypeProvider mime;
 
-  public AbstractResourceHandler(JdkApp app,
-                                 ContentTypeProvider mime,
-                                 String rootURI,
-                                 boolean requiresAuth) {
+  AbstractResourceHandler(JdkApp app,
+                          ContentTypeProvider mime,
+                          String rootURI,
+                          boolean requiresAuth) {
     super(app);
     this.mime = mime;
     this.rootURI = rootURI;
@@ -36,15 +38,12 @@ public abstract class AbstractResourceHandler extends DefaultHandler {
   @Override
   public void doGet(HttpExchange t) throws Exception {
 
-    if (requiresAuth && !app.checkLoggedIn(t))
+    app.setThreadLocalRequest(new JdkRequest(app.makeRelativePath(rootURI), "", t));
+
+    if (requiresAuth && !app.checkLoggedIn((SPRequest) app.getRequest()))
       return;
 
-    String uri = t.getRequestURI().toString();
-
-    // ignore query string
-    int qs = uri.indexOf('?');
-    if (qs > 0)
-      uri = uri.substring(0, qs);
+    String uri = t.getRequestURI().getPath();
 
     if (uri.endsWith("/"))
       uri += "index.html";

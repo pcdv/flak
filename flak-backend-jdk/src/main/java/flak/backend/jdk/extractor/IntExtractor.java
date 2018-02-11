@@ -1,6 +1,7 @@
 package flak.backend.jdk.extractor;
 
-import flak.backend.jdk.JdkRequest;
+import flak.spi.ArgExtractor;
+import flak.spi.SPRequest;
 
 /**
  * @author pcdv
@@ -14,7 +15,7 @@ public class IntExtractor extends ArgExtractor<Integer> {
   }
 
   @Override
-  public Integer extract(JdkRequest request) {
+  public Integer extract(SPRequest request) {
     return Integer.valueOf(request.getSplit(tokenIndex));
   }
 }

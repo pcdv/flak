@@ -32,7 +32,7 @@ public class Context implements HttpHandler, RequestHandler {
    */
   private final int rootURIOffset;
 
-  public Context(JdkApp app, String rootURI) {
+  Context(JdkApp app, String rootURI) {
     this.app = app;
     this.rootURI = rootURI;
     this.rootURIOffset =
@@ -58,7 +58,9 @@ public class Context implements HttpHandler, RequestHandler {
   }
 
   public void handle(HttpExchange r) throws IOException {
-    JdkRequest req = new JdkRequest(this, r);
+    String path = r.getRequestURI().getPath();
+    JdkRequest req =
+      new JdkRequest(app.makeRelativePath(path), makeRelativePath(path), r);
     app.setThreadLocalRequest(req);
     try {
       for (MethodHandler h : handlers) {
@@ -96,7 +98,7 @@ public class Context implements HttpHandler, RequestHandler {
    * Returns the URI relative to the current app. E.g. if app root is "/app1"
    * and URI is "/app1/foo", this will return "/foo".
    */
-  String makeRelativePath(String uri) {
+  private String makeRelativePath(String uri) {
     return uri.substring(rootURIOffset);
   }
 

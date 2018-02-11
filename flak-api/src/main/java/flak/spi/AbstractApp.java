@@ -1,5 +1,6 @@
 package flak.spi;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Map;
@@ -56,9 +57,12 @@ public abstract class AbstractApp implements App {
   }
 
   public String getRootUrl() {
-    String path = rootUrl == null ? "" : rootUrl;
     WebServer srv = getServer();
-    return srv.getProtocol() + "://" + srv.getHostName() + ":" + srv.getPort() + path;
+    return srv.getProtocol() + "://" + srv.getHostName() + ":" + srv.getPort() + getPath();
+  }
+
+  public String getPath() {
+    return rootUrl == null ? "" : rootUrl;
   }
 
   /**
@@ -232,5 +236,12 @@ public abstract class AbstractApp implements App {
    */
   public void setUnknownPageHandler(UnknownPageHandler unknownPageHandler) {
     this.unknownPageHandler = unknownPageHandler;
+  }
+
+  public abstract boolean checkLoggedIn(SPRequest req) throws IOException;
+
+  public String makeRelativePath(String path) {
+    return rootUrl == null || rootUrl.equals("/") ? path
+                                                  : path.substring(rootUrl.length());
   }
 }

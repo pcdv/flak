@@ -1,7 +1,8 @@
 package flak.backend.jdk.extractor;
 
 import flak.Request;
-import flak.backend.jdk.JdkRequest;
+import flak.spi.ArgExtractor;
+import flak.spi.SPRequest;
 
 /**
  * @author pcdv
@@ -12,7 +13,7 @@ public class RequestExtractor extends ArgExtractor<Request> {
   }
 
   @Override
-  public Request extract(JdkRequest request) {
+  public Request extract(SPRequest request) {
     return request;
   }
 }
