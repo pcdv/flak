@@ -12,7 +12,7 @@ public class TestUtil {
   public static void assertFails(Callable callable, String message) {
     try {
       callable.call();
-      Assert.fail("Should have failed");
+      Assert.fail("An exception was supposed to be thrown (with message: " + message + ")");
     }
     catch (Exception e) {
       Assert.assertEquals(message, e.getMessage());

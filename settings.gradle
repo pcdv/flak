@@ -5,4 +5,5 @@ include 'flak-tests'
 include "webapp"
 include 'flak-util'
 include 'flak-examples'
+include 'flak-permissions'
 

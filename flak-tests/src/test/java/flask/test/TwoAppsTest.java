@@ -85,7 +85,5 @@ public class TwoAppsTest {
   @Test
   public void testWithArg() throws Exception {
     assertEquals("OK:foo", client.get("/app1/foo/arg"));
-
-
   }
 }
