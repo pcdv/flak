@@ -9,7 +9,6 @@ public interface Response {
   /**
    * Warning: must be called after addHeader().
    *
-   * @param status
    * @see java.net.HttpURLConnection
    */
   void setStatus(int status);

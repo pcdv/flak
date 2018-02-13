@@ -4,8 +4,6 @@ import flak.annotations.Route;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
 public class RouteTest extends AbstractAppTest {
 
   @Route(value = "/hello/:name", method = "GET")

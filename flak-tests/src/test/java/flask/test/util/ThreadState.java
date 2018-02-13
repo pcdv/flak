@@ -111,9 +111,9 @@ public class ThreadState {
       s.append("\n    no stack, state ").append(th.getState().name());
 
     else {
-      for (int i = 0; i < st.length; i++) {
+      for (StackTraceElement aSt : st) {
         s.append("\n    at ");
-        s.append(st[i]);
+        s.append(aSt);
       }
     }
   }
