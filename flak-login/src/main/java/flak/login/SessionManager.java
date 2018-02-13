@@ -1,5 +1,6 @@
-package flak;
+package flak.login;
 
+import flak.Response;
 import flak.spi.SPRequest;
 
 /**

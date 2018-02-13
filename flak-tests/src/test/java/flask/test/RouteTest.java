@@ -6,7 +6,7 @@ import org.junit.Test;
 
 public class RouteTest extends AbstractAppTest {
 
-  @Route(value = "/hello/:name", method = "GET")
+  @Route(value = "/hello/:name")
   public String hello(String name) {
     return "Hello " + name;
   }

@@ -1,4 +1,4 @@
-package flak.spi;
+package flak.login;
 
 import java.net.HttpURLConnection;
 import java.util.Hashtable;
@@ -8,7 +8,7 @@ import java.util.Random;
 import flak.App;
 import flak.Request;
 import flak.Response;
-import flak.SessionManager;
+import flak.spi.SPRequest;
 import flak.util.Log;
 
 /**
@@ -99,9 +99,6 @@ public class DefaultSessionManager implements SessionManager {
    */
   public void setRequireLoggedInByDefault(boolean flag) {
     this.requireLoggedInByDefault = flag;
-
-    // TODO: this will disappear eventually
-    ((AbstractApp) app).reconfigureHandlers();
   }
 
   /**
@@ -172,7 +169,7 @@ public class DefaultSessionManager implements SessionManager {
    * Call this method to destroy the current session, i.e. make the user
    * appearing as "not logged in".
    *
-   * @see flak.annotations.LoginRequired
+   * @see LoginRequired
    */
   public void logoutUser() {
     Request req = app.getRequest();

@@ -1,0 +1,5 @@
+description = "Session management for flak"
+
+dependencies {
+  compile project(":flak-api")
+}

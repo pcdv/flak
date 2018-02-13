@@ -77,8 +77,4 @@ public @interface Route {
    */
   String value();
 
-  /**
-   * Specifies the HTTP method. Defaults to "GET".
-   */
-  String method() default "GET";
 }

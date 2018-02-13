@@ -3,25 +3,24 @@ package flak.spi;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import flak.App;
+import flak.BeforeHook;
 import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Response;
 import flak.annotations.Delete;
 import flak.annotations.InputFormat;
 import flak.annotations.JSON;
-import flak.annotations.LoginNotRequired;
-import flak.annotations.LoginPage;
-import flak.annotations.LoginRequired;
 import flak.annotations.OutputFormat;
 import flak.annotations.Patch;
 import flak.annotations.Post;
 import flak.annotations.Put;
-import flak.annotations.Route;
 import flak.util.IO;
 import flak.util.Log;
 
@@ -65,6 +64,8 @@ public abstract class AbstractMethodHandler
 
   private ArgExtractor[] extractors;
 
+  private List<BeforeHook> beforeHooks = new ArrayList<>();
+
   public AbstractMethodHandler(AbstractApp app,
                                String route,
                                Method m,
@@ -75,9 +76,6 @@ public abstract class AbstractMethodHandler
     this.outputFormat = getOutputFormat(m);
     this.javaMethod = m;
     this.target = target;
-
-    if (m.getAnnotation(LoginPage.class) != null)
-      app.getSessionManager().setLoginPage(app.getPath() + route);
 
     configure();
 
@@ -132,6 +130,14 @@ public abstract class AbstractMethodHandler
     return null;
   }
 
+  public void addHook(BeforeHook hook) {
+    beforeHooks.add(hook);
+  }
+
+  public Object getTarget() {
+    return target;
+  }
+
   private static boolean isNotBasic(Class<?> type) {
     return type != String.class && type != byte[].class && type != InputStream.class && type != Response.class && type != void.class;
   }
@@ -158,7 +164,7 @@ public abstract class AbstractMethodHandler
       return "PATCH";
     if (m.getAnnotation(Delete.class) != null)
       return "DELETE";
-    return m.getAnnotation(Route.class).method();
+    return "GET";
   }
 
   /**
@@ -166,16 +172,6 @@ public abstract class AbstractMethodHandler
    * require adaptation in handlers.
    */
   public void configure() {
-    loginRequired = isLoginRequired();
-  }
-
-  private boolean isLoginRequired() {
-    if (javaMethod.getAnnotation(LoginRequired.class) != null)
-      return true;
-
-    return javaMethod.getAnnotation(LoginNotRequired.class) == null && //
-             javaMethod.getAnnotation(LoginPage.class) == null && //
-             app.getSessionManager().getRequireLoggedInByDefault();
   }
 
   /**
@@ -188,8 +184,8 @@ public abstract class AbstractMethodHandler
     if (!isApplicable(req))
       return false;
 
-    if (loginRequired && !app.getSessionManager().checkLoggedIn(req)) {
-      return true;
+    for (BeforeHook hook : beforeHooks) {
+      hook.execute(req);
     }
 
     Object[] args = extractArgs(req);
@@ -274,4 +270,7 @@ public abstract class AbstractMethodHandler
     return javaMethod;
   }
 
+  public AbstractApp getApp() {
+    return app;
+  }
 }

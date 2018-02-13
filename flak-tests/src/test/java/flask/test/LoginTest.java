@@ -2,9 +2,11 @@ package flask.test;
 
 import flak.Form;
 import flak.Response;
-import flak.annotations.LoginPage;
-import flak.annotations.LoginRequired;
+import flak.login.LoginPage;
+import flak.login.LoginRequired;
+import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.SessionManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -14,6 +16,10 @@ import org.junit.Test;
  * @author pcdv
  */
 public class LoginTest extends AbstractAppTest {
+  @Override
+  protected void preScan() {
+    installFlakLogin();
+  }
 
   @LoginPage
   @Route("/login")
@@ -22,8 +28,8 @@ public class LoginTest extends AbstractAppTest {
   }
 
   @Route("/logout")
-  public Response logout() {
-    app.getSessionManager().logoutUser();
+  public Response logout(SessionManager sessionManager) {
+    sessionManager.logoutUser();
     return app.redirect("/login");
   }
 
@@ -33,13 +39,14 @@ public class LoginTest extends AbstractAppTest {
     return "Welcome";
   }
 
-  @Route(value = "/login", method = "POST")
-  public Response login(Form form) {
+  @Post
+  @Route(value = "/login")
+  public Response login(Form form, SessionManager sessionManager) {
     String login = form.get("login");
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      app.getSessionManager().loginUser(login);
+      sessionManager.loginUser(login);
       return app.redirect("/app");
     }
 

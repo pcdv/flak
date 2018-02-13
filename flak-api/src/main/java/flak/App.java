@@ -98,7 +98,5 @@ public interface App {
 
   WebServer getServer();
 
-  SessionManager getSessionManager();
-
   String absolutePath(String path);
 }

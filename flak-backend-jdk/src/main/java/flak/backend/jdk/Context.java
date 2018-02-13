@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import flak.BeforeHook;
 import flak.HttpException;
 import flak.RequestHandler;
 import flak.util.Log;
@@ -72,6 +73,10 @@ public class Context implements HttpHandler, RequestHandler {
       app.on404(req);
     }
     catch (Throwable t) {
+
+      if (t instanceof BeforeHook.StopProcessingException) {
+        return;
+      }
 
       if (t instanceof InvocationTargetException) {
         t = ((InvocationTargetException) t).getTargetException();

@@ -5,6 +5,7 @@ sourceCompatibility = 1.8
 dependencies {
   compile project(":flak-api")
   compile project(":flak-jackson")
+  compile project(":flak-login")
   compile project(":flak-permissions")
   runtime project(":flak-backend-jdk")
 }

@@ -5,6 +5,8 @@ import flak.AppFactory;
 import flak.Flak;
 import flak.WebServer;
 import flak.annotations.Route;
+import flak.login.DefaultSessionManager;
+import flak.login.FlakLogin;
 import flask.test.util.SimpleClient;
 import org.junit.After;
 import org.junit.Assert;
@@ -13,6 +15,8 @@ import org.junit.Test;
 public class ServePathTest {
 
   private App app;
+
+  private DefaultSessionManager sessionManager;
 
   @After
   public void tearDown() {
@@ -49,9 +53,10 @@ public class ServePathTest {
     WebServer ws = factory.getServer();
     ws.start();
     app = factory.createApp("/app");
+    FlakLogin fl = new FlakLogin(app);
     app.servePath("/static", "/test-resources");
-    app.getSessionManager().setRequireLoggedInByDefault(true);
-    app.getSessionManager().setLoginPage("/static/login.html");
+    fl.getSessionManager().setRequireLoggedInByDefault(true);
+    fl.getSessionManager().setLoginPage("/static/login.html");
     app.scan(this);
     app.start();
 
@@ -63,7 +68,7 @@ public class ServePathTest {
   public void testServePathWithProtectedAccess() throws Exception {
     app = createApp();
     app.servePath("/static", "/test-resources", null, true);
-    app.getSessionManager().setLoginPage("/static/login.html");
+    sessionManager.setLoginPage("/static/login.html");
     app.start();
 
     SimpleClient client = new SimpleClient(app.getRootUrl());
@@ -74,7 +79,7 @@ public class ServePathTest {
   public void testServeRootWithProtectedAccess() throws Exception {
     app = createApp();
     app.servePath("/", "/test-resources/", null, true);
-    app.getSessionManager().setLoginPage("/login.html");
+    sessionManager.setLoginPage("/login.html");
     app.start();
 
     SimpleClient client = new SimpleClient(app.getRootUrl());
@@ -85,7 +90,7 @@ public class ServePathTest {
   public void testServeRootWithProtectedAccessAndClassLoader() throws Exception {
     app = createApp();
     app.servePath("/", "/test-resources/", getClass().getClassLoader(), true);
-    app.getSessionManager().setLoginPage("/login.html");
+    sessionManager.setLoginPage("/login.html");
     app.start();
 
     SimpleClient client = new SimpleClient(app.getRootUrl());
@@ -95,7 +100,9 @@ public class ServePathTest {
   private App createApp() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
     AppFactory factory = Flak.getFactory();
     factory.setPort(9191);
-    return factory.createApp();
+    App app = factory.createApp();
+    sessionManager = new FlakLogin(app).getSessionManager();
+    return app;
   }
 
 }

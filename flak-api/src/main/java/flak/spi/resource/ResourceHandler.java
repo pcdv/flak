@@ -1,10 +1,9 @@
-package flak.backend.jdk.resource;
+package flak.spi.resource;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import flak.ContentTypeProvider;
-import flak.backend.jdk.JdkApp;
 import flak.util.Log;
 
 /**
@@ -18,13 +17,12 @@ public class ResourceHandler extends AbstractResourceHandler {
 
   private final ClassLoader loader;
 
-  public ResourceHandler(JdkApp app,
-                         ContentTypeProvider mime,
+  public ResourceHandler(ContentTypeProvider mime,
                          String rootURI,
                          String localPath,
                          ClassLoader loader,
-                         boolean restricted) {
-    super(app, mime, rootURI, restricted);
+                         boolean requiresAuth) {
+    super(mime, rootURI, requiresAuth);
     if (!localPath.endsWith("/"))
       localPath += "/";
     this.localPath = localPath;

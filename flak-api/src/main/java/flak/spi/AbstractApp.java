@@ -1,8 +1,12 @@
 package flak.spi;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
@@ -14,11 +18,13 @@ import flak.OutputFormatter;
 import flak.Request;
 import flak.RequestHandler;
 import flak.Response;
-import flak.SessionManager;
 import flak.SuccessHandler;
 import flak.UnknownPageHandler;
 import flak.WebServer;
 import flak.annotations.Route;
+import flak.spi.resource.AbstractResourceHandler;
+import flak.spi.resource.FileHandler;
+import flak.spi.resource.ResourceHandler;
 import flak.util.Log;
 
 public abstract class AbstractApp implements App {
@@ -37,17 +43,18 @@ public abstract class AbstractApp implements App {
 
   private final Map<String, InputParser> inputParserMap = new Hashtable<>();
 
-  protected SessionManager sessionManager;
+  private final Vector<ErrorHandler> errorHandlers = new Vector<>();
 
-  protected Vector<ErrorHandler> errorHandlers = new Vector<>();
-
-  protected Vector<SuccessHandler> successHandlers = new Vector<>();
+  private final Vector<SuccessHandler> successHandlers = new Vector<>();
 
   protected UnknownPageHandler unknownPageHandler;
 
+  private final Map<Class, ArgExtractor> extractors = new HashMap<>();
+
+  private final List<FlakPlugin> plugins = new ArrayList<>();
+
   public AbstractApp(String rootUrl) {
     this.rootUrl = rootUrl;
-    sessionManager = new DefaultSessionManager(this);
   }
 
   public String getRootUrl() {
@@ -69,17 +76,29 @@ public abstract class AbstractApp implements App {
     for (Method method : obj.getClass().getMethods()) {
       Route route = method.getAnnotation(Route.class);
       if (route != null) {
-        addHandler(route, method, obj);
+        addHandler0(route.value(), method, obj);
       }
     }
     return this;
   }
 
-  protected abstract void addHandler(Route route, Method method, Object obj);
+  private AbstractMethodHandler addHandler0(String route,
+                                            Method method,
+                                            Object obj) {
+    AbstractMethodHandler handler = addHandler(route, method, obj);
+    for (FlakPlugin plugin : plugins) {
+      plugin.onNewHandler(handler);
+    }
+    handler.init();
+    return handler;
+  }
+
+  protected abstract AbstractMethodHandler addHandler(String route,
+                                                      Method method,
+                                                      Object obj);
 
   public App addOutputFormatter(String name, OutputFormatter<?> conv) {
     outputFormatterMap.put(name, conv);
-    reconfigureHandlers();
     return this;
   }
 
@@ -90,7 +109,6 @@ public abstract class AbstractApp implements App {
   @Override
   public App addInputParser(String name, InputParser inputParser) {
     inputParserMap.put(name, inputParser);
-    reconfigureHandlers();
     return this;
   }
 
@@ -105,6 +123,9 @@ public abstract class AbstractApp implements App {
       else
         uri = rootUrl + "/" + uri;
     }
+    if (uri == null || uri.isEmpty())
+      return "/";
+
     return uri;
   }
 
@@ -118,10 +139,6 @@ public abstract class AbstractApp implements App {
    */
   public boolean isDebugEnabled() {
     return Log.DEBUG;
-  }
-
-  public void setSessionManager(SessionManager mgr) {
-    this.sessionManager = mgr;
   }
 
   /**
@@ -138,8 +155,6 @@ public abstract class AbstractApp implements App {
   public void redirect(Response r, String location) {
     r.redirect(location);
   }
-
-  protected abstract void reconfigureHandlers();
 
   /**
    * Adds a handler that will be notified whenever a request is rejected
@@ -192,7 +207,73 @@ public abstract class AbstractApp implements App {
     return rootUrl == null || rootUrl.equals("/") ? path : rootUrl + path;
   }
 
-  public SessionManager getSessionManager() {
-    return sessionManager;
+  /**
+   * WARNING: if rootURI == "/" beware of conflicts with other handlers with
+   * root URLs like "/foo": they will conflict with the resource handler.
+   */
+  public AbstractApp servePath(String rootURI, String path) {
+    return servePath(rootURI, path, null, false);
+  }
+
+  /**
+   * Serves the contents of a given path (which may be a directory on the file
+   * system or nested in a jar from the classpath) from a given root URI.
+   * WARNING: if rootURI == "/" beware of conflicts with other handlers with
+   * root URLs like "/foo": they will conflict with the resource handler.
+   *
+   * @return this
+   */
+  public AbstractApp servePath(String rootURI,
+                               String resourcesPath,
+                               ClassLoader loader,
+                               boolean requiresAuth) {
+    File file = new File(resourcesPath);
+    AbstractResourceHandler h;
+    if (file.exists() && file.isDirectory())
+      h = new FileHandler(mime, rootURI, file, requiresAuth);
+    else
+      h = new ResourceHandler(mime,
+                              makeAbsoluteUrl(rootURI),
+                              resourcesPath,
+                              loader,
+                              requiresAuth);
+
+    try {
+      addHandler0(rootURI + "/*splat",
+                  h.getClass().getMethod("doGet", Request.class),
+                  h);
+
+    }
+    catch (NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
+
+    return this;
+  }
+
+  protected abstract boolean isStarted();
+
+  /**
+   * WARNING: if rootURI == "/" beware of conflicts with other handlers
+   * with root URLs like "/foo": they will conflict with the resource handler.
+   */
+  public AbstractApp serveDir(String rootURI, File dir) {
+    return serveDir(rootURI, dir, false);
+  }
+
+  public AbstractApp serveDir(String rootURI, File dir, boolean restricted) {
+    return servePath(rootURI, dir.getAbsolutePath(), null, restricted);
+  }
+
+  public ArgExtractor getCustomExtractor(Method m, Class<?> type) {
+    return extractors.get(type);
+  }
+
+  public void addCustomExtractor(Class<?> type, ArgExtractor extractor) {
+    extractors.put(type, extractor);
+  }
+
+  public void addPlugin(FlakPlugin plugin) {
+    plugins.add(plugin);
   }
 }

@@ -1,21 +1,15 @@
 package flak.backend.jdk;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import flak.Request;
 import flak.RequestHandler;
 import flak.Response;
-import flak.annotations.Route;
-import flak.backend.jdk.resource.AbstractResourceHandler;
-import flak.backend.jdk.resource.FileHandler;
-import flak.backend.jdk.resource.ResourceHandler;
 import flak.spi.AbstractApp;
+import flak.spi.AbstractMethodHandler;
 import flak.util.Log;
 
 /**
@@ -28,8 +22,6 @@ public class JdkApp extends AbstractApp {
   private final JdkWebServer srv;
 
   private final ThreadLocal<JdkRequest> localRequest = new ThreadLocal<>();
-
-  private List<MethodHandler> allHandlers = new ArrayList<>(256);
 
   private boolean started;
 
@@ -46,8 +38,10 @@ public class JdkApp extends AbstractApp {
   }
 
   @Override
-  protected void addHandler(Route route, Method m, Object obj) {
-    String[] tok = route.value().split("/+");
+  protected AbstractMethodHandler addHandler(String route,
+                                             Method m,
+                                             Object obj) {
+    String[] tok = route.split("/+");
 
     // split the static and dynamic part of the route (i.e. /app/hello/:name =>
     // "/app/hello" + "/:name"). The static part is used to get or create a
@@ -69,29 +63,32 @@ public class JdkApp extends AbstractApp {
 
     MethodHandler handler =
       getContext(root.toString()).addHandler(rest.toString(), m, obj);
-    handler.init();
 
-    allHandlers.add(handler);
+    return handler;
+  }
+
+  @Override
+  protected boolean isStarted() {
+    return started;
   }
 
   /**
    * Gets or creates a Context for specified root URI.
    */
   private Context getContext(String rootURI) {
-    if ("/".equals(rootURI))
-      rootURI = "";
-
     RequestHandler c = handlers.get(rootURI);
 
     if (c == null) {
       Log.debug("Creating context for " + rootURI);
-      handlers.put(rootURI, c = new Context(this, makeAbsoluteUrl(rootURI)));
+      String absPath = makeAbsoluteUrl(rootURI);
+      handlers.put(rootURI, c = new Context(this, absPath));
       if (started)
         addHandlerInServer(rootURI, c);
 
     }
     else if (!(c instanceof Context))
       throw new IllegalStateException("A handler is already registered for: " + rootURI);
+
     return (Context) c;
   }
 
@@ -119,70 +116,8 @@ public class JdkApp extends AbstractApp {
     srv.removeApp(this);
   }
 
-  /**
-   * WARNING: if rootURI == "/" beware of conflicts with other handlers with
-   * root URLs like "/foo": they will conflict with the resource handler.
-   */
-  public JdkApp servePath(String rootURI, String path) {
-    return servePath(rootURI, path, null, sessionManager.getRequireLoggedInByDefault());
-  }
-
-  /**
-   * Serves the contents of a given path (which may be a directory on the file
-   * system or nested in a jar from the classpath) from a given root URI.
-   * WARNING: if rootURI == "/" beware of conflicts with other handlers with
-   * root URLs like "/foo": they will conflict with the resource handler.
-   *
-   * @return this
-   */
-  public JdkApp servePath(String rootURI,
-                          String resourcesPath,
-                          ClassLoader loader,
-                          boolean requiresAuth) {
-    File file = new File(resourcesPath);
-    AbstractResourceHandler h;
-    if (file.exists() && file.isDirectory())
-      h = new FileHandler(this,
-                          mime,
-                          makeAbsoluteUrl(rootURI),
-                          file,
-                          requiresAuth);
-    else
-      h = new ResourceHandler(this,
-                              mime,
-                              makeAbsoluteUrl(rootURI),
-                              resourcesPath,
-                              loader,
-                              requiresAuth);
-
-    handlers.put(rootURI, h);
-    if (started)
-      addHandlerInServer(rootURI, h);
-
-    return this;
-  }
-
   private void addHandlerInServer(String uri, RequestHandler h) {
     srv.addHandler(makeAbsoluteUrl(uri), h);
-  }
-
-  /**
-   * WARNING: if rootURI == "/" beware of conflicts with other handlers
-   * with root URLs like "/foo": they will conflict with the resource handler.
-   */
-  public JdkApp serveDir(String rootURI, File dir) {
-    return serveDir(rootURI, dir, sessionManager.getRequireLoggedInByDefault());
-  }
-
-  public JdkApp serveDir(String rootURI, File dir, boolean restricted) {
-    FileHandler h =
-      new FileHandler(this, mime, makeAbsoluteUrl(rootURI), dir, restricted);
-
-    handlers.put(rootURI, h);
-    if (started)
-      addHandlerInServer(rootURI, h);
-
-    return this;
   }
 
   public void setThreadLocalRequest(JdkRequest req) {
@@ -195,15 +130,6 @@ public class JdkApp extends AbstractApp {
 
   public Response getResponse() {
     return localRequest.get();
-  }
-
-  /**
-   * Reconfigures existing handlers after a change of configuration (converted
-   * added etc.).
-   */
-  protected void reconfigureHandlers() {
-    for (MethodHandler h : allHandlers)
-      h.configure();
   }
 
   public JdkWebServer getServer() {

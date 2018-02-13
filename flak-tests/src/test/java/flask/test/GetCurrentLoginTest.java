@@ -2,10 +2,11 @@ package flask.test;
 
 import flak.Form;
 import flak.Response;
-import flak.SessionManager;
-import flak.annotations.LoginPage;
-import flak.annotations.LoginRequired;
+import flak.login.LoginPage;
+import flak.login.LoginRequired;
+import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.SessionManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -22,7 +23,12 @@ public class GetCurrentLoginTest extends AbstractAppTest {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    sm = app.getSessionManager();
+  }
+
+  @Override
+  protected void preScan() {
+    installFlakLogin();
+    sm = flakLogin.getSessionManager();
   }
 
   @LoginPage
@@ -47,7 +53,8 @@ public class GetCurrentLoginTest extends AbstractAppTest {
     return "Welcome";
   }
 
-  @Route(value = "/login", method = "POST")
+  @Post
+  @Route(value = "/login")
   public Response login(Form form) {
     String login = form.get("login");
     String pass = form.get("password");

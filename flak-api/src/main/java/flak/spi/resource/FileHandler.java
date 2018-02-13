@@ -1,4 +1,4 @@
-package flak.backend.jdk.resource;
+package flak.spi.resource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,18 +7,16 @@ import java.io.InputStream;
 import java.nio.file.Path;
 
 import flak.ContentTypeProvider;
-import flak.backend.jdk.JdkApp;
 
 public class FileHandler extends AbstractResourceHandler {
 
   private final Path localPath;
 
-  public FileHandler(JdkApp app,
-                     ContentTypeProvider mime,
+  public FileHandler(ContentTypeProvider mime,
                      String rootURI,
                      File localFile,
                      boolean requiresAuth) {
-    super(app, mime, rootURI, requiresAuth);
+    super(mime, rootURI, requiresAuth);
     this.localPath = localFile.toPath();
   }
 

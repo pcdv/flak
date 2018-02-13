@@ -2,6 +2,7 @@ package flask.test;
 
 import flak.App;
 import flak.Flak;
+import flak.login.FlakLogin;
 import flask.test.util.SimpleClient;
 import flask.test.util.ThreadState;
 import org.junit.After;
@@ -21,6 +22,8 @@ public class AbstractAppTest {
   public ThreadState.ThreadStateRule noZombies =
       new ThreadState.ThreadStateRule();
 
+  protected FlakLogin flakLogin;
+
   @Before
   public void setUp() throws Exception {
     app = Flak.createHttpApp(9191);
@@ -32,6 +35,10 @@ public class AbstractAppTest {
     app.start();
 
     client = new SimpleClient(app.getRootUrl());
+  }
+
+  protected void installFlakLogin() {
+    flakLogin = new FlakLogin(app);
   }
 
   /**

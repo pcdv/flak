@@ -12,10 +12,15 @@ import org.junit.Test;
  * @author pcdv
  */
 public class PermissionTest extends AbstractAppTest {
+  @Override
+  protected void preScan() {
+    installFlakLogin();
+  }
+
 
   @Route("/api/login")
   public void login(Form form) {
-    app.getSessionManager().loginUser(form.get("login"));
+    flakLogin.getSessionManager().loginUser(form.get("login"));
   }
 
   @WithPermission("access")

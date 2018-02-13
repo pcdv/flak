@@ -2,19 +2,26 @@ package flask.test;
 
 import flak.Form;
 import flak.Response;
-import flak.annotations.LoginNotRequired;
-import flak.annotations.LoginPage;
+import flak.login.LoginNotRequired;
+import flak.login.LoginPage;
+import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.SessionManager;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
  * Variant of LoginTest that uses @LoginNotRequired and
- * {@link flak.SessionManager#setRequireLoggedInByDefault(boolean)}.
+ * {@link SessionManager#setRequireLoggedInByDefault(boolean)}.
  *
  * @author pcdv
  */
 public class LoginTest2 extends AbstractAppTest {
+
+  @Override
+  protected void preScan() {
+    installFlakLogin();
+  }
 
   @LoginPage
   @Route("/login")
@@ -23,24 +30,25 @@ public class LoginTest2 extends AbstractAppTest {
   }
 
   @Route("/logout")
-  public Response logout() {
-    app.getSessionManager().logoutUser();
+  public Response logout(SessionManager sessionManager) {
+    sessionManager.logoutUser();
     return app.redirect("/login");
   }
 
   @Route("/app")
-  public String appPage() {
-    return "Welcome " + app.getSessionManager().getCurrentLogin();
+  public String appPage(SessionManager sessionManager) {
+    return "Welcome " + sessionManager.getCurrentLogin();
   }
 
-  @Route(value = "/login", method = "POST")
+  @Route(value = "/login")
+  @Post
   @LoginNotRequired
-  public Response login(Form form) {
+  public Response login(Form form, SessionManager sessionManager) {
     String login = form.get("login");
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      app.getSessionManager().loginUser(login);
+      sessionManager.loginUser(login);
       return app.redirect("/app");
     }
 
@@ -50,7 +58,7 @@ public class LoginTest2 extends AbstractAppTest {
   @Test
   public void testLogin() throws Exception {
 
-    app.getSessionManager().setRequireLoggedInByDefault(true);
+    flakLogin.getSessionManager().setRequireLoggedInByDefault(true);
 
     // app redirects to login page when not logged in
     Assert.assertEquals("Please login", client.get("/app"));

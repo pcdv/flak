@@ -88,6 +88,10 @@ public class MethodHandler extends AbstractMethodHandler {
                                          int i,
                                          AtomicInteger urlParam,
                                          int[] idx) {
+    ArgExtractor ex = app.getCustomExtractor(m, type);
+    if (ex != null)
+      return ex;
+
     if (type == Request.class) {
       return new RequestExtractor(i);
     }

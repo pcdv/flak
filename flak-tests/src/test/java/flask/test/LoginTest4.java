@@ -1,8 +1,9 @@
 package flask.test;
 
 import flak.Response;
-import flak.SessionManager;
-import flak.annotations.LoginNotRequired;
+import flak.annotations.Post;
+import flak.login.SessionManager;
+import flak.login.LoginNotRequired;
 import flak.annotations.Route;
 import org.junit.Assert;
 import org.junit.Test;
@@ -13,11 +14,16 @@ import org.junit.Test;
  * @author pcdv
  */
 public class LoginTest4 extends AbstractAppTest {
+  @Override
+  protected void preScan() {
+    installFlakLogin();
+  }
 
   @LoginNotRequired
-  @Route(value = "/auth/login", method = "POST")
-  public Response login() {
-    app.getSessionManager().loginUser("foo");
+  @Post
+  @Route(value = "/auth/login")
+  public Response login(SessionManager sessionManager) {
+    sessionManager.loginUser("foo");
     return app.redirect("/hello");
   }
 
@@ -33,7 +39,7 @@ public class LoginTest4 extends AbstractAppTest {
 
   @Test
   public void testCookieWithInvalidPath() throws Exception {
-    SessionManager sm = this.app.getSessionManager();
+    SessionManager sm = flakLogin.getSessionManager();
     sm.setRequireLoggedInByDefault(true);
     sm.setLoginPage("/login");
     sm.setSessionCookieName("sesame");

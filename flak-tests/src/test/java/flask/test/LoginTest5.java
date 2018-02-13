@@ -2,9 +2,10 @@ package flask.test;
 
 import flak.Form;
 import flak.Response;
-import flak.SessionManager;
-import flak.annotations.LoginNotRequired;
+import flak.login.LoginNotRequired;
+import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.SessionManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,13 +22,14 @@ public class LoginTest5 extends AbstractAppTest {
   private SessionManager sm;
 
   @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    sm = app.getSessionManager();
+  protected void preScan() {
+    installFlakLogin();
+    sm = flakLogin.getSessionManager();
   }
 
+  @Post
   @LoginNotRequired
-  @Route(value = "/auth/login", method = "POST")
+  @Route(value = "/auth/login")
   public void login(Response r, Form form) {
     String login = form.get("login");
     String pass = form.get("password");

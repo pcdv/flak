@@ -1,5 +1,6 @@
 package flask.test;
 
+import flak.annotations.Post;
 import flak.annotations.Route;
 import org.junit.Test;
 
@@ -10,7 +11,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class PostSplatTest extends AbstractAppTest {
 
-  @Route(value = "/process/:id/file/*splat", method = "POST")
+  @Post
+  @Route(value = "/process/:id/file/*splat")
   public String handlePostWithSplat(String id, String splat) {
     return id + ":" + splat;
   }
