@@ -5,8 +5,6 @@ import flak.annotations.Route;
 
 /**
  * Example of how the query string can be parsed.
- *
- * @author pcdv
  */
 public class AccessQueryParameters {
 

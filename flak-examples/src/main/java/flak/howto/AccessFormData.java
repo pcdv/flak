@@ -6,11 +6,8 @@ import flak.annotations.Route;
 
 /**
  * Example of how form data can be parsed in a POST request.
- *
- * @author pcdv
  */
 public class AccessFormData {
-
   @Post
   @Route("/api/form")
   public String postForm(Form form) {
