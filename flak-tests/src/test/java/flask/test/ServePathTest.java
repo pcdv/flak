@@ -7,6 +7,7 @@ import flak.WebServer;
 import flak.annotations.Route;
 import flak.login.DefaultSessionManager;
 import flak.login.FlakLogin;
+import flak.plugin.resource.FlakResourceImpl;
 import flask.test.util.SimpleClient;
 import org.junit.After;
 import org.junit.Assert;
@@ -39,7 +40,7 @@ public class ServePathTest {
     WebServer ws = fac.getServer();
     ws.start();
     app = fac.createApp("/app");
-    app.servePath("/static", "/test-resources");
+    new FlakResourceImpl(app).servePath("/static", "/test-resources");
     app.start();
 
     SimpleClient client = new SimpleClient(app.getRootUrl());
@@ -54,7 +55,7 @@ public class ServePathTest {
     ws.start();
     app = factory.createApp("/app");
     FlakLogin fl = new FlakLogin(app);
-    app.servePath("/static", "/test-resources");
+    new FlakResourceImpl(app).servePath("/static", "/test-resources");
     fl.getSessionManager().setRequireLoggedInByDefault(true);
     fl.getSessionManager().setLoginPage("/static/login.html");
     app.scan(this);
@@ -67,7 +68,10 @@ public class ServePathTest {
   @Test
   public void testServePathWithProtectedAccess() throws Exception {
     app = createApp();
-    app.servePath("/static", "/test-resources", null, true);
+    new FlakResourceImpl(app).servePath("/static",
+                                        "/test-resources",
+                                        null,
+                                        true);
     sessionManager.setLoginPage("/static/login.html");
     app.start();
 
@@ -78,7 +82,7 @@ public class ServePathTest {
   @Test
   public void testServeRootWithProtectedAccess() throws Exception {
     app = createApp();
-    app.servePath("/", "/test-resources/", null, true);
+    new FlakResourceImpl(app).servePath("/", "/test-resources/", null, true);
     sessionManager.setLoginPage("/login.html");
     app.start();
 
@@ -89,7 +93,10 @@ public class ServePathTest {
   @Test
   public void testServeRootWithProtectedAccessAndClassLoader() throws Exception {
     app = createApp();
-    app.servePath("/", "/test-resources/", getClass().getClassLoader(), true);
+    new FlakResourceImpl(app).servePath("/",
+                                        "/test-resources/",
+                                        getClass().getClassLoader(),
+                                        true);
     sessionManager.setLoginPage("/login.html");
     app.start();
 

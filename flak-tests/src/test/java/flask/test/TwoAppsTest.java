@@ -8,6 +8,7 @@ import flak.Flak;
 import flak.Request;
 import flak.WebServer;
 import flak.annotations.Route;
+import flak.plugin.resource.FlakResourceImpl;
 import flask.test.util.SimpleClient;
 import org.junit.After;
 import org.junit.Before;
@@ -54,7 +55,7 @@ public class TwoAppsTest {
     app2 = fac.createApp("/app2").scan(new Object() {
       @Route("/hello")
       public String hello(Request req) {
-        return "Hello from app2 - path = "+req.getPath();
+        return "Hello from app2 - path = " + req.getPath();
       }
     });
 
@@ -78,7 +79,7 @@ public class TwoAppsTest {
   @Test
   public void testServeDir() throws Exception {
     Files.write(tmp.newFile("foo").toPath(), "Foobar".getBytes());
-    app1.serveDir("/stuff", tmp.getRoot());
+    new FlakResourceImpl(app1).serveDir("/stuff", tmp.getRoot());
     assertEquals("Foobar", client.get("/app1/stuff/foo"));
   }
 

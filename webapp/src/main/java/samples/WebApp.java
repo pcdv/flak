@@ -4,6 +4,7 @@ import flak.App;
 import flak.AppFactory;
 import flak.Flak;
 import flak.annotations.Route;
+import flak.plugin.resource.FlakResourceImpl;
 
 public class WebApp {
 
@@ -22,7 +23,8 @@ public class WebApp {
 
     // static resources are served from local file system or directly
     // from the web-app jar
-    app.servePath("/", "app/", WebApp.class.getClassLoader(), false);
+    FlakResourceImpl res = new FlakResourceImpl(app);
+    res.servePath("/", "app/", WebApp.class.getClassLoader(), false);
 
     app.start();
     System.out.println("Listening on " + app.getRootUrl());

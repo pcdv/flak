@@ -1,4 +1,4 @@
-package flak.spi.resource;
+package flak.plugin.resource;
 
 import java.io.File;
 import java.io.FileInputStream;

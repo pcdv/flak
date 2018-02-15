@@ -3,6 +3,7 @@ package flask.test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import flak.plugin.resource.FlakResourceImpl;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -20,7 +21,10 @@ public class ResourceWithQueryStringTest extends AbstractAppTest {
     Path dir = Files.createTempDirectory("flak");
     Files.write(dir.resolve("foo"), "Foo".getBytes());
 
-    app.servePath("/", dir.toString(), getClass().getClassLoader(), false);
+    new FlakResourceImpl(app).servePath("/",
+                                        dir.toString(),
+                                        getClass().getClassLoader(),
+                                        false);
     assertEquals("Foo", client.get("/foo"));
     assertEquals("Foo", client.get("/foo?q=1"));
   }

@@ -1,5 +1,6 @@
 dependencies {
   compile project(':flak-api')
+  compile project(':flak-resource')
   runtime project(':flak-backend-jdk')
 }
 

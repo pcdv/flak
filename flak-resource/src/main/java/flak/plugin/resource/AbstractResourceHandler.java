@@ -1,4 +1,4 @@
-package flak.spi.resource;
+package flak.plugin.resource;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import flak.ContentTypeProvider;
 import flak.HttpException;
 import flak.Request;
+import flak.spi.RestrictedTarget;
 import flak.util.IO;
 
 /**
@@ -15,7 +16,7 @@ import flak.util.IO;
  *
  * @author pcdv
  */
-public abstract class AbstractResourceHandler {
+public abstract class AbstractResourceHandler implements RestrictedTarget {
 
   private final String rootURI;
 

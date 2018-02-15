@@ -1,6 +1,5 @@
 package flak.spi;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
@@ -11,7 +10,6 @@ import java.util.Map;
 import java.util.Vector;
 
 import flak.App;
-import flak.ContentTypeProvider;
 import flak.ErrorHandler;
 import flak.InputParser;
 import flak.OutputFormatter;
@@ -22,9 +20,6 @@ import flak.SuccessHandler;
 import flak.UnknownPageHandler;
 import flak.WebServer;
 import flak.annotations.Route;
-import flak.spi.resource.AbstractResourceHandler;
-import flak.spi.resource.FileHandler;
-import flak.spi.resource.ResourceHandler;
 import flak.util.Log;
 
 public abstract class AbstractApp implements App {
@@ -35,8 +30,6 @@ public abstract class AbstractApp implements App {
   protected final String rootUrl;
 
   protected final Map<String, RequestHandler> handlers = new Hashtable<>();
-
-  protected ContentTypeProvider mime = new DefaultContentTypeProvider();
 
   private final Map<String, OutputFormatter<?>> outputFormatterMap =
     new Hashtable<>();
@@ -82,9 +75,9 @@ public abstract class AbstractApp implements App {
     return this;
   }
 
-  private AbstractMethodHandler addHandler0(String route,
-                                            Method method,
-                                            Object obj) {
+  public AbstractMethodHandler addHandler0(String route,
+                                           Method method,
+                                           Object obj) {
     AbstractMethodHandler handler = addHandler(route, method, obj);
     for (FlakPlugin plugin : plugins) {
       plugin.onNewHandler(handler);
@@ -116,7 +109,7 @@ public abstract class AbstractApp implements App {
     return inputParserMap.get(name);
   }
 
-  protected String makeAbsoluteUrl(String uri) {
+  public String makeAbsoluteUrl(String uri) {
     if (rootUrl != null) {
       if (uri.startsWith("/"))
         uri = rootUrl + uri;
@@ -127,10 +120,6 @@ public abstract class AbstractApp implements App {
       return "/";
 
     return uri;
-  }
-
-  public void setContentTypeProvider(ContentTypeProvider mime) {
-    this.mime = mime;
   }
 
   /**
@@ -207,63 +196,7 @@ public abstract class AbstractApp implements App {
     return rootUrl == null || rootUrl.equals("/") ? path : rootUrl + path;
   }
 
-  /**
-   * WARNING: if rootURI == "/" beware of conflicts with other handlers with
-   * root URLs like "/foo": they will conflict with the resource handler.
-   */
-  public AbstractApp servePath(String rootURI, String path) {
-    return servePath(rootURI, path, null, false);
-  }
-
-  /**
-   * Serves the contents of a given path (which may be a directory on the file
-   * system or nested in a jar from the classpath) from a given root URI.
-   * WARNING: if rootURI == "/" beware of conflicts with other handlers with
-   * root URLs like "/foo": they will conflict with the resource handler.
-   *
-   * @return this
-   */
-  public AbstractApp servePath(String rootURI,
-                               String resourcesPath,
-                               ClassLoader loader,
-                               boolean requiresAuth) {
-    File file = new File(resourcesPath);
-    AbstractResourceHandler h;
-    if (file.exists() && file.isDirectory())
-      h = new FileHandler(mime, rootURI, file, requiresAuth);
-    else
-      h = new ResourceHandler(mime,
-                              makeAbsoluteUrl(rootURI),
-                              resourcesPath,
-                              loader,
-                              requiresAuth);
-
-    try {
-      addHandler0(rootURI + "/*splat",
-                  h.getClass().getMethod("doGet", Request.class),
-                  h);
-
-    }
-    catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-
-    return this;
-  }
-
   protected abstract boolean isStarted();
-
-  /**
-   * WARNING: if rootURI == "/" beware of conflicts with other handlers
-   * with root URLs like "/foo": they will conflict with the resource handler.
-   */
-  public AbstractApp serveDir(String rootURI, File dir) {
-    return serveDir(rootURI, dir, false);
-  }
-
-  public AbstractApp serveDir(String rootURI, File dir, boolean restricted) {
-    return servePath(rootURI, dir.getAbsolutePath(), null, restricted);
-  }
 
   public ArgExtractor getCustomExtractor(Method m, Class<?> type) {
     return extractors.get(type);

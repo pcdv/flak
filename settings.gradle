@@ -7,4 +7,5 @@ include 'flak-util'
 include 'flak-examples'
 include 'flak-permissions'
 include 'flak-login'
+include 'flak-resource'
 

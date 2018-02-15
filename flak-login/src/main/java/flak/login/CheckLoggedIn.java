@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 
 import flak.BeforeHook;
 import flak.spi.AbstractMethodHandler;
-import flak.spi.resource.AbstractResourceHandler;
+import flak.spi.RestrictedTarget;
 import flak.spi.SPRequest;
 
 /**
@@ -37,8 +37,8 @@ public class CheckLoggedIn implements BeforeHook {
       LoginNotRequired.class) != null)
       return false;
 
-    if (handler.getTarget() instanceof AbstractResourceHandler)
-      return ((AbstractResourceHandler) handler.getTarget()).isRestricted();
+    if (handler.getTarget() instanceof RestrictedTarget)
+      return ((RestrictedTarget) handler.getTarget()).isRestricted();
 
     return manager.getRequireLoggedInByDefault();
   }
