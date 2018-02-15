@@ -135,7 +135,6 @@ public class MethodHandler extends AbstractMethodHandler {
     return splitPath;
   }
 
-
   /**
    * Checks whether current handler should respond to specified request.
    */
@@ -149,10 +148,8 @@ public class MethodHandler extends AbstractMethodHandler {
 
     String[] uri = req.getSplitUri();
     String[] tok = getSplitPath();
-    if (uri.length != tok.length) {
-      if (!hasSplat() || uri.length < tok.length)
-        return false;
-    }
+    if (uri.length != tok.length && !hasSplat())
+      return false;
 
     for (int i = 0; i < tok.length; i++) {
       if (tok[i].charAt(0) != ':' && tok[i].charAt(0) != '*' && !tok[i].equals(
