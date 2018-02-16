@@ -38,7 +38,7 @@ public class AbstractAppTest {
   }
 
   protected void installFlakLogin() {
-    flakLogin = new FlakLogin(app);
+    flakLogin = new FlakLogin(app).install();
   }
 
   /**

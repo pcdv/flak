@@ -78,7 +78,7 @@ public class SSLTest {
   }
 
   // http://stacktips.com/snippet/how-to-trust-all-certificates-for-httpurlconnection-in-android
-  public void trustAllCertificates() {
+  private void trustAllCertificates() {
     try {
       TrustManager[] trustAllCerts = new TrustManager[]{
         new X509TrustManager() {
@@ -103,7 +103,7 @@ public class SSLTest {
       HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
       HttpsURLConnection.setDefaultHostnameVerifier((arg0, arg1) -> true);
     }
-    catch (Exception e) {
+    catch (Exception ignored) {
     }
   }
 }

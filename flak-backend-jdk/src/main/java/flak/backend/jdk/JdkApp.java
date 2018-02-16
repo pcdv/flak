@@ -61,10 +61,7 @@ public class JdkApp extends AbstractApp {
       rest.append('/').append(tok[i]);
     }
 
-    MethodHandler handler =
-      getContext(root.toString()).addHandler(rest.toString(), m, obj);
-
-    return handler;
+    return getContext(root.toString()).addHandler(rest.toString(), m, obj);
   }
 
   /**

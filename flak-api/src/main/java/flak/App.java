@@ -18,18 +18,14 @@ public interface App {
   /**
    * Adds a formatter that takes the value returned by the route handler and
    * writes it into the response. The method must be decorated with {@link
-   * flak.annotations.OutputFormat}. Note that the {@link
-   * flak.annotations.JSON} annotation implies the presence of an
-   * OutputFormatter with name "JSON".
+   * flak.annotations.OutputFormat}.
    */
   App addOutputFormatter(String name, OutputFormatter<?> outputFormatter);
 
   /**
    * Adds a parser that can read the request's input and convert it to the
    * type of an argument of the route handler. The method must be decorated
-   * with {@link flak.annotations.InputFormat}. Note that the {@link
-   * flak.annotations.JSON} annotation implies the presence of an InputParser
-   * with name "JSON".
+   * with {@link flak.annotations.InputFormat}.
    */
   App addInputParser(String name, InputParser inputParser);
 

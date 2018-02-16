@@ -20,15 +20,15 @@ public class DefaultSessionManager implements SessionManager {
 
   private Map<String, String> sessions = new Hashtable<>();
 
-  protected String sessionCookieName = "sessionToken";
+  private String sessionCookieName = "sessionToken";
 
-  protected String loginPage;
+  private String loginPage;
 
-  protected boolean requireLoggedInByDefault;
+  private boolean requireLoggedInByDefault;
 
   private App app;
 
-  public DefaultSessionManager(App app) {
+  DefaultSessionManager(App app) {
     this.app = app;
   }
 
@@ -61,14 +61,14 @@ public class DefaultSessionManager implements SessionManager {
     loginUser(login, false, makeRandomToken(login));
   }
 
-  public String makeRandomToken(String login) {
+  private String makeRandomToken(String login) {
     return (new Random().nextLong() ^ login.hashCode()) + "";
   }
 
   /**
    * Marks current session as logged in (by setting a cookie).
    */
-  public void loginUser(String login, boolean rememberMe, String token) {
+  private void loginUser(String login, boolean rememberMe, String token) {
     createToken(token, login, rememberMe);
     app.getResponse()
        .addHeader("Set-Cookie", sessionCookieName + "=" + token + "; path=/;");

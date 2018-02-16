@@ -2,8 +2,6 @@ package flask.test;
 
 import java.io.IOException;
 
-import flak.OutputFormatter;
-import flak.Response;
 import flak.annotations.OutputFormat;
 import flak.annotations.Route;
 import flak.jackson.JsonOutputFormatter;
@@ -17,11 +15,9 @@ public class OutputFormatTest extends AbstractAppTest {
   protected void preScan() {
     app.addOutputFormatter("JSON", new JsonOutputFormatter<>());
 
-    app.addOutputFormatter("FOO", new OutputFormatter<String>() {
-      public void convert(String data, Response resp) throws Exception {
-        resp.setStatus(200);
-        resp.getOutputStream().write(("FOO " + data).getBytes());
-      }
+    app.addOutputFormatter("FOO", (data, resp) -> {
+      resp.setStatus(200);
+      resp.getOutputStream().write(("FOO " + data).getBytes());
     });
   }
 
@@ -37,6 +33,7 @@ public class OutputFormatTest extends AbstractAppTest {
   }
 
   public static class Foo {
+    @SuppressWarnings("unused")
     public int stuff = 42;
   }
 

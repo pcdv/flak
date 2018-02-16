@@ -14,22 +14,25 @@ public class FlakLogin implements FlakPlugin {
 
   private final DefaultSessionManager sessionManager;
 
-  private App app;
+  private final AbstractApp app;
 
   public FlakLogin(App app) {
-    this.app = app;
+    this.app = (AbstractApp) app;
     this.sessionManager = new DefaultSessionManager(app);
+  }
 
-    ((AbstractApp) app).addPlugin(this);
+  public FlakLogin install() {
 
-    ((AbstractApp) app)
+    app.addPlugin(this);
 
-      .addCustomExtractor(SessionManager.class, new ArgExtractor(-1) {
-        @Override
-        public Object extract(SPRequest request) throws Exception {
-          return sessionManager;
-        }
-      });
+    app.addCustomExtractor(SessionManager.class, new ArgExtractor(-1) {
+      @Override
+      public Object extract(SPRequest request) {
+        return sessionManager;
+      }
+    });
+
+    return this;
   }
 
   public DefaultSessionManager getSessionManager() {

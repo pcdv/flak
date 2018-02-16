@@ -28,17 +28,14 @@ public class AsyncResponseTest extends AbstractAppTest {
   @Route("/async")
   public Response replyAsync() {
     final Response r = app.getResponse();
-    new Thread() {
-      @Override
-      public void run() {
-        try {
-          reply(r);
-        }
-        catch (IOException e) {
-          e.printStackTrace();
-        }
+    new Thread(() -> {
+      try {
+        reply(r);
       }
-    }.start();
+      catch (IOException e) {
+        e.printStackTrace();
+      }
+    }).start();
     return r;
   }
 

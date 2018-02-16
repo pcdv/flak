@@ -1,21 +1,20 @@
 package flask.test;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import flak.Request;
-import flak.SuccessHandler;
-import flak.annotations.Route;
-import flak.ErrorHandler;
 import flak.HttpException;
+import flak.annotations.Route;
 import org.junit.Assert;
 import org.junit.Test;
 
+@SuppressWarnings("CodeBlock2Expr")
 public class HookTest extends AbstractAppTest {
 
-  /** This one conflicts with initial declaration for ErrorHandler. */
+  /**
+   * This one conflicts with initial declaration for ErrorHandler.
+   */
   @Route("/")
   public String root() {
     return "root";
@@ -39,25 +38,23 @@ public class HookTest extends AbstractAppTest {
 
     final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
 
-    app.addErrorHandler(new ErrorHandler() {
-      @Override
-      public void onError(int status, Request request, Throwable t) {
-        queue.offer(status + " " + request.getMethod() + " " + request.getPath() + " " + t);
-      }
+    app.addErrorHandler((status, request, t) -> {
+      queue.offer(status + " " + request.getMethod() + " " + request.getPath() + " " + t);
     });
 
     try {
       client.get("/unknown");
     }
-    catch (HttpException e) {
+    catch (HttpException ignored) {
     }
 
-    Assert.assertEquals("404 GET /unknown null", queue.poll(1, TimeUnit.SECONDS));
+    Assert.assertEquals("404 GET /unknown null",
+                        queue.poll(1, TimeUnit.SECONDS));
 
     try {
       client.get("/barf");
     }
-    catch (HttpException e) {
+    catch (HttpException ignored) {
     }
 
     Assert.assertEquals("500 GET /barf java.lang.RuntimeException: barf",
@@ -71,15 +68,10 @@ public class HookTest extends AbstractAppTest {
   public void testSuccessHook() throws Exception {
     final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
 
-    app.addSuccessHandler(new SuccessHandler() {
-      @Override
-      public void onSuccess(Request r,
-                            Method method,
-                            Object[] args,
-                            Object result) {
-        queue.offer(r.getMethod() + " " + r.getPath() + " "
-                    + method.getName() + Arrays.toString(args) + " " + result);
-      }
+    app.addSuccessHandler((r, method, args, result) -> {
+      queue.offer(r.getMethod() + " " + r.getPath() + " " + method.getName() + Arrays
+                                                                                 .toString(
+                                                                                   args) + " " + result);
     });
 
     client.get("/hello/world");

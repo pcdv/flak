@@ -43,9 +43,6 @@ public class JdkWebServer implements WebServer {
 
   private String hostName = "localhost";
 
-  public JdkWebServer() {
-  }
-
   @Override
   public void setSSLContext(SSLContext context) {
     this.sslContext = context;
@@ -61,7 +58,7 @@ public class JdkWebServer implements WebServer {
       stop();
   }
 
-  public JdkWebServer addHandler(String path, RequestHandler handler) {
+  public void addHandler(String path, RequestHandler handler) {
     RequestHandler old = handlers.get(path);
     if (old != null) {
       if (old.getApp() != handler.getApp())
@@ -76,7 +73,6 @@ public class JdkWebServer implements WebServer {
     handlers.put(path, handler);
     if (srv != null)
       srv.createContext(path, (HttpHandler) handler);
-    return this;
   }
 
   public void setPort(int port) {
