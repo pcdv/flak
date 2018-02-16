@@ -37,7 +37,7 @@ public class FlakLogin implements FlakPlugin {
   }
 
   @Override
-  public void onNewHandler(AbstractMethodHandler handler) {
+  public void preInit(AbstractMethodHandler handler) {
     handler.addHook(new CheckLoggedIn(handler, sessionManager));
   }
 }

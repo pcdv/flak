@@ -117,7 +117,7 @@ public class MethodHandler extends AbstractMethodHandler {
         inputParser = new QueryParser();
       }
       else
-        inputParser = getInputParser(m, app);
+        inputParser = super.inputParser;
 
       if (inputParser == null)
         throw new IllegalArgumentException(

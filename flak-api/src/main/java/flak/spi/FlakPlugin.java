@@ -5,5 +5,5 @@ package flak.spi;
  */
 public interface FlakPlugin {
 
-  void onNewHandler(AbstractMethodHandler handler);
+  void preInit(AbstractMethodHandler handler);
 }

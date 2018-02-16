@@ -79,7 +79,7 @@ public abstract class AbstractApp implements App {
                                            Object obj) {
     AbstractMethodHandler handler = addHandler(route, method, obj);
     for (FlakPlugin plugin : plugins) {
-      plugin.onNewHandler(handler);
+      plugin.preInit(handler);
     }
     handler.init();
     return handler;

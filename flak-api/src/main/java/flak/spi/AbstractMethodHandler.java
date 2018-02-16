@@ -9,14 +9,12 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import flak.App;
 import flak.BeforeHook;
 import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Response;
 import flak.annotations.Delete;
 import flak.annotations.InputFormat;
-import flak.annotations.JSON;
 import flak.annotations.OutputFormat;
 import flak.annotations.Patch;
 import flak.annotations.Post;
@@ -51,9 +49,7 @@ public abstract class AbstractMethodHandler
    */
   private final Object target;
 
-  private final OutputFormatter outputFormat;
-
-  private boolean loginRequired;
+  private OutputFormatter outputFormat;
 
   /**
    * The route as defined with the Route annotation. It is an absolute route
@@ -65,6 +61,8 @@ public abstract class AbstractMethodHandler
   private ArgExtractor[] extractors;
 
   private final List<BeforeHook> beforeHooks = new Vector<>();
+
+  protected InputParser inputParser;
 
   public AbstractMethodHandler(AbstractApp app,
                                String route,
@@ -82,14 +80,18 @@ public abstract class AbstractMethodHandler
     if (!m.isAccessible())
       m.setAccessible(true);
 
-    if (isNotBasic(m.getReturnType()) && outputFormat == null) {
-      throw new IllegalArgumentException(
-        "No @OutputFormat or @JSON around method " + m.getName() + "()");
-    }
   }
 
   public void init() {
+    if (inputParser == null)
+      inputParser = initInputParser();
+
     extractors = createExtractors(javaMethod);
+
+    if (isNotBasic(javaMethod.getReturnType()) && outputFormat == null) {
+      throw new IllegalArgumentException(
+        "No @OutputFormat or @JSON around method " + javaMethod.getName() + "()");
+    }
   }
 
   protected abstract ArgExtractor[] createExtractors(Method m);
@@ -116,14 +118,6 @@ public abstract class AbstractMethodHandler
       return format;
     }
 
-    JSON json = m.getAnnotation(JSON.class);
-    if (json != null) {
-      OutputFormatter<?> fmt = app.getOutputFormatter("JSON");
-      if (fmt == null)
-        throw new IllegalArgumentException("In method " + m.getName() + ": no OutputFormatter with name JSON was declared");
-      return fmt;
-    }
-
     return null;
   }
 
@@ -135,20 +129,22 @@ public abstract class AbstractMethodHandler
     return target;
   }
 
-  private static boolean isNotBasic(Class<?> type) {
+  public void setOutputFormatter(OutputFormatter<?> outputFormatter) {
+    this.outputFormat = outputFormatter;
+  }
+
+  public void setInputParser(InputParser inputParser) {
+    this.inputParser = inputParser;
+  }
+
+  public static boolean isNotBasic(Class<?> type) {
     return type != String.class && type != byte[].class && type != InputStream.class && type != Response.class && type != void.class;
   }
 
-  protected InputParser getInputParser(Method m, App app) {
-    InputFormat input = m.getAnnotation(InputFormat.class);
+  private InputParser initInputParser() {
+    InputFormat input = javaMethod.getAnnotation(InputFormat.class);
     if (input != null)
       return app.getInputParser(input.value());
-    JSON json = m.getAnnotation(JSON.class);
-    if (json != null) {
-      if (isNotBasic(m.getReturnType())) {
-        return app.getInputParser("JSON");
-      }
-    }
     return null;
   }
 
@@ -190,13 +186,14 @@ public abstract class AbstractMethodHandler
 
     app.fireSuccess(javaMethod, args, res);
 
-    return processResponse(req.getResponse(), res);
+    processResponse(req.getResponse(), res);
+    return true;
   }
 
   protected abstract boolean isApplicable(SPRequest req);
 
   @SuppressWarnings("StatementWithEmptyBody")
-  private boolean processResponse(Response r, Object res) throws Exception {
+  private void processResponse(Response r, Object res) throws Exception {
     if (outputFormat != null) {
       outputFormat.convert(res, r);
     }
@@ -228,7 +225,6 @@ public abstract class AbstractMethodHandler
       throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod
                                                                                   .toGenericString());
 
-    return true;
   }
 
   /**

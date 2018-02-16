@@ -2,7 +2,7 @@ package flask.test;
 
 import java.io.IOException;
 
-import flak.annotations.JSON;
+import flak.jackson.JSON;
 import flak.annotations.Put;
 import flak.annotations.Route;
 import flak.jackson.JacksonPlugin;
