@@ -14,7 +14,6 @@ import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Request;
 import flak.RequestHandler;
-import flak.Response;
 import flak.SuccessHandler;
 import flak.UnknownPageHandler;
 import flak.WebServer;
@@ -74,15 +73,12 @@ public abstract class AbstractApp implements App {
     return this;
   }
 
-  public AbstractMethodHandler addHandler0(String route,
-                                           Method method,
-                                           Object obj) {
+  public void addHandler0(String route, Method method, Object obj) {
     AbstractMethodHandler handler = addHandler(route, method, obj);
     for (FlakPlugin plugin : plugins) {
       plugin.preInit(handler);
     }
     handler.init();
-    return handler;
   }
 
   protected abstract AbstractMethodHandler addHandler(String route,
@@ -127,10 +123,6 @@ public abstract class AbstractApp implements App {
    */
   public boolean isDebugEnabled() {
     return Log.DEBUG;
-  }
-
-  public void redirect(Response r, String location) {
-    r.redirect(location);
   }
 
   /**
