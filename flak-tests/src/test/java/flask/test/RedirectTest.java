@@ -12,8 +12,8 @@ import static org.junit.Assert.assertEquals;
 public class RedirectTest extends AbstractAppTest {
 
   @Route("/foo")
-  public Response foo() {
-    return app.redirect("/bar");
+  public void foo(Response resp) {
+    resp.redirect("/bar");
   }
 
   @Route("/bar")

@@ -1,4 +1,4 @@
-package flak.spi;
+package flak.plugin.resource;
 
 import flak.ContentTypeProvider;
 

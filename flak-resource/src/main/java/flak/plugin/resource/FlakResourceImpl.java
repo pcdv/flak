@@ -6,7 +6,6 @@ import flak.App;
 import flak.ContentTypeProvider;
 import flak.Request;
 import flak.spi.AbstractApp;
-import flak.spi.DefaultContentTypeProvider;
 
 /**
  * @author pcdv

@@ -2,11 +2,11 @@ package flask.test;
 
 import flak.Form;
 import flak.Response;
+import flak.annotations.Post;
+import flak.annotations.Route;
 import flak.login.LoginNotRequired;
 import flak.login.LoginPage;
 import flak.login.LoginRequired;
-import flak.annotations.Post;
-import flak.annotations.Route;
 import flak.login.SessionManager;
 import org.junit.Test;
 
@@ -31,9 +31,9 @@ public class LoginTest3 extends AbstractAppTest {
   }
 
   @Route("/logout")
-  public Response logout(SessionManager sessionManager) {
+  public void logout(SessionManager sessionManager) {
     sessionManager.logoutUser();
-    return app.redirect("/login");
+    app.getResponse().redirect("/login");
   }
 
   @Route("/app")
@@ -45,16 +45,16 @@ public class LoginTest3 extends AbstractAppTest {
   @Post
   @LoginNotRequired
   @Route(value = "/login")
-  public Response login(Form form, SessionManager sessionManager) {
+  public void login(Response r, Form form, SessionManager sessionManager) {
     String login = form.get("login");
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
       sessionManager.loginUser(login);
-      return app.redirect("/app");
+      r.redirect("/app");
     }
-
-    return app.redirect("/login");
+    else
+      r.redirect("/login");
   }
 
   @Test
@@ -62,7 +62,7 @@ public class LoginTest3 extends AbstractAppTest {
 
     // this is not needed but without it the test sometimes fails due to a
     // probable bug in HttpUrlConnection ...
-     client.get("/app");
+    client.get("/app");
 
     // good login/password redirects to app
     assertEquals("Welcome", client.post("/login", "login=foo&password=bar"));

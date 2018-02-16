@@ -2,10 +2,10 @@ package flask.test;
 
 import flak.Form;
 import flak.Response;
-import flak.login.LoginPage;
-import flak.login.LoginRequired;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.LoginPage;
+import flak.login.LoginRequired;
 import flak.login.SessionManager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,9 +28,9 @@ public class LoginTest extends AbstractAppTest {
   }
 
   @Route("/logout")
-  public Response logout(SessionManager sessionManager) {
+  public void logout(SessionManager sessionManager) {
     sessionManager.logoutUser();
-    return app.redirect("/login");
+    app.getResponse().redirect("/login");
   }
 
   @Route("/app")
@@ -41,16 +41,16 @@ public class LoginTest extends AbstractAppTest {
 
   @Post
   @Route(value = "/login")
-  public Response login(Form form, SessionManager sessionManager) {
+  public void login(Response r, Form form, SessionManager sessionManager) {
     String login = form.get("login");
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
       sessionManager.loginUser(login);
-      return app.redirect("/app");
+      r.redirect("/app");
     }
-
-    return app.redirect("/login");
+    else
+      r.redirect("/login");
   }
 
   @Test
@@ -59,10 +59,12 @@ public class LoginTest extends AbstractAppTest {
     Assert.assertEquals("Please login", client.get("/app"));
 
     // wrong login/password redirects to login page
-    Assert.assertEquals("Please login", client.post("/login", "login=foo&password="));
+    Assert.assertEquals("Please login",
+                        client.post("/login", "login=foo&password="));
 
     // good login/password redirects to app
-    Assert.assertEquals("Welcome", client.post("/login", "login=foo&password=bar"));
+    Assert.assertEquals("Welcome",
+                        client.post("/login", "login=foo&password=bar"));
 
     // app remains accessible thanks to session cookie
     Assert.assertEquals("Welcome", client.get("/app"));

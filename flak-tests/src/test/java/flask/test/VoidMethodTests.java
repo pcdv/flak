@@ -24,7 +24,7 @@ public class VoidMethodTests extends AbstractAppTest {
 
   @Route("/redirect")
   public void redirect() {
-    app.redirect("/app");
+    app.getResponse().redirect("/app");
   }
 
   @Test

@@ -1,7 +1,6 @@
 package flak.spi;
 
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -128,17 +127,6 @@ public abstract class AbstractApp implements App {
    */
   public boolean isDebugEnabled() {
     return Log.DEBUG;
-  }
-
-  /**
-   * Replies to current request with an HTTP redirect response with specified
-   * location.
-   */
-  public Response redirect(String location) {
-    Response r = getResponse();
-    r.addHeader("Location", location);
-    r.setStatus(HttpURLConnection.HTTP_MOVED_TEMP);
-    return r;
   }
 
   public void redirect(Response r, String location) {

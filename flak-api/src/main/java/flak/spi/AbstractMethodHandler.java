@@ -3,10 +3,10 @@ package flak.spi;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import flak.App;
@@ -64,7 +64,7 @@ public abstract class AbstractMethodHandler
 
   private ArgExtractor[] extractors;
 
-  private List<BeforeHook> beforeHooks = new ArrayList<>();
+  private final List<BeforeHook> beforeHooks = new Vector<>();
 
   public AbstractMethodHandler(AbstractApp app,
                                String route,
@@ -77,13 +77,10 @@ public abstract class AbstractMethodHandler
     this.javaMethod = m;
     this.target = target;
 
-    configure();
-
     // hack for being able to call method even if not public or if the class
     // is not public
     if (!m.isAccessible())
       m.setAccessible(true);
-
 
     if (isNotBasic(m.getReturnType()) && outputFormat == null) {
       throw new IllegalArgumentException(
@@ -165,13 +162,6 @@ public abstract class AbstractMethodHandler
     if (m.getAnnotation(Delete.class) != null)
       return "DELETE";
     return "GET";
-  }
-
-  /**
-   * Called during construction and when App configuration changes that may
-   * require adaptation in handlers.
-   */
-  public void configure() {
   }
 
   /**

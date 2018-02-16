@@ -1,10 +1,9 @@
 package flask.test;
 
-import flak.Response;
 import flak.annotations.Post;
-import flak.login.SessionManager;
-import flak.login.LoginNotRequired;
 import flak.annotations.Route;
+import flak.login.LoginNotRequired;
+import flak.login.SessionManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -22,9 +21,9 @@ public class LoginTest4 extends AbstractAppTest {
   @LoginNotRequired
   @Post
   @Route(value = "/auth/login")
-  public Response login(SessionManager sessionManager) {
+  public void login(SessionManager sessionManager) {
     sessionManager.loginUser("foo");
-    return app.redirect("/hello");
+    app.getResponse().redirect("/hello");
   }
 
   @Route("/hello")

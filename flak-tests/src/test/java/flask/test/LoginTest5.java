@@ -36,7 +36,7 @@ public class LoginTest5 extends AbstractAppTest {
 
     if (login.equals("foo") && pass.equals("bar")) {
       sm.loginUser(login);
-      app.redirect("/hello");
+      r.redirect("/hello");
     }
     else
       sm.redirectToLogin(r);

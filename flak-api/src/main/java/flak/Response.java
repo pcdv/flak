@@ -15,5 +15,9 @@ public interface Response {
 
   OutputStream getOutputStream();
 
+  /**
+   * Replies to current request with an HTTP redirect response with specified
+   * location.
+   */
   void redirect(String path);
 }

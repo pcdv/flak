@@ -1,11 +1,10 @@
 package flask.test;
 
 import flak.Form;
-import flak.Response;
-import flak.login.LoginPage;
-import flak.login.LoginRequired;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.LoginPage;
+import flak.login.LoginRequired;
 import flak.login.SessionManager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,11 +38,11 @@ public class GetCurrentLoginTest extends AbstractAppTest {
   }
 
   @Route("/logout")
-  public Response logout() {
+  public void logout() {
     assertNotNull(sm.getCurrentLogin());
     sm.logoutUser();
     assertNull(sm.getCurrentLogin());
-    return app.redirect("/login");
+    app.getResponse().redirect("/login");
   }
 
   @Route("/app")
@@ -55,7 +54,7 @@ public class GetCurrentLoginTest extends AbstractAppTest {
 
   @Post
   @Route(value = "/login")
-  public Response login(Form form) {
+  public void login(Form form) {
     String login = form.get("login");
     String pass = form.get("password");
 
@@ -65,10 +64,10 @@ public class GetCurrentLoginTest extends AbstractAppTest {
       sm.loginUser(login);
       // unintuitive but the login request does not contain the cookie
       assertNull(sm.getCurrentLogin());
-      return app.redirect("/app");
+      app.getResponse().redirect("/app");
     }
-
-    return app.redirect("/login");
+    else
+      app.getResponse().redirect("/login");
   }
 
   @Test

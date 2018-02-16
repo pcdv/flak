@@ -51,8 +51,6 @@ public interface App {
 
   Request getRequest();
 
-  Response redirect(String path);
-
   Response getResponse();
 
   void setUnknownPageHandler(UnknownPageHandler handler);
