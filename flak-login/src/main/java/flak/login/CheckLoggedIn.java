@@ -12,7 +12,7 @@ import flak.spi.SPRequest;
  */
 public class CheckLoggedIn implements BeforeHook {
 
-  private final boolean loginRequired;
+  private final Boolean loginRequired;
 
   private final AbstractMethodHandler handler;
 
@@ -20,16 +20,16 @@ public class CheckLoggedIn implements BeforeHook {
 
   private final Method method;
 
-  public CheckLoggedIn(AbstractMethodHandler handler, SessionManager manager) {
+  CheckLoggedIn(AbstractMethodHandler handler, SessionManager manager) {
     this.handler = handler;
     this.manager = manager;
     this.method = handler.getJavaMethod();
-    this.loginRequired = isLoginRequired();
+    this.loginRequired = initLoginRequired();
     if (method.getAnnotation(LoginPage.class) != null)
       manager.setLoginPage(handler.getRoute());
   }
 
-  private boolean isLoginRequired() {
+  private Boolean initLoginRequired() {
     if (method.getAnnotation(LoginRequired.class) != null)
       return true;
 
@@ -40,7 +40,12 @@ public class CheckLoggedIn implements BeforeHook {
     if (handler.getTarget() instanceof RestrictedTarget)
       return ((RestrictedTarget) handler.getTarget()).isRestricted();
 
-    return manager.getRequireLoggedInByDefault();
+    return null;
+  }
+
+  private boolean isLoginRequired() {
+    return loginRequired != null ? loginRequired
+                                 : manager.getRequireLoggedInByDefault();
   }
 
   @Override

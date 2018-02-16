@@ -184,7 +184,7 @@ public abstract class AbstractMethodHandler
 
     Object res = javaMethod.invoke(target, args);
 
-    app.fireSuccess(javaMethod, args, res);
+    app.fireSuccess(req, javaMethod, args, res);
 
     processResponse(req.getResponse(), res);
     return true;

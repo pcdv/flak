@@ -150,10 +150,9 @@ public abstract class AbstractApp implements App {
     }
   }
 
-  public void fireSuccess(Method method, Object[] args, Object res) {
-    Request r = getRequest();
+  public void fireSuccess(SPRequest req, Method method, Object[] args, Object res) {
     for (SuccessHandler successHandler : successHandlers) {
-      successHandler.onSuccess(r, method, args, res);
+      successHandler.onSuccess(req, method, args, res);
     }
   }
 
