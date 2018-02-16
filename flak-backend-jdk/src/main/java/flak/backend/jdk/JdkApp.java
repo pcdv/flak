@@ -67,11 +67,6 @@ public class JdkApp extends AbstractApp {
     return handler;
   }
 
-  @Override
-  protected boolean isStarted() {
-    return started;
-  }
-
   /**
    * Gets or creates a Context for specified root URI.
    */

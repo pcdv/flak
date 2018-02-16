@@ -184,8 +184,6 @@ public abstract class AbstractApp implements App {
     return rootUrl == null || rootUrl.equals("/") ? path : rootUrl + path;
   }
 
-  protected abstract boolean isStarted();
-
   public ArgExtractor getCustomExtractor(Method m, Class<?> type) {
     return extractors.get(type);
   }
