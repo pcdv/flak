@@ -10,12 +10,10 @@ import java.util.concurrent.Executors;
 
 import javax.net.ssl.SSLContext;
 
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
-import flak.RequestHandler;
 import flak.WebServer;
 
 /**
@@ -35,7 +33,7 @@ public class JdkWebServer implements WebServer {
 
   private InetSocketAddress address;
 
-  private final Map<String, RequestHandler> handlers = new Hashtable<>();
+  private final Map<String, Context> handlers = new Hashtable<>();
 
   private Vector<JdkApp> apps = new Vector<>();
 
@@ -58,21 +56,21 @@ public class JdkWebServer implements WebServer {
       stop();
   }
 
-  public void addHandler(String path, RequestHandler handler) {
-    RequestHandler old = handlers.get(path);
+  public void addHandler(String path, Context handler) {
+    Context old = handlers.get(path);
     if (old != null) {
-      if (old.getApp() != handler.getApp())
+      if (old.app != handler.app)
         throw new RuntimeException(String.format(
           "Path %s already used by app %s",
           path,
-          old.getApp()));
+          old.app));
       else
         throw new RuntimeException("Path already used: " + path);
     }
 
     handlers.put(path, handler);
     if (srv != null)
-      srv.createContext(path, (HttpHandler) handler);
+      srv.createContext(path, handler);
   }
 
   public void setPort(int port) {
@@ -128,11 +126,11 @@ public class JdkWebServer implements WebServer {
     this.srv = createServer();
     this.srv.setExecutor(pool);
 
-    for (Map.Entry<String, RequestHandler> e : handlers.entrySet()) {
+    for (Map.Entry<String, Context> e : handlers.entrySet()) {
       String path = e.getKey();
       if (path.isEmpty())
         path = "/";
-      srv.createContext(path, (HttpHandler) e.getValue());
+      srv.createContext(path, e.getValue());
     }
 
     this.srv.start();

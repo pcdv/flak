@@ -3,10 +3,10 @@ package flak.backend.jdk;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Hashtable;
 import java.util.Map;
 
 import flak.Request;
-import flak.RequestHandler;
 import flak.Response;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
@@ -22,6 +22,8 @@ public class JdkApp extends AbstractApp {
   private final JdkWebServer srv;
 
   private final ThreadLocal<JdkRequest> localRequest = new ThreadLocal<>();
+
+  private final Map<String, Context> handlers = new Hashtable<>();
 
   private boolean started;
 
@@ -68,7 +70,7 @@ public class JdkApp extends AbstractApp {
    * Gets or creates a Context for specified root URI.
    */
   private Context getContext(String rootURI) {
-    RequestHandler c = handlers.get(rootURI);
+    Context c = handlers.get(rootURI);
 
     if (c == null) {
       Log.debug("Creating context for " + rootURI);
@@ -96,7 +98,7 @@ public class JdkApp extends AbstractApp {
     if (!srv.isStarted())
       srv.start();
 
-    for (Map.Entry<String, RequestHandler> e : handlers.entrySet()) {
+    for (Map.Entry<String, Context> e : handlers.entrySet()) {
       String path = e.getKey();
       if (path.isEmpty())
         path = "/";
@@ -108,7 +110,7 @@ public class JdkApp extends AbstractApp {
     srv.removeApp(this);
   }
 
-  private void addHandlerInServer(String uri, RequestHandler h) {
+  private void addHandlerInServer(String uri, Context h) {
     srv.addHandler(makeAbsoluteUrl(uri), h);
   }
 
@@ -143,7 +145,7 @@ public class JdkApp extends AbstractApp {
     }
   }
 
-  public Collection<RequestHandler> getHandlers() {
+  public Collection<Context> getHandlers() {
     return handlers.values();
   }
 

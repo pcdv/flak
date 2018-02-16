@@ -11,7 +11,6 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import flak.BeforeHook;
 import flak.HttpException;
-import flak.RequestHandler;
 import flak.util.Log;
 
 /**
@@ -20,7 +19,7 @@ import flak.util.Log;
  *
  * @author pcdv
  */
-public class Context implements HttpHandler, RequestHandler {
+public class Context implements HttpHandler {
 
   final String rootURI;
 
@@ -105,10 +104,5 @@ public class Context implements HttpHandler, RequestHandler {
    */
   private String makeRelativePath(String uri) {
     return uri.substring(rootURIOffset);
-  }
-
-  @Override
-  public JdkApp getApp() {
-    return app;
   }
 }

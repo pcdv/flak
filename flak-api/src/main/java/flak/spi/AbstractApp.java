@@ -13,7 +13,6 @@ import flak.ErrorHandler;
 import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Request;
-import flak.RequestHandler;
 import flak.SuccessHandler;
 import flak.UnknownPageHandler;
 import flak.WebServer;
@@ -26,8 +25,6 @@ public abstract class AbstractApp implements App {
    * Optional URL where the app is plugged.
    */
   protected final String rootUrl;
-
-  protected final Map<String, RequestHandler> handlers = new Hashtable<>();
 
   private final Map<String, OutputFormatter<?>> outputFormatterMap =
     new Hashtable<>();

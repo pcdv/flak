@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import flak.RequestHandler;
-
 /**
  * @author pcdv
  */
@@ -18,9 +16,8 @@ public class RouteDumper {
   public StringBuilder dumpRoutes(JdkApp app, StringBuilder b) {
 
     ArrayList<Context> contexts = new ArrayList<>();
-    for (RequestHandler h : app.getHandlers()) {
-      if (h instanceof Context)
-        contexts.add((Context) h);
+    for (Context h : app.getHandlers()) {
+      contexts.add(h);
     }
 
     Collections.sort(contexts, new Comparator<Context>() {
@@ -36,8 +33,6 @@ public class RouteDumper {
 
     return b;
   }
-
-
 
   public static void dumpUrls(Context c, StringBuilder b) {
     b.append(c.rootURI).append(":\n");
