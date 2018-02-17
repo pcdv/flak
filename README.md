@@ -4,15 +4,13 @@ Flak allows to easily write lightweight web applications. It is composed
 of a generic API, a default implementation and some add-ons. In a minimal 
 setup, the total size of dependencies is around 40KiB.
 
-Flak components | Description
------------- | -------------
-`flak-api`         | Contains the API and various utilities
+Flak components    | Description
+------------------ | -----------
+`flak-api`         | Main API
 `flak-backend-jdk` | Binding for the web server included in JDK
 `flak-login`       | Add-on for managing user sessions
 `flak-resource`    | Add-on for serving static resources
 `flak-jackson`     | Add-on for conversion to/from JSON using jackson
-
-More add-ons are on the way.
 
 ## Getting started
 
