@@ -9,7 +9,7 @@ import flak.App;
 import flak.Request;
 import flak.Response;
 import flak.spi.SPRequest;
-import flak.util.Log;
+import flak.spi.util.Log;
 
 /**
  * Default, non-persistent, implementation of SessionManager.

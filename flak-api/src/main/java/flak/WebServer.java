@@ -9,7 +9,7 @@ import javax.net.ssl.SSLContext;
  */
 public interface WebServer {
   /**
-   * Experimental. Enabled HTTPS.
+   * Experimental. Enables HTTPS.
    */
   void setSSLContext(SSLContext context);
 

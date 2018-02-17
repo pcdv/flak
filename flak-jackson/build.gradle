@@ -2,5 +2,6 @@ description = "JSON converters using jackson-databind"
 
 dependencies {
   compile project(":flak-api")
+  compile project(":flak-spi")
   compile "com.fasterxml.jackson.core:jackson-databind:${version_jackson}"
 }

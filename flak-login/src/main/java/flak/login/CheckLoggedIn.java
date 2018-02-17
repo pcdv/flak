@@ -2,8 +2,8 @@ package flak.login;
 
 import java.lang.reflect.Method;
 
-import flak.BeforeHook;
 import flak.spi.AbstractMethodHandler;
+import flak.spi.BeforeHook;
 import flak.spi.RestrictedTarget;
 import flak.spi.SPRequest;
 

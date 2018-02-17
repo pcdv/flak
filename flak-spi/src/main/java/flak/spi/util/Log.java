@@ -1,4 +1,4 @@
-package flak.util;
+package flak.spi.util;
 
 public class Log {
 

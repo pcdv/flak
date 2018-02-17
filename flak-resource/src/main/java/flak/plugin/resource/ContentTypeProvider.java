@@ -1,4 +1,4 @@
-package flak;
+package flak.plugin.resource;
 
 /**
  * Provides the mapping between a resource's path and the content type to

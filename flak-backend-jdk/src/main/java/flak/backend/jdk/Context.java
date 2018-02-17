@@ -9,9 +9,9 @@ import java.util.List;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import flak.BeforeHook;
 import flak.HttpException;
-import flak.util.Log;
+import flak.spi.BeforeHook;
+import flak.spi.util.Log;
 
 /**
  * A HTTP handler that receives all requests on a given rootURI and dispatches

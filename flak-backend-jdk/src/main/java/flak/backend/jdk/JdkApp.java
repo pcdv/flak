@@ -10,7 +10,7 @@ import flak.Request;
 import flak.Response;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
-import flak.util.Log;
+import flak.spi.util.Log;
 
 /**
  * Implements flak App with the JDK backend.

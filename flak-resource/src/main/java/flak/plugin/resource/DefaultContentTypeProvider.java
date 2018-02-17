@@ -1,7 +1,5 @@
 package flak.plugin.resource;
 
-import flak.ContentTypeProvider;
-
 public class DefaultContentTypeProvider implements ContentTypeProvider {
 
   public String getContentType(String path) {

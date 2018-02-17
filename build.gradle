@@ -5,7 +5,12 @@ plugins {
 apply plugin: 'eclipse'
 
 def PUBLISH_PROJECTS = [
-  'flak-api', 'flak-backend-jdk', 'flak-jackson'
+  'flak-api',
+  'flak-spi',
+  'flak-backend-jdk',
+  'flak-jackson',
+  'flak-login',
+  'flak-resource'
 ]
 
 subprojects {

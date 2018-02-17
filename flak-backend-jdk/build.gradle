@@ -2,4 +2,5 @@ description = "Flak backend using the HTTP server included in JDK"
 
 dependencies {
   compile project(":flak-api")
+  compile project(":flak-spi")
 }

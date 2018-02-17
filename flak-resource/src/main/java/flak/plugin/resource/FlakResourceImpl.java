@@ -3,7 +3,6 @@ package flak.plugin.resource;
 import java.io.File;
 
 import flak.App;
-import flak.ContentTypeProvider;
 import flak.Request;
 import flak.spi.AbstractApp;
 

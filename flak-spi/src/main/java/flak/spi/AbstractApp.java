@@ -17,7 +17,7 @@ import flak.SuccessHandler;
 import flak.UnknownPageHandler;
 import flak.WebServer;
 import flak.annotations.Route;
-import flak.util.Log;
+import flak.spi.util.Log;
 
 public abstract class AbstractApp implements App {
 

@@ -4,11 +4,10 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import flak.ContentTypeProvider;
 import flak.HttpException;
 import flak.Request;
 import flak.spi.RestrictedTarget;
-import flak.util.IO;
+import flak.spi.util.IO;
 
 /**
  * Abstract handler that Serves resources found either in the file system or

@@ -13,7 +13,7 @@ import flak.Form;
 import flak.Query;
 import flak.Response;
 import flak.spi.SPRequest;
-import flak.util.IO;
+import flak.spi.util.IO;
 
 public class JdkRequest implements SPRequest, Response {
 

@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import flak.BeforeHook;
 import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Response;
@@ -19,8 +18,8 @@ import flak.annotations.OutputFormat;
 import flak.annotations.Patch;
 import flak.annotations.Post;
 import flak.annotations.Put;
-import flak.util.IO;
-import flak.util.Log;
+import flak.spi.util.IO;
+import flak.spi.util.Log;
 
 /**
  * Handles a request submitted by the Context, if compatible with the HTTP

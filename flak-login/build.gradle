@@ -2,4 +2,5 @@ description = "Session management for flak"
 
 dependencies {
   compile project(":flak-api")
+  compile project(":flak-spi")
 }

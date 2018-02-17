@@ -1,6 +1,4 @@
-package flak;
-
-import flak.spi.SPRequest;
+package flak.spi;
 
 /**
  * A hook that is executed before the route handler. For example it can be

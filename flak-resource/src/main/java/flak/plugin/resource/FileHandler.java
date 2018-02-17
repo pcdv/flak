@@ -6,8 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.file.Path;
 
-import flak.ContentTypeProvider;
-
 public class FileHandler extends AbstractResourceHandler {
 
   private final Path localPath;

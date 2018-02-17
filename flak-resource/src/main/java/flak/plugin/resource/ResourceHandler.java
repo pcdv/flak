@@ -3,8 +3,7 @@ package flak.plugin.resource;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
-import flak.ContentTypeProvider;
-import flak.util.Log;
+import flak.spi.util.Log;
 
 /**
  * Serves files nested in a jar from classpath.

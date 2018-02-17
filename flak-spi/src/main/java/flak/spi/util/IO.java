@@ -1,4 +1,4 @@
-package flak.util;
+package flak.spi.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

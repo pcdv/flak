@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import flak.HttpException;
-import flak.util.IO;
+import flak.spi.util.IO;
 
 /**
  * Minimal HTTP client that mimics the behaviour of a browser, eg. by allowing

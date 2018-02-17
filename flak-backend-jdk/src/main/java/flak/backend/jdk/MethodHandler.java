@@ -18,7 +18,7 @@ import flak.backend.jdk.extractor.StringExtractor;
 import flak.spi.AbstractMethodHandler;
 import flak.spi.ArgExtractor;
 import flak.spi.SPRequest;
-import flak.util.Log;
+import flak.spi.util.Log;
 
 /**
  * Handles a request submitted by the Context, if compatible with the HTTP
