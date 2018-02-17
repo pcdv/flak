@@ -73,4 +73,11 @@ subprojects {
   task sourceJar(type: Jar) {
     from sourceSets.main.allJava
   }
+
+  jar {
+    manifest {
+      attributes 'Implementation-Title': project.name,
+        'Implementation-Version': project.version
+    }
+  }
 }
