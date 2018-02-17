@@ -15,10 +15,7 @@ public class RouteDumper {
    */
   public StringBuilder dumpRoutes(JdkApp app, StringBuilder b) {
 
-    ArrayList<Context> contexts = new ArrayList<>();
-    for (Context h : app.getHandlers()) {
-      contexts.add(h);
-    }
+    ArrayList<Context> contexts = new ArrayList<>(app.getHandlers());
 
     Collections.sort(contexts, new Comparator<Context>() {
       public int compare(Context o1, Context o2) {
@@ -42,7 +39,7 @@ public class RouteDumper {
 
     for (MethodHandler mh : list) {
       b.append(String.format("%-50s  %-8s  %-15s %s\n",
-                             c.rootURI + mh.getRoute(),
+                             c.app.getPath() + mh.getRoute(),
                              mh.getHttpMethod(),
                              mh.getJavaMethod().getName(),
                              mh.getJavaMethod().getDeclaringClass().getName()));

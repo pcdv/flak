@@ -9,4 +9,5 @@ dependencies {
   compile project(":flak-resource")
   compile project(":flak-permissions")
   runtime project(":flak-backend-jdk")
+  runtime project(":flak-util")
 }
