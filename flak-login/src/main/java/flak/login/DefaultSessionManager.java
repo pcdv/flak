@@ -3,7 +3,7 @@ package flak.login;
 import java.net.HttpURLConnection;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Random;
+import java.util.UUID;
 
 import flak.App;
 import flak.Request;
@@ -18,7 +18,7 @@ import flak.spi.util.Log;
  */
 public class DefaultSessionManager implements SessionManager {
 
-  private Map<String, String> sessions = new Hashtable<>();
+  private Map<String, FlakSession> sessions = new Hashtable<>();
 
   private String sessionCookieName = "sessionToken";
 
@@ -26,52 +26,61 @@ public class DefaultSessionManager implements SessionManager {
 
   private boolean requireLoggedInByDefault;
 
-  private App app;
-
-  DefaultSessionManager(App app) {
-    this.app = app;
-  }
+  private Map<String, FlakUser> users = new Hashtable<>();
 
   /**
    * Changes the name of the cookie in which the session token is stored. This
    * allows to have several web apps sharing a same host address (eg. using a
    * different port).
    */
-  public void setSessionCookieName(String name) {
+  public void setAuthTokenCookieName(String name) {
     this.sessionCookieName = name;
   }
 
-  private void createToken(String token, String login, boolean rememberMe) {
-    // TODO: store more useful info about the user
-    sessions.put(token, login);
+  @Override
+  public FlakSession getCurrentSession(Request r) {
+    String token = r.getCookie(sessionCookieName);
+    if (token == null)
+      return null;
+
+    return sessions.get(token);
+  }
+
+  @Override
+  public FlakSession openSession(App app, FlakUser user, Response r) {
+    DefaultFlakSession session = new DefaultFlakSession(user, generateToken());
+
+    r.addHeader("Set-Cookie",
+                sessionCookieName + "=" + session.getAuthToken() + "; path=" + app
+                                                                                 .getPath() + ";");
+    sessions.put(session.getAuthToken(), session);
+
+    return session;
+  }
+
+  private String generateToken() {
+    return UUID.randomUUID().toString();
+  }
+
+  @Override
+  public void closeSession(FlakSession session) {
+    sessions.remove(session.getAuthToken());
+  }
+
+  @Override
+  public void closeCurrentSession(Request request) {
+    FlakSession session = getCurrentSession(request);
+    if (session != null)
+      closeSession(session);
+  }
+
+  @Override
+  public FlakUser getUser(String id) {
+    return users.get(id);
   }
 
   private boolean isTokenValid(String token) {
     return sessions.containsKey(token);
-  }
-
-  private void removeToken(String token) {
-    sessions.remove(token);
-  }
-
-  /**
-   * Marks current session as logged in (by setting a cookie).
-   */
-  public void loginUser(String login) {
-    loginUser(login, false, makeRandomToken(login));
-  }
-
-  private String makeRandomToken(String login) {
-    return (new Random().nextLong() ^ login.hashCode()) + "";
-  }
-
-  /**
-   * Marks current session as logged in (by setting a cookie).
-   */
-  private void loginUser(String login, boolean rememberMe, String token) {
-    createToken(token, login, rememberMe);
-    app.getResponse()
-       .addHeader("Set-Cookie", sessionCookieName + "=" + token + "; path=/;");
   }
 
   public void redirectToLogin(Response resp) {
@@ -102,21 +111,6 @@ public class DefaultSessionManager implements SessionManager {
   }
 
   /**
-   * Returns the login bound with current request (i.e. the one that has been
-   * associated with session using {@link #loginUser(String)}.
-   *
-   * @return current request login, null if none
-   */
-  public String getCurrentLogin() {
-    String token = app.getRequest().getCookie(sessionCookieName);
-    if (token == null)
-      return null;
-
-    // method below will fail if we have a token BUT user is unknown or logged out
-    return sessions.get(token);
-  }
-
-  /**
    * Returns the default policy for checking whether user must be logged in to
    * access all URLs by default.
    */
@@ -128,10 +122,6 @@ public class DefaultSessionManager implements SessionManager {
    * Can be called from a request handler to determine whether current
    * session is authenticated.
    */
-  public boolean isLoggedIn() {
-    return isLoggedIn(app.getRequest());
-  }
-
   private boolean isLoggedIn(Request r) {
     String token = r.getCookie(sessionCookieName);
     return (token != null && isTokenValid(token));
@@ -165,16 +155,11 @@ public class DefaultSessionManager implements SessionManager {
     }
   }
 
-  /**
-   * Call this method to destroy the current session, i.e. make the user
-   * appearing as "not logged in".
-   *
-   * @see LoginRequired
-   */
-  public void logoutUser() {
-    Request req = app.getRequest();
-    String token = req.getCookie(sessionCookieName);
-    if (token != null)
-      removeToken(token);
+  public FlakUser createUser(String login) {
+    return new DefaultUser(login);
+  }
+
+  public void addUser(FlakUser user) {
+    users.put(user.getId(), user);
   }
 }

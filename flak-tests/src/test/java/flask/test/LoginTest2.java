@@ -4,6 +4,7 @@ import flak.Form;
 import flak.Response;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.DefaultSessionManager;
 import flak.login.LoginNotRequired;
 import flak.login.LoginPage;
 import flak.login.SessionManager;
@@ -31,13 +32,15 @@ public class LoginTest2 extends AbstractAppTest {
 
   @Route("/logout")
   public void logout(SessionManager sessionManager) {
-    sessionManager.logoutUser();
+    sessionManager.closeCurrentSession(app.getRequest());
     app.getResponse().redirect("/login");
   }
 
   @Route("/app")
   public String appPage(SessionManager sessionManager) {
-    return "Welcome " + sessionManager.getCurrentLogin();
+    return "Welcome " + sessionManager.getCurrentSession(app.getRequest())
+                                      .getUser()
+                                      .getId();
   }
 
   @Route(value = "/login")
@@ -48,7 +51,8 @@ public class LoginTest2 extends AbstractAppTest {
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      sessionManager.loginUser(login);
+      DefaultSessionManager dsm = (DefaultSessionManager) sessionManager;
+      sessionManager.openSession(app, dsm.createUser("foo"), r);
       r.redirect("/app");
     }
     r.redirect("/login");

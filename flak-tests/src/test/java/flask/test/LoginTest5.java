@@ -1,10 +1,12 @@
 package flask.test;
 
 import flak.Form;
+import flak.Request;
 import flak.Response;
-import flak.login.LoginNotRequired;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.DefaultSessionManager;
+import flak.login.LoginNotRequired;
 import flak.login.SessionManager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,7 +37,8 @@ public class LoginTest5 extends AbstractAppTest {
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      sm.loginUser(login);
+      DefaultSessionManager dsm = (DefaultSessionManager) sm;
+      sm.openSession(app, dsm.createUser(login), r);
       r.redirect("/hello");
     }
     else
@@ -53,8 +56,8 @@ public class LoginTest5 extends AbstractAppTest {
   }
 
   @Route("/auth/logout")
-  public void logout(Response response) {
-    sm.logoutUser();
+  public void logout(Request r, Response response) {
+    sm.closeCurrentSession(r);
     sm.redirectToLogin(response);
   }
 

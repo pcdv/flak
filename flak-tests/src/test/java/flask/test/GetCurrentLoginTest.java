@@ -1,8 +1,11 @@
 package flask.test;
 
 import flak.Form;
+import flak.Request;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.FlakSession;
+import flak.login.FlakUser;
 import flak.login.LoginPage;
 import flak.login.LoginRequired;
 import flak.login.SessionManager;
@@ -12,12 +15,11 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Tests {@link SessionManager#getCurrentLogin()} method behavior.
+ * Tests {@link SessionManager#getCurrentSession(Request)} method behavior.
  *
  * @author galvarez
  */
 public class GetCurrentLoginTest extends AbstractAppTest {
-  private SessionManager sm;
 
   @Override
   public void setUp() throws Exception {
@@ -27,28 +29,32 @@ public class GetCurrentLoginTest extends AbstractAppTest {
   @Override
   protected void preScan() {
     installFlakLogin();
-    sm = flakLogin.getSessionManager();
+    sessionManager = flakLogin.getSessionManager();
   }
 
   @LoginPage
   @Route("/login")
   public String loginPage() {
-    assertNull(sm.getCurrentLogin());
+    assertNull(getSession());
     return "Please login";
   }
 
   @Route("/logout")
   public void logout() {
-    assertNotNull(sm.getCurrentLogin());
-    sm.logoutUser();
-    assertNull(sm.getCurrentLogin());
+    assertNotNull(getSession());
+    sessionManager.closeCurrentSession(app.getRequest());
+    assertNull(getSession());
     app.getResponse().redirect("/login");
+  }
+
+  private FlakSession getSession() {
+    return sessionManager.getCurrentSession(app.getRequest());
   }
 
   @Route("/app")
   @LoginRequired
   public String appPage() {
-    assertNotNull(sm.getCurrentLogin());
+    assertNotNull(getSession());
     return "Welcome";
   }
 
@@ -58,12 +64,13 @@ public class GetCurrentLoginTest extends AbstractAppTest {
     String login = form.get("login");
     String pass = form.get("password");
 
-    assertNull(sm.getCurrentLogin());
+    assertNull(getSession());
 
     if (login.equals("foo") && pass.equals("bar")) {
-      sm.loginUser(login);
+      FlakUser user = sessionManager.createUser(login);
+      sessionManager.openSession(app, user, app.getResponse());
       // unintuitive but the login request does not contain the cookie
-      assertNull(sm.getCurrentLogin());
+      assertNull(getSession());
       app.getResponse().redirect("/app");
     }
     else

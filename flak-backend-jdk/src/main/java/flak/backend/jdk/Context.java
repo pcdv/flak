@@ -79,12 +79,12 @@ public class Context implements HttpHandler {
 
       if (t instanceof InvocationTargetException) {
         t = ((InvocationTargetException) t).getTargetException();
+      }
 
-        if (t instanceof HttpException) {
-          r.sendResponseHeaders(((HttpException) t).getResponseCode(), 0);
-          r.getResponseBody().write(t.getMessage().getBytes("UTF-8"));
-          return;
-        }
+      if (t instanceof HttpException) {
+        r.sendResponseHeaders(((HttpException) t).getResponseCode(), 0);
+        r.getResponseBody().write(t.getMessage().getBytes("UTF-8"));
+        return;
       }
 
       app.fireError(500, req, t);

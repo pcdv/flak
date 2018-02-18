@@ -4,6 +4,9 @@ import flak.Form;
 import flak.Response;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.DefaultSessionManager;
+import flak.login.FlakSession;
+import flak.login.FlakUser;
 import flak.login.LoginPage;
 import flak.login.LoginRequired;
 import flak.login.SessionManager;
@@ -29,7 +32,8 @@ public class LoginTest extends AbstractAppTest {
 
   @Route("/logout")
   public void logout(SessionManager sessionManager) {
-    sessionManager.logoutUser();
+    FlakSession session = sessionManager.getCurrentSession(app.getRequest());
+    sessionManager.closeSession(session);
     app.getResponse().redirect("/login");
   }
 
@@ -46,7 +50,9 @@ public class LoginTest extends AbstractAppTest {
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      sessionManager.loginUser(login);
+      DefaultSessionManager dsm = (DefaultSessionManager) sessionManager;
+      FlakUser user = dsm.createUser(login);
+      dsm.openSession(app, user, r);
       r.redirect("/app");
     }
     else
@@ -63,7 +69,7 @@ public class LoginTest extends AbstractAppTest {
                         client.post("/login", "login=foo&password="));
 
     // good login/password redirects to app
-    Assert.assertEquals("Welcome",
+      Assert.assertEquals("Welcome",
                         client.post("/login", "login=foo&password=bar"));
 
     // app remains accessible thanks to session cookie

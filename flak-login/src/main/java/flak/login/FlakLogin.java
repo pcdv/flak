@@ -12,13 +12,18 @@ import flak.spi.SPRequest;
  */
 public class FlakLogin implements FlakPlugin {
 
-  private final DefaultSessionManager sessionManager;
+  private DefaultSessionManager sessionManager;
 
   private final AbstractApp app;
 
   public FlakLogin(App app) {
     this.app = (AbstractApp) app;
-    this.sessionManager = new DefaultSessionManager(app);
+    this.sessionManager = new DefaultSessionManager();
+  }
+
+  public FlakLogin setSessionManager(DefaultSessionManager sessionManager) {
+    this.sessionManager = sessionManager;
+    return this;
   }
 
   public FlakLogin install() {
@@ -41,6 +46,8 @@ public class FlakLogin implements FlakPlugin {
 
   @Override
   public void preInit(AbstractMethodHandler handler) {
+    // TODO do not systematically add hooks (if access is not restricted)
     handler.addHook(new CheckLoggedIn(handler, sessionManager));
+    handler.addHook(new CheckPermission(handler, sessionManager));
   }
 }

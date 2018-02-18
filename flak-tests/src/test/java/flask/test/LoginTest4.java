@@ -2,6 +2,7 @@ package flask.test;
 
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.DefaultSessionManager;
 import flak.login.LoginNotRequired;
 import flak.login.SessionManager;
 import org.junit.Assert;
@@ -22,7 +23,8 @@ public class LoginTest4 extends AbstractAppTest {
   @Post
   @Route(value = "/auth/login")
   public void login(SessionManager sessionManager) {
-    sessionManager.loginUser("foo");
+    DefaultSessionManager dsm = (DefaultSessionManager) sessionManager;
+    sessionManager.openSession(app, dsm.createUser("foo"), app.getResponse());
     app.getResponse().redirect("/hello");
   }
 
@@ -41,7 +43,7 @@ public class LoginTest4 extends AbstractAppTest {
     SessionManager sm = flakLogin.getSessionManager();
     sm.setRequireLoggedInByDefault(true);
     sm.setLoginPage("/login");
-    sm.setSessionCookieName("sesame");
+    sm.setAuthTokenCookieName("sesame");
 
     Assert.assertEquals("Please login", client.get("/hello"));
     Assert.assertEquals("yo", client.post("/auth/login", ""));

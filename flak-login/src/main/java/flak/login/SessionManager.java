@@ -1,5 +1,7 @@
 package flak.login;
 
+import flak.App;
+import flak.Request;
 import flak.Response;
 import flak.spi.SPRequest;
 
@@ -8,21 +10,32 @@ import flak.spi.SPRequest;
  */
 public interface SessionManager {
 
-  void loginUser(String login);
-
-  void logoutUser();
-
-  String getCurrentLogin();
-
   void setRequireLoggedInByDefault(boolean b);
 
   boolean getRequireLoggedInByDefault();
 
   void redirectToLogin(Response response);
 
+  /**
+   * Checks whether request is associated to an active session. If not,
+   * either reject the request or redirect it to login page.
+   */
+  boolean checkLoggedIn(SPRequest r);
+
+  /**
+   * Sets the login page to redirect to.
+   */
   void setLoginPage(String path);
 
-  void setSessionCookieName(String name);
+  void setAuthTokenCookieName(String name);
 
-  boolean checkLoggedIn(SPRequest r);
+  FlakSession getCurrentSession(Request r);
+
+  FlakSession openSession(App app, FlakUser user, Response r);
+
+  void closeSession(FlakSession session);
+
+  void closeCurrentSession(Request request);
+
+  FlakUser getUser(String id);
 }
