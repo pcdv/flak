@@ -7,7 +7,6 @@ dependencies {
   compile project(":flak-jackson")
   compile project(":flak-login")
   compile project(":flak-resource")
-  compile project(":flak-permissions")
   runtime project(":flak-backend-jdk")
   runtime project(":flak-util")
 }
