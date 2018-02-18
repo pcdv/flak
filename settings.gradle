@@ -2,11 +2,10 @@ include 'flak-api'
 include "flak-backend-jdk"
 include 'flak-jackson'
 include 'flak-tests'
-include "webapp"
 include 'flak-util'
 include 'flak-examples'
-include 'flak-permissions'
 include 'flak-login'
 include 'flak-resource'
 include 'flak-spi'
+include "webapp"
 

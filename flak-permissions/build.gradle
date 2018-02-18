@@ -1,5 +1,0 @@
-description = "Permission system for flak"
-
-dependencies {
-  compile project(":flak-api")
-}
