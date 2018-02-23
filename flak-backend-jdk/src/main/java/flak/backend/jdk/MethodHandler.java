@@ -151,6 +151,9 @@ public class MethodHandler extends AbstractMethodHandler {
     if (uri.length != tok.length && !hasSplat())
       return false;
 
+    if (uri.length < splat)
+      return false;
+
     for (int i = 0; i < tok.length; i++) {
       if (tok[i].charAt(0) != ':' && tok[i].charAt(0) != '*' && !tok[i].equals(
         uri[i]))
