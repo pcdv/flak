@@ -1,3 +1,5 @@
+description = "Flak add-on allowing to serve static resources"
+
 dependencies {
   compile project(":flak-api")
   compile project(":flak-spi")

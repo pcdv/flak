@@ -1,3 +1,5 @@
+description = "Service provider utilities for Flak modules"
+
 dependencies {
-    compile project(":flak-api")
+  compile project(":flak-api")
 }

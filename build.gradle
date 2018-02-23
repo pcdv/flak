@@ -10,7 +10,8 @@ def PUBLISH_PROJECTS = [
   'flak-backend-jdk',
   'flak-jackson',
   'flak-login',
-  'flak-resource'
+  'flak-resource',
+  'flak-util'
 ]
 
 subprojects {
