@@ -29,6 +29,8 @@ public interface Request {
    */
   Query getQuery();
 
+  String getHeader(String name);
+
   InputStream getInputStream();
 
   String getHttpMethod();

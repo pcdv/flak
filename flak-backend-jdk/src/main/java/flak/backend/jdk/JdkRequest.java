@@ -96,6 +96,11 @@ public class JdkRequest implements SPRequest, Response {
   }
 
   @Override
+  public String getHeader(String name) {
+    return getExchange().getRequestHeaders().getFirst(name);
+  }
+
+  @Override
   public Form getForm() {
     try {
       if (form == null)
