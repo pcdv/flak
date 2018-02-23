@@ -30,6 +30,7 @@ subprojects {
   if (PUBLISH_PROJECTS.contains(project.name)) {
     apply plugin: 'com.jfrog.bintray'
     apply plugin: 'maven-publish'
+    apply plugin: "ivy-publish"
 
     bintray {
       user = System.getenv('BINTRAY_USER')
@@ -55,8 +56,19 @@ subprojects {
     }
 
 
+
     publishing {
+      repositories {
+        ivy {
+          name "local"
+          url "${System.properties['user.home']}/.ivy2/local"
+        }
+      }
       publications {
+        ivy(IvyPublication) {
+          organisation "com.github.pcdv.flak"
+          from components.java
+        }
         MyPublication(MavenPublication) {
           from components.java
           groupId 'com.github.pcdv.flak'
