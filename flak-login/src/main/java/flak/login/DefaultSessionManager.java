@@ -8,7 +8,6 @@ import java.util.UUID;
 import flak.App;
 import flak.Request;
 import flak.Response;
-import flak.spi.SPRequest;
 import flak.spi.util.Log;
 
 /**
@@ -48,13 +47,16 @@ public class DefaultSessionManager implements SessionManager {
 
   @Override
   public FlakSession openSession(App app, FlakUser user, Response r) {
-    DefaultFlakSession session = new DefaultFlakSession(user, generateToken());
-
+    String token = generateToken();
+    FlakSession session = addSession(user, token);
     r.addHeader("Set-Cookie",
-                sessionCookieName + "=" + session.getAuthToken() + "; path=" + app
-                                                                                 .getPath() + ";");
-    sessions.put(session.getAuthToken(), session);
+                sessionCookieName + "=" + token + "; path=" + app.getPath() + ";");
+    return session;
+  }
 
+  public FlakSession addSession(FlakUser user, String token) {
+    DefaultFlakSession session = new DefaultFlakSession(user, token);
+    sessions.put(token, session);
     return session;
   }
 
@@ -122,7 +124,7 @@ public class DefaultSessionManager implements SessionManager {
    * Can be called from a request handler to determine whether current
    * session is authenticated.
    */
-  private boolean isLoggedIn(Request r) {
+  public boolean isLoggedIn(Request r) {
     String token = r.getCookie(sessionCookieName);
     return (token != null && isTokenValid(token));
   }
@@ -137,7 +139,7 @@ public class DefaultSessionManager implements SessionManager {
    * has been set using @LoginPage or setLoginPage(), the user is redirected to
    * it. Otherwise a 403 error is returned.
    */
-  public boolean checkLoggedIn(SPRequest r) {
+  public boolean checkLoggedIn(Request r) {
     if (isLoggedIn(r)) {
       return true;
     }

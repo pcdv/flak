@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import flak.App;
+
 /**
  * @author pcdv
  */
@@ -13,9 +15,9 @@ public class RouteDumper {
    * Dumps all registered URLs/methods in a readable way into specified buffer.
    * This can be useful to generate reports or to document an API.
    */
-  public StringBuilder dumpRoutes(JdkApp app, StringBuilder b) {
+  public StringBuilder dumpRoutes(App app, StringBuilder b) {
 
-    ArrayList<Context> contexts = new ArrayList<>(app.getHandlers());
+    ArrayList<Context> contexts = new ArrayList<>(((JdkApp)app).getHandlers());
 
     Collections.sort(contexts, new Comparator<Context>() {
       public int compare(Context o1, Context o2) {

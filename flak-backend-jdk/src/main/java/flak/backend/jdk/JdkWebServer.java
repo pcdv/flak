@@ -29,7 +29,7 @@ public class JdkWebServer implements WebServer {
 
   private HttpServer srv;
 
-  private ExecutorService pool;
+  private ExecutorService executor;
 
   private InetSocketAddress address;
 
@@ -92,8 +92,8 @@ public class JdkWebServer implements WebServer {
   public void stop() {
     if (srv != null)
       this.srv.stop(0);
-    if (pool != null)
-      pool.shutdownNow();
+    if (executor != null)
+      executor.shutdownNow();
   }
 
   public int getPort() {
@@ -115,16 +115,21 @@ public class JdkWebServer implements WebServer {
     this.hostName = hostName;
   }
 
+  @Override
+  public void setExecutor(ExecutorService executor) {
+    this.executor = executor;
+  }
+
   public void start() throws IOException {
-    if (pool == null)
-      pool = Executors.newCachedThreadPool();
+    if (executor == null)
+      executor = Executors.newCachedThreadPool();
 
     if (address == null)
       throw new IllegalStateException(
         "Address not set. Call AppFactory.setHttpPort()");
 
     this.srv = createServer();
-    this.srv.setExecutor(pool);
+    this.srv.setExecutor(executor);
 
     for (Map.Entry<String, Context> e : handlers.entrySet()) {
       String path = e.getKey();

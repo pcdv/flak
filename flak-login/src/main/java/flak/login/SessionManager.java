@@ -3,7 +3,6 @@ package flak.login;
 import flak.App;
 import flak.Request;
 import flak.Response;
-import flak.spi.SPRequest;
 
 /**
  * @author pcdv
@@ -20,7 +19,9 @@ public interface SessionManager {
    * Checks whether request is associated to an active session. If not,
    * either reject the request or redirect it to login page.
    */
-  boolean checkLoggedIn(SPRequest r);
+  boolean checkLoggedIn(Request r);
+
+  boolean isLoggedIn(Request r);
 
   /**
    * Sets the login page to redirect to.

@@ -1,6 +1,8 @@
 package flak;
 
 import java.io.IOException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 import javax.net.ssl.SSLContext;
 
@@ -24,4 +26,6 @@ public interface WebServer {
   String getHostName();
 
   void setHostName(String hostName);
+
+  void setExecutor(ExecutorService executor);
 }

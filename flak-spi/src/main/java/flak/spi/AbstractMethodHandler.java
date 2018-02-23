@@ -13,6 +13,7 @@ import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Response;
 import flak.annotations.Delete;
+import flak.annotations.Head;
 import flak.annotations.InputFormat;
 import flak.annotations.OutputFormat;
 import flak.annotations.Patch;
@@ -154,6 +155,8 @@ public abstract class AbstractMethodHandler
       return "PUT";
     if (m.getAnnotation(Patch.class) != null)
       return "PATCH";
+    if (m.getAnnotation(Head.class) != null)
+      return "HEAD";
     if (m.getAnnotation(Delete.class) != null)
       return "DELETE";
     return "GET";
