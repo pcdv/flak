@@ -23,8 +23,8 @@ repositories {
 }
 
 dependencies {
-  compile 'com.github.pcdv.flak:flak-api:0.30'
-  runtime 'com.github.pcdv.flak:flak-backend-jdk:0.30'
+  compile "com.github.pcdv.flak:flak-api:1.0.0-beta2"
+  runtime "com.github.pcdv.flak:flak-backend-jdk:1.0.0-beta2"
 }
 ```
 
