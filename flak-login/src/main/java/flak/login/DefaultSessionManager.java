@@ -145,7 +145,7 @@ public class DefaultSessionManager implements SessionManager {
     }
     else {
       if (loginPage != null) {
-        if (r.getPath().startsWith(loginPage))
+        if (r.getPath().equals(loginPage))
           return true;
         r.getResponse().redirect(loginPage + "?url=" + r.getPath());
       }
