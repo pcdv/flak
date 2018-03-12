@@ -8,6 +8,7 @@ import java.net.CookiePolicy;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,15 @@ public class SimpleClient {
     cookie.setPath("/");
     cookie.setVersion(0);
     cookies.getCookieStore().add(URI.create(rootUrl), cookie);
+  }
+
+  public HttpCookie getCookie(String name) throws URISyntaxException {
+    return cookies.getCookieStore()
+                  .get(new URI(rootUrl))
+                  .stream()
+                  .filter(c -> c.getName().equals(name))
+                  .findAny()
+                  .get();
   }
 
   private InputStream doHTTP(String path,

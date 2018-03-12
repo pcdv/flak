@@ -49,8 +49,11 @@ public class DefaultSessionManager implements SessionManager {
   public FlakSession openSession(App app, FlakUser user, Response r) {
     String token = generateToken();
     FlakSession session = addSession(user, token);
+    String path = app.getPath();
+    if (path == null || path.isEmpty())
+      path = "/";
     r.addHeader("Set-Cookie",
-                sessionCookieName + "=" + token + "; path=" + app.getPath() + ";");
+                sessionCookieName + "=" + token + "; path=" + path + ";");
     return session;
   }
 
@@ -163,5 +166,9 @@ public class DefaultSessionManager implements SessionManager {
 
   public void addUser(FlakUser user) {
     users.put(user.getId(), user);
+  }
+
+  public String getAuthTokenCookieName() {
+    return sessionCookieName;
   }
 }
