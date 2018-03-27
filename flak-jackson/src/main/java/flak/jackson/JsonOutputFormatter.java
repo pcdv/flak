@@ -21,6 +21,7 @@ public class JsonOutputFormatter<T> implements OutputFormatter<T> {
 
   @Override
   public void convert(T data, Response resp) throws Exception {
+    resp.addHeader("Content-Type", "application/json");
     resp.setStatus(200);
     mapper.writeValue(resp.getOutputStream(), data);
   }
