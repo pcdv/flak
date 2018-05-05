@@ -18,7 +18,11 @@ public abstract class Flak {
     return factory.createApp();
   }
 
+  /**
+   * Creates a new instance of the default AppFactory.
+   */
   public static AppFactory getFactory() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-    return (AppFactory) Class.forName("flak.backend.jdk.JdkAppFactory").newInstance();
+    return (AppFactory) Class.forName("flak.backend.jdk.JdkAppFactory")
+                             .newInstance();
   }
 }

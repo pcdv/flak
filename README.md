@@ -14,8 +14,14 @@ Flak components    | Description
 
 ## Getting started
 
+### Hello World
+
 Here is the obligatory
  [HelloWorld](https://github.com/pcdv/flak/blob/master/flak-examples/src/main/java/flak/examples/HelloWorld.java) application.
+
+This is the minimal set of dependencies needs to be included in `build.gradle`.
+If you want to download jars by hand, you can find them
+[here](https://bintray.com/paulcdv/maven).
 
 ```groovy
 repositories {
@@ -27,6 +33,9 @@ dependencies {
   runtime "com.github.pcdv.flak:flak-backend-jdk:1.0.0-beta2"
 }
 ```
+
+Here is a minimal application that outputs "Hello world!" on
+`http://localhost:8080`:
 
 ```java
 public class HelloWorld {
@@ -58,6 +67,118 @@ public class HelloWorldCompact {
   }
 }
 ```
+
+### Managing apps
+
+The example above allocates a web server for a single application. However,
+it is possible to host several Flak apps on a single server, for example
+one located at path `/app1` and another one at `/app2`.
+
+The idea is to create a [FlakFactory](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/AppFactory.java)
+then call `createApp(String)` with two separate paths. Then you can add your
+route handlers and start them.
+
+### Route handlers
+
+A route handler is a public method annotated with [@Route](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/annotations/Route.java).
+As in Python Flask, the route's argument specifies the path to which the
+handler must be bound (relative to the root path of the application).
+
+It is associated with only one HTTP method which is GET by default. To
+associate it with another method, just add the @Post, @Put, @Delete or any
+other annotation.
+
+Route handlers can be defined in any class. Scan an instance of the
+class with
+[App](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/App.java).scan()
+so all handlers can be discovered.
+
+### Return values
+
+Route handlers can return the following basic types:
+ - String : directly returned in response
+ - byte[] : directly returned in response
+ - InputStream : piped into response
+ - void : returns an empty document
+
+You can return any other type provided an [OutputFormatter](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/OutputFormatter.java)
+is specified. Use the [@OutputFormat](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/annotations/OutputFormat.java)
+annotation to specify which formatter to use.
+
+Note that the formatter is referenced by name and needs to have been registered
+before with `App.addOutputFormatter()`.
+
+If what you need is to convert the returned object to JSON, you can simply
+use the `Jackson` plugin and add the [@JSON](https://github.com/pcdv/flak/blob/master/flak-jackson/src/main/java/flak/jackson/JSON.java)
+annotation.
+
+### Method arguments
+
+Route handlers can accept arguments. Like Flask, arguments can be extracted
+from the request's path. But there is more.
+
+#### Path variables
+
+If the path contains variable (e.g. `/api/:arg1/:arg2`), then the route handler
+must have the same number of arguments. For example:
+
+```
+  @Route("/db/hello/:name")
+  public String hello(String name) {
+    return "Hello " + name;
+  }
+```
+
+The accepted arguments are String and int.
+
+#### Request argument
+
+Each HTTP call is wrapped in a [Request](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/Request.java).
+You can access the request by simply adding a Request argument in your method,
+e.g.
+
+```
+  @Route("/api/stuff")
+  public String getStuff(Request req) {
+    return "You submitted param1=" + req.getQuery().get("param1");
+  }
+```
+
+#### Query argument
+
+If you only need to access the query string, the above example can be
+simplified to:
+
+```
+  @Route("/api/stuff")
+  public String getStuff(Query q) {
+    return "You submitted param1=" + q.get("param1");
+  }
+```
+
+The query corresponds to arguments that are present in request URL, after '?',
+e.g. `/api/stuff?param1=42`
+
+#### Form argument
+
+Similar to the example above, if you are in a POST route handler and need to
+access arguments in `application/x-www-form-urlencoded` format, you can use
+a [Form](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/Form.java)
+argument.
+
+See the following [example](https://github.com/pcdv/flak/blob/master/flak-tests/src/test/java/flask/test/FormTest.java).
+
+#### Custom arguments
+
+You can accept any other argument type but there are 2 solutions.
+ - associate the argument type with an extractor using method
+ AbstractApp.addCustomExtractor() (this is not in official API yet)
+ - specify an input format with the @InputFormat annotation (which required
+ prior declaration of an InputParser with App.addInputParser().
+
+
+### To be continued....
+
 
 ## Why Flak?
 
