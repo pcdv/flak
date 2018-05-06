@@ -12,6 +12,25 @@ Flak components    | Description
 `flak-resource`    | Add-on for serving static resources
 `flak-jackson`     | Add-on for conversion to/from JSON using jackson
 
+## Table of Contents
+
+  * [Getting started](#getting-started)
+     * [Hello World](#hello-world)
+     * [Managing apps](#managing-apps)
+     * [Route handlers](#route-handlers)
+     * [Return values](#return-values)
+     * [Method arguments](#method-arguments)
+        * [Path variables](#path-variables)
+        * [Request argument](#request-argument)
+        * [Query argument](#query-argument)
+        * [Form argument](#form-argument)
+        * [Custom arguments](#custom-arguments)
+     * [To be continued....](#to-be-continued)
+  * [Why Flak?](#why-flak)
+  * [History](#history)
+     * [Goals of the migration from JFlask](#goals-of-the-migration-from-jflask)
+  * [A few words of warning](#a-few-words-of-warning)
+
 ## Getting started
 
 ### Hello World
@@ -19,7 +38,7 @@ Flak components    | Description
 Here is the obligatory
  [HelloWorld](https://github.com/pcdv/flak/blob/master/flak-examples/src/main/java/flak/examples/HelloWorld.java) application.
 
-This is the minimal set of dependencies needs to be included in `build.gradle`.
+Here is the minimal set of dependencies needs to be included in `build.gradle`.
 If you want to download jars by hand, you can find them
 [here](https://bintray.com/paulcdv/maven).
 
@@ -29,13 +48,12 @@ repositories {
 }
 
 dependencies {
-  compile "com.github.pcdv.flak:flak-api:1.0.0-beta2"
-  runtime "com.github.pcdv.flak:flak-backend-jdk:1.0.0-beta2"
+  compile "com.github.pcdv.flak:flak-api:1.0.0-beta5"
+  runtime "com.github.pcdv.flak:flak-backend-jdk:1.0.0-beta5"
 }
 ```
 
-Here is a minimal application that outputs "Hello world!" on
-`http://localhost:8080`:
+The following application outputs "Hello world!" on `http://localhost:8080`:
 
 ```java
 public class HelloWorld {
@@ -96,10 +114,10 @@ so all handlers can be discovered.
 ### Return values
 
 Route handlers can return the following basic types:
- - String : directly returned in response
- - byte[] : directly returned in response
- - InputStream : piped into response
- - void : returns an empty document
+ - `String` : directly returned in response
+ - `byte[]` : directly returned in response
+ - `InputStream` : piped into response
+ - `void` : returns an empty document
 
 You can return any other type provided an [OutputFormatter](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/OutputFormatter.java)
 is specified. Use the [@OutputFormat](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/annotations/OutputFormat.java)
@@ -114,22 +132,21 @@ annotation.
 
 ### Method arguments
 
-Route handlers can accept arguments. Like Flask, arguments can be extracted
-from the request's path. But there is more.
+Route handlers can accept arguments. Like with [Flask](http://flask.pocoo.org/docs/1.0/quickstart/#routing),
+arguments can be extracted from the request's path. But there is more.
 
 #### Path variables
 
-If the path contains variable (e.g. `/api/:arg1/:arg2`), then the route handler
-must have the same number of arguments. For example:
+If the path contains variable (e.g. `/api/:arg1/:arg2`), they are
+automatically split, converted and passed as method arguments. The route handler
+must have the same number of `int` or `String` arguments. For example:
 
-```
+```java
   @Route("/db/hello/:name")
   public String hello(String name) {
     return "Hello " + name;
   }
 ```
-
-The accepted arguments are String and int.
 
 #### Request argument
 
@@ -137,7 +154,7 @@ Each HTTP call is wrapped in a [Request](https://github.com/pcdv/flak/blob/maste
 You can access the request by simply adding a Request argument in your method,
 e.g.
 
-```
+```java
   @Route("/api/stuff")
   public String getStuff(Request req) {
     return "You submitted param1=" + req.getQuery().get("param1");
@@ -149,7 +166,7 @@ e.g.
 If you only need to access the query string, the above example can be
 simplified to:
 
-```
+```java
   @Route("/api/stuff")
   public String getStuff(Query q) {
     return "You submitted param1=" + q.get("param1");
@@ -170,15 +187,26 @@ See the following [example](https://github.com/pcdv/flak/blob/master/flak-tests/
 
 #### Custom arguments
 
-You can accept any other argument type but there are 2 solutions.
- - associate the argument type with an extractor using method
+You can accept other argument types if you:
+ - associate the type with an extractor using method
  AbstractApp.addCustomExtractor() (this is not in official API yet)
- - specify an input format with the @InputFormat annotation (which required
+ - specify an input format with the @InputFormat annotation (which requires
  prior declaration of an InputParser with App.addInputParser().
 
 
 ### To be continued....
 
+Other features that still need to be documented (until more documentation is
+available, you can find examples in the
+[junits](https://github.com/pcdv/flak/tree/master/flak-tests/src/test/java/flask/test)
+):
+ * easy parsing of path arguments (e.g. `/api/todo/:id` or `/api/upload/*path`)
+ * error handlers
+ * HTTP redirection
+ * pluggable user authentication
+ * direct serving of static resources from directory or jar
+ * HTTPS support (experimental)
+ * ...
 
 ## Why Flak?
 
@@ -207,22 +235,6 @@ The API initially shared a lot of similarities with [Flask](http://flask.pocoo.o
 
 But now the style differs quite a bit since objects can be automatically
 passed in method arguments.
-
-## Features
-
-This deserves more documentation but here is a non-exhaustive list:
- * route handlers for any HTTP method
- * handlers can return: String, byte[], InputStream, Response ...
- * easy parsing of path arguments (e.g. `/api/todo/:id` or `/api/upload/*path`)
- * on-the-fly parsing to/from JSON or other formats
- * error handlers
- * easy HTTP redirection
- * pluggable user authentication
- * direct serving of static resources from directory or jar
- * HTTPS support (experimental)
-
-Until more documentation is available, you can find examples in the 
-[junits](https://github.com/pcdv/flak/tree/master/flak-tests/src/test/java/flask/test).
 
 
 ## History
