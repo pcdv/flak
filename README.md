@@ -14,9 +14,9 @@ Flak components    | Description
 
 ## Table of Contents
 
+  * [Table of Contents](#table-of-contents)
   * [Getting started](#getting-started)
      * [Hello World](#hello-world)
-     * [Managing apps](#managing-apps)
      * [Route handlers](#route-handlers)
      * [Return values](#return-values)
      * [Method arguments](#method-arguments)
@@ -25,6 +25,7 @@ Flak components    | Description
         * [Query argument](#query-argument)
         * [Form argument](#form-argument)
         * [Custom arguments](#custom-arguments)
+     * [Managing apps](#managing-apps)
      * [To be continued....](#to-be-continued)
   * [Why Flak?](#why-flak)
   * [History](#history)
@@ -85,16 +86,6 @@ public class HelloWorldCompact {
   }
 }
 ```
-
-### Managing apps
-
-The example above allocates a web server for a single application. However,
-it is possible to host several Flak apps on a single server, for example
-one located at path `/app1` and another one at `/app2`.
-
-The idea is to create a [FlakFactory](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/AppFactory.java)
-then call `createApp(String)` with two separate paths. Then you can add your
-route handlers and start them.
 
 ### Route handlers
 
@@ -193,6 +184,15 @@ You can accept other argument types if you:
  - specify an input format with the @InputFormat annotation (which requires
  prior declaration of an InputParser with App.addInputParser().
 
+### Managing apps
+
+The example above allocates a web server for a single application. However,
+it is possible to host several Flak apps on a single server, for example
+one located at path `/app1` and another one at `/app2`.
+
+The idea is to create a [FlakFactory](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/AppFactory.java)
+then call `createApp(String)` with two separate paths. Then you can add your
+route handlers and start them.
 
 ### To be continued....
 
