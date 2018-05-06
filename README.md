@@ -198,8 +198,7 @@ You can accept other argument types if you:
 
 Other features that still need to be documented (until more documentation is
 available, you can find examples in the
-[junits](https://github.com/pcdv/flak/tree/master/flak-tests/src/test/java/flask/test)
-):
+[junits](https://github.com/pcdv/flak/tree/master/flak-tests/src/test/java/flask/test)):
  * easy parsing of path arguments (e.g. `/api/todo/:id` or `/api/upload/*path`)
  * error handlers
  * HTTP redirection
@@ -245,7 +244,7 @@ Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
  * have a clean API, well separated from implementation
  * provide several back-ends (only one is available at this time: 
  [flak-backend-jdk](https://github.com/pcdv/flak/tree/master/flak-backend-jdk) but it will
- now possible to provide backends for [Netty](https://netty.io/), 
+ now be possible to provide backends for [Netty](https://netty.io/),
  [Jetty](https://www.eclipse.org/jetty/), etc.)
  * provide SSL support
  * optional plugins for user management, JSON serialization, CSRF protection...
