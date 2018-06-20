@@ -8,5 +8,5 @@ dependencies {
   compile project(":flak-login")
   compile project(":flak-resource")
   runtime project(":flak-backend-jdk")
-  runtime project(":flak-util")
+  compile project(":flak-util")
 }
