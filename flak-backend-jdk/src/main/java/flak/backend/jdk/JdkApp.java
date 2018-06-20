@@ -80,10 +80,8 @@ public class JdkApp extends AbstractApp {
         addHandlerInServer(rootURI, c);
 
     }
-    else if (!(c instanceof Context))
-      throw new IllegalStateException("A handler is already registered for: " + rootURI);
 
-    return (Context) c;
+    return c;
   }
 
   /**

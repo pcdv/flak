@@ -13,6 +13,7 @@ import flak.ErrorHandler;
 import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Request;
+import flak.ScanException;
 import flak.SuccessHandler;
 import flak.UnknownPageHandler;
 import flak.WebServer;
@@ -64,7 +65,12 @@ public abstract class AbstractApp implements App {
     for (Method method : obj.getClass().getMethods()) {
       Route route = method.getAnnotation(Route.class);
       if (route != null) {
-        addHandler0(route.value(), method, obj);
+        try {
+          addHandler0(route.value(), method, obj);
+        }
+        catch (Exception e) {
+          throw new ScanException("Error while scanning " + method, e);
+        }
       }
     }
     return this;

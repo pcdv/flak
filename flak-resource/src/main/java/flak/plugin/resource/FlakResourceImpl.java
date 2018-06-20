@@ -68,7 +68,7 @@ public class FlakResourceImpl implements FlakResource {
 
     try {
       app.addHandler0(rootURI + "/*splat",
-                      h.getClass().getMethod("doGet", Request.class),
+                      h.getClass().getMethod("doGet", Request.class, String.class),
                       h);
 
     }

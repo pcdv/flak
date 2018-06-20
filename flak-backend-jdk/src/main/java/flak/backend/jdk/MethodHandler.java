@@ -55,6 +55,9 @@ public class MethodHandler extends AbstractMethodHandler {
     for (int i = 0; i < types.length; i++) {
       extractors[i] = createExtractor(m, types[i], i, index, idx);
     }
+    if (index.get() < idx.length) {
+      throw new IllegalArgumentException("Not enough method parameters");
+    }
     return extractors;
   }
 
@@ -99,6 +102,9 @@ public class MethodHandler extends AbstractMethodHandler {
       return new ResponseExtractor(app, i);
     }
     else if (type == String.class) {
+      if (urlParam.get() >= idx.length) {
+        throw new IllegalArgumentException("Too many method parameters");
+      }
       int tokenIndex = idx[urlParam.getAndIncrement()];
       if (splat == tokenIndex)
         return new SplatExtractor(i, tokenIndex);

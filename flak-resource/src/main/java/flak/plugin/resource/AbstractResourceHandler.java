@@ -35,7 +35,7 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
     return restricted;
   }
 
-  public void doGet(Request r) throws Exception {
+  public void doGet(Request r, String ignored) throws Exception {
 
     String uri = r.getPath();
 
