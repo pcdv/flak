@@ -54,8 +54,7 @@ public class ServePathTest {
     WebServer ws = factory.getServer();
     ws.start();
     app = factory.createApp("/app");
-    FlakLogin fl = new FlakLogin(app).install(
-                                             );
+    FlakLogin fl = new FlakLogin(app).install();
     new FlakResourceImpl(app).servePath("/static", "/test-resources");
     fl.getSessionManager().setRequireLoggedInByDefault(true);
     fl.getSessionManager().setLoginPage("/static/login.html");
