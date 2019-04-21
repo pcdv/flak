@@ -183,6 +183,19 @@ You can accept other argument types if you:
  AbstractApp.addCustomExtractor() (this is not in official API yet)
  - specify an input format with the @InputFormat annotation (which requires
  prior declaration of an InputParser with App.addInputParser().
+ - a common case is to decode an object serialized as JSON in the body
+ of the request. You could do the following:
+ 
+```java
+  @Route("/api/jsonMap")
+  @Post
+  @JSON
+  public Map postMap(Map map) {
+    map.put("status", "ok");
+    return map;
+  }
+```
+ 
 
 ### Managing apps
 
