@@ -41,10 +41,8 @@ public class AbstractAppTest {
   }
 
   protected void installFlakLogin() {
-    FlakLogin flakLogin = new FlakLogin(app);
-    sessionManager = new DefaultSessionManager();
-    flakLogin.setSessionManager(sessionManager);
-    this.flakLogin = flakLogin.install();
+    this.flakLogin = app.getPlugin(FlakLogin.class);
+    this.sessionManager = flakLogin.getSessionManager();
   }
 
   /**

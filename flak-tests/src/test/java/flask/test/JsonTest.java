@@ -1,21 +1,19 @@
 package flask.test;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-import flak.jackson.JSON;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.Route;
-import flak.jackson.JacksonPlugin;
+import flak.jackson.JSON;
 import flask.test.OutputFormatTest.Foo;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class JsonTest extends AbstractAppTest {
-
-  @Override
-  protected void preScan() {
-    JacksonPlugin.install(app);
-  }
 
   /**
    * Parses a JSON foo object and returns it.
@@ -53,5 +51,24 @@ public class JsonTest extends AbstractAppTest {
       });
       return client.get("/foo1");
     }, "No @OutputFormat or @JSON around method foo()");
+  }
+
+  @Route("/api/jsonMap")
+  @Post
+  @JSON
+  public Map postMap(Map map) {
+    map.put("status", "ok");
+    return map;
+  }
+
+  @Test
+  public void testJsonMap() throws Exception {
+    Map m = new HashMap();
+    m.put("foo", "bar");
+    String reply = client.post("/api/jsonMap", new ObjectMapper().writeValueAsString(m));
+
+    Map r = new ObjectMapper().readValue(reply, Map.class);
+    Assert.assertEquals("ok", r.get("status"));
+    Assert.assertEquals("bar", r.get("foo"));
   }
 }

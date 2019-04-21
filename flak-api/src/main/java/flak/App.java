@@ -58,4 +58,6 @@ public interface App {
   WebServer getServer();
 
   String absolutePath(String path);
+
+  <T> T getPlugin(Class<T> clazz);
 }

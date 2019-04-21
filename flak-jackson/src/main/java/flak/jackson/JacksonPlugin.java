@@ -37,18 +37,21 @@ public class JacksonPlugin implements FlakPlugin {
         handler.setInputParser(app.getInputParser("JSON"));
       }
     }
-
   }
 
+  /**
+   * @deprecated This method should not be called anymore as since 1.0 the
+   * Jackson plugin is automatically installed when present in classpath.
+   */
+  @Deprecated
   public static void install(App app) {
-    new JacksonPlugin(app).install0();
   }
 
   public void setObjectMapper(ObjectMapper mapper) {
     this.mapper = mapper;
   }
 
-  private void install0() {
+  void init() {
     if (mapper == null)
       mapper = new ObjectMapper();
 

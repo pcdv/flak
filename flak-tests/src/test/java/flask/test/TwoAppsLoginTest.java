@@ -59,7 +59,7 @@ public class TwoAppsLoginTest {
   }
 
   private static void addLoginHandlers(App app, DefaultSessionManager dsm) {
-    new FlakLogin(app).setSessionManager(dsm).install();
+    app.getPlugin(FlakLogin.class).setSessionManager(dsm);
 
     app.scan(new Object() {
       @LoginNotRequired

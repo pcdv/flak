@@ -153,7 +153,10 @@ public abstract class AbstractApp implements App {
     }
   }
 
-  public void fireSuccess(SPRequest req, Method method, Object[] args, Object res) {
+  public void fireSuccess(SPRequest req,
+                          Method method,
+                          Object[] args,
+                          Object res) {
     for (SuccessHandler successHandler : successHandlers) {
       successHandler.onSuccess(req, method, args, res);
     }
@@ -188,5 +191,13 @@ public abstract class AbstractApp implements App {
 
   public void addPlugin(FlakPlugin plugin) {
     plugins.add(plugin);
+  }
+
+  @Override
+  public <T> T getPlugin(Class<T> clazz) {
+    return (T) plugins.stream()
+                      .filter(p -> p.getClass() == clazz)
+                      .findFirst()
+                      .get();
   }
 }

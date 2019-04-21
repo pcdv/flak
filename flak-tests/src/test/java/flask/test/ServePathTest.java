@@ -54,7 +54,7 @@ public class ServePathTest {
     WebServer ws = factory.getServer();
     ws.start();
     app = factory.createApp("/app");
-    FlakLogin fl = new FlakLogin(app).install();
+    FlakLogin fl = app.getPlugin(FlakLogin.class);
     new FlakResourceImpl(app).servePath("/static", "/test-resources");
     fl.getSessionManager().setRequireLoggedInByDefault(true);
     fl.getSessionManager().setLoginPage("/static/login.html");
@@ -108,7 +108,7 @@ public class ServePathTest {
     AppFactory factory = Flak.getFactory();
     factory.setPort(9191);
     App app = factory.createApp();
-    sessionManager = new FlakLogin(app).install().getSessionManager();
+    sessionManager = app.getPlugin(FlakLogin.class).getSessionManager();
     return app;
   }
 
