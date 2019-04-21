@@ -1,7 +1,5 @@
 version version_flak
 
-sourceCompatibility = 1.8
-
 dependencies {
   compile project(":flak-api")
   compile project(":flak-jackson")
