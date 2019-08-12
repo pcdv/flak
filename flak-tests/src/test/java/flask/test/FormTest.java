@@ -33,5 +33,9 @@ public class FormTest extends AbstractAppTest {
     };
     Assert.assertEquals("Hello  w o r l d !",
                         client.post("/api/form", TestUtil.urlEncodeMap(form)));
+
+    form.remove("name");
+    Assert.assertEquals("Hello null",
+                        client.post("/api/form", TestUtil.urlEncodeMap(form)));
   }
 }

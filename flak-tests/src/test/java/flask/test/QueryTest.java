@@ -61,6 +61,7 @@ public class QueryTest extends AbstractAppTest {
   public void queryStringFromInjectedRequest() throws IOException {
     assertEquals("Hello world", client.get("/hello/request?name=world"));
     assertEquals("Hello ???", client.get("/hello/request?foo=bar"));
+    assertEquals("Hello ???", client.get("/hello/request?foo=bar&baz=x"));
     assertEquals("Hello ???", client.get("/hello/request?"));
     assertEquals("Hello ???", client.get("/hello/request"));
   }

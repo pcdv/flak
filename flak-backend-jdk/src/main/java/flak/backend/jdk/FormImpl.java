@@ -1,37 +1,43 @@
 package flak.backend.jdk;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-
 import flak.Form;
 import flak.Query;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.HashMap;
 
 /**
  * @author pcdv
  */
 public class FormImpl implements Form, Query {
-  private String data;
+
+  private final HashMap<String, String> data = new HashMap<>();
 
   public FormImpl(String data) {
-    this.data = data;
+    try {
+      if (data != null)
+        for (String tok : data.split("&")) {
+          int pos = tok.indexOf('=');
+          if (pos != -1) {
+            this.data.put(tok.substring(0, pos),
+                          URLDecoder.decode(tok.substring(pos + 1), "UTF-8"));
+          }
+        }
+    }
+    catch (UnsupportedEncodingException e) {
+      throw new IllegalArgumentException(e);
+    }
   }
 
   @Override
   public String get(String name) {
-    if (data == null)
-      return null;
-    String s = data.replaceAll(".*(?:^|&)" + name + "=([^&]*).*", "$1");
-    try {
-      return URLDecoder.decode(s, "UTF-8");
-    }
-    catch (UnsupportedEncodingException e) {
-      return e.toString();
-    }
+    return data.get(name);
   }
 
   @Override
   public String get(String name, String def) {
     String res = get(name);
-    return res == null || res.equals(data)? def : res;
+    return res == null ? def : res;
   }
 }
