@@ -61,6 +61,13 @@ public class JsonTest extends AbstractAppTest {
     return map;
   }
 
+  @Route("/api/jsonMapVoid")
+  @Post
+  @JSON
+  public void postMapVoid(Map map) {
+    map.put("status", "ok");
+  }
+
   @Test
   public void testJsonMap() throws Exception {
     Map m = new HashMap();
@@ -70,5 +77,7 @@ public class JsonTest extends AbstractAppTest {
     Map r = new ObjectMapper().readValue(reply, Map.class);
     Assert.assertEquals("ok", r.get("status"));
     Assert.assertEquals("bar", r.get("foo"));
+
+    client.post("/api/jsonMapVoid", new ObjectMapper().writeValueAsString(m));
   }
 }

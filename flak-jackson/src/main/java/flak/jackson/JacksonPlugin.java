@@ -31,11 +31,11 @@ public class JacksonPlugin implements FlakPlugin {
       if (fmt == null)
         throw new IllegalArgumentException("In method " + m.getName() + ": no OutputFormatter with name JSON was declared");
 
+      // convert response to JSON automatically
       handler.setOutputFormatter(fmt);
 
-      if (AbstractMethodHandler.isNotBasic(m.getReturnType())) {
-        handler.setInputParser(app.getInputParser("JSON"));
-      }
+      // also convert extra args from JSON
+      handler.setInputParser(app.getInputParser("JSON"));
     }
   }
 
