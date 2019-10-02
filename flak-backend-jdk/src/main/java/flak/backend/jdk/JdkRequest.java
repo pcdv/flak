@@ -157,8 +157,8 @@ public class JdkRequest implements SPRequest, Response {
 
   public void setStatus(int status) {
     try {
-      long l = "HEAD".equals(exchange.getRequestMethod()) ? -1 : 0;
-      exchange.sendResponseHeaders(status, l);
+      long responseLength = "HEAD".equals(exchange.getRequestMethod()) ? -1 : 0;
+      exchange.sendResponseHeaders(status, responseLength);
     }
     catch (IOException e) {
       throw new RuntimeException(e);
