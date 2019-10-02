@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,6 +62,17 @@ public class SimpleClient {
   public String put(String path, String data) throws IOException {
     return toString(doHTTP(path, data, "PUT", null));
   }
+
+  public Map<String, List<String>> head(String path) throws IOException {
+    Map<String, List<String>> responseHeaders = new HashMap<>();
+    try {
+      doHTTP(path, null, "HEAD", responseHeaders).close();
+    } catch (IOException ignored) {
+
+    }
+    return responseHeaders;
+  }
+
 
   public void addCookie(String name, String value) {
     HttpCookie cookie = new HttpCookie(name, value);
