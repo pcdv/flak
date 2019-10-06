@@ -1,5 +1,5 @@
 plugins {
-  id "com.jfrog.bintray" version "1.8.0"
+  id "com.jfrog.bintray" version "1.8.4"
 }
 
 apply plugin: 'eclipse'
@@ -14,7 +14,7 @@ def PUBLISH_PROJECTS = [
   'flak-util'
 ]
 
-subprojects {
+allprojects {
   apply plugin: 'java'
 
   sourceCompatibility = 1.8
@@ -59,7 +59,6 @@ subprojects {
     }
 
 
-
     publishing {
       repositories {
         ivy {
@@ -68,10 +67,6 @@ subprojects {
         }
       }
       publications {
-        ivy(IvyPublication) {
-          organisation "com.github.pcdv.flak"
-          from components.java
-        }
         MyPublication(MavenPublication) {
           from components.java
           groupId 'com.github.pcdv.flak'
