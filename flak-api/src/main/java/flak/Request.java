@@ -1,8 +1,14 @@
 package flak;
 
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 
 public interface Request {
+
+  /**
+   * Returns the address of the remote entity invoking this request
+   */
+  InetSocketAddress getRemoteAddress();
 
   /**
    * Returns the request path, relative from the app's root.

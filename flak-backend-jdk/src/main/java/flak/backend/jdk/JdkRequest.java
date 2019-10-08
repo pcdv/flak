@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.util.List;
 
 import com.sun.net.httpserver.Headers;
@@ -19,7 +20,7 @@ public class JdkRequest implements SPRequest, Response {
 
   private static final String[] EMPTY = {};
 
-  private App app;
+  private final App app;
 
   private final HttpExchange exchange;
 
@@ -29,7 +30,12 @@ public class JdkRequest implements SPRequest, Response {
 
   private final String appRelativePath;
 
+  private BufferedOutputStream outputStream;
+
   private Form form;
+  private HeaderList headers = new HeaderList();
+  private int status;
+  private boolean statusFlushed;
 
   public JdkRequest(App app,
                     String appRelativePath,
@@ -39,12 +45,14 @@ public class JdkRequest implements SPRequest, Response {
     this.exchange = r;
     this.qs = r.getRequestURI().getQuery();
     this.appRelativePath = appRelativePath;
-    this.split =
-      (contextRelativePath.isEmpty() || contextRelativePath.equals("/")) ? EMPTY
-                                                                         : trimLeftSlash(
-                                                                           contextRelativePath)
-                                                                             .split(
-                                                                               "/");
+    this.split = (contextRelativePath.isEmpty() || contextRelativePath.equals("/"))
+      ? EMPTY
+      : trimLeftSlash(contextRelativePath).split("/");
+  }
+
+  @Override
+  public InetSocketAddress getRemoteAddress() {
+    return exchange.getRemoteAddress();
   }
 
   public String getSplit(int tokenIndex) {
@@ -152,26 +160,65 @@ public class JdkRequest implements SPRequest, Response {
   // /////////// Response methods
 
   public void addHeader(String header, String value) {
-    exchange.getResponseHeaders().add(header, value);
+    if (statusFlushed)
+      throw new IllegalStateException("Status and headers already sent");
+    headers.add(header, value);
   }
 
   public void setStatus(int status) {
-    try {
-      long responseLength = "HEAD".equals(exchange.getRequestMethod()) ? -1 : 0;
-      exchange.sendResponseHeaders(status, responseLength);
-    }
-    catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    if (statusFlushed && status != this.status)
+      throw new IllegalStateException("Status has already been sent: " + this.status);
+    this.status = status;
+  }
+
+  @Override
+  public boolean isStatusSet() {
+    return status != 0;
   }
 
   public OutputStream getOutputStream() {
-    return exchange.getResponseBody();
+    if (outputStream == null) {
+      this.outputStream = new BufferedOutputStream(exchange.getResponseBody(), 8192) {
+        @Override
+        public void close() {
+          // disable close, we will do it in finish()
+        }
+
+        @Override
+        protected void flushBuffer() throws IOException {
+          flushStatus();
+          super.flushBuffer();
+        }
+      };
+    }
+    return outputStream;
   }
 
   @Override
   public void redirect(String location) {
     addHeader("Location", app.absolutePath(location));
     setStatus(HttpURLConnection.HTTP_MOVED_TEMP);
+  }
+
+  void finish() throws IOException {
+    flushStatus();
+    if (outputStream != null)
+      outputStream.flush();
+    exchange.getResponseBody().close();
+  }
+
+  private void flushStatus() throws IOException {
+    if (!statusFlushed) {
+      statusFlushed = true;
+      if (status == 0)
+        status = 200;
+      headers.addHeadersInto(exchange);
+      long responseLength = "HEAD".equals(exchange.getRequestMethod()) ? -1 : 0;
+      exchange.sendResponseHeaders(status, responseLength);
+    }
+  }
+
+  boolean hasOutputStream() {
+    return outputStream != null;
   }
 }

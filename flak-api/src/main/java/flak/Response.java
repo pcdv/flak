@@ -13,6 +13,8 @@ public interface Response {
    */
   void setStatus(int status);
 
+  boolean isStatusSet();
+
   OutputStream getOutputStream();
 
   /**

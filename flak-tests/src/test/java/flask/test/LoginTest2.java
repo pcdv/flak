@@ -55,7 +55,8 @@ public class LoginTest2 extends AbstractAppTest {
       sessionManager.openSession(app, dsm.createUser("foo"), r);
       r.redirect("/app");
     }
-    r.redirect("/login");
+    else
+      r.redirect("/login");
   }
 
   @Test

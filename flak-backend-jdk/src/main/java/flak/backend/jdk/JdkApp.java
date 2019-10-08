@@ -142,7 +142,7 @@ public class JdkApp extends AbstractApp {
 
       fireError(404, r, null);
 
-      r.getExchange().sendResponseHeaders(404, 0);
+      r.setStatus(404);
     }
   }
 

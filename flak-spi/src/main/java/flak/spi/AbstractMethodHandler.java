@@ -215,13 +215,8 @@ public abstract class AbstractMethodHandler
       IO.pipe((InputStream) res, r.getOutputStream(), false);
     }
     else if (res == null) {
-      try {
-        // will throw if already set
+      if (!r.isStatusSet())
         r.setStatus(200);
-      }
-      catch (Exception ignored) {
-      }
-      r.getOutputStream().close();
     }
     else
       throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod

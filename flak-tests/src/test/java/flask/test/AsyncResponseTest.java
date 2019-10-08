@@ -21,6 +21,9 @@ public class AsyncResponseTest extends AbstractAppTest {
   private Response reply(Response resp) throws IOException {
     resp.setStatus(200);
     resp.getOutputStream().write("foobar".getBytes());
+    // NB: this does nothing now (since it would mess up the response, the output
+    // stream is closed automatically at the end). Leave it for non regression, in
+    // case some pre-existing handlers do that.
     resp.getOutputStream().close();
     return resp;
   }

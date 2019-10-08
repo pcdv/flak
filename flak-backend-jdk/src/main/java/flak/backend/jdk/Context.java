@@ -82,19 +82,23 @@ public class Context implements HttpHandler {
       }
 
       if (t instanceof HttpException) {
-        r.sendResponseHeaders(((HttpException) t).getResponseCode(), 0);
-        r.getResponseBody().write(t.getMessage().getBytes("UTF-8"));
+        req.setStatus(((HttpException) t).getResponseCode());
+        req.getOutputStream().write(t.getMessage().getBytes("UTF-8"));
         return;
       }
 
       app.fireError(500, req, t);
       Log.error(t, t);
-      r.sendResponseHeaders(500, 0);
-      if (app.isDebugEnabled()) {
-        t.printStackTrace(new PrintStream(r.getResponseBody()));
+
+      if (!req.isStatusSet())
+        req.setStatus(500);
+
+      if (app.isDebugEnabled() && !req.hasOutputStream()) {
+        t.printStackTrace(new PrintStream(req.getOutputStream()));
       }
-    } finally {
-      r.getResponseBody().close();
+    }
+    finally {
+      req.finish();
     }
   }
 
