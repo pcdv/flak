@@ -16,6 +16,7 @@ def PUBLISH_PROJECTS = [
 
 allprojects {
   apply plugin: 'java'
+  apply plugin: 'ivy-publish'
 
   sourceCompatibility = 1.8
   targetCompatibility = 1.8
@@ -67,6 +68,11 @@ allprojects {
         }
       }
       publications {
+        // allows to do a local publish
+        ivy(IvyPublication) {
+          organisation "com.github.pcdv.flak"
+          from components.java
+        }
         MyPublication(MavenPublication) {
           from components.java
           groupId 'com.github.pcdv.flak'
