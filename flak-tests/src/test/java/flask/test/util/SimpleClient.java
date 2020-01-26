@@ -90,10 +90,10 @@ public class SimpleClient {
                   .get();
   }
 
-  private InputStream doHTTP(String path,
-                             Object data,
-                             String method,
-                             Map<String, List<String>> responseHeaders) throws HttpException, IOException {
+  public InputStream doHTTP(String path,
+                            Object data,
+                            String method,
+                            Map<String, List<String>> responseHeaders) throws HttpException, IOException {
     URL url = new URL(rootUrl + path);
     HttpURLConnection con = (HttpURLConnection) url.openConnection();
     con.setRequestMethod(method);
