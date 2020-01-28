@@ -27,6 +27,8 @@ public class SimpleClient {
 
   private final String rootUrl;
 
+  private final Map<String, String> headers = new HashMap<>();
+
   private CookieManager cookies;
 
   public SimpleClient(String host, int port) {
@@ -98,11 +100,11 @@ public class SimpleClient {
     HttpURLConnection con = (HttpURLConnection) url.openConnection();
     con.setRequestMethod(method);
 
+    addAdditionalHeaders(con);
     if (data != null) {
       con.setDoOutput(true);
 
       String body = data.toString();
-      addAdditionalHeaders(path, method, con, body);
       con.getOutputStream().write(body.getBytes("UTF-8"));
       con.getOutputStream().close();
     }
@@ -121,9 +123,18 @@ public class SimpleClient {
     return con.getInputStream();
   }
 
-  protected void addAdditionalHeaders(String path,
-                                      String method,
-                                      HttpURLConnection con,
-                                      String body) {
+  private void addAdditionalHeaders(HttpURLConnection con) {
+    headers.forEach(con::setRequestProperty);
+  }
+
+  public void addHeader(String name, String value) {
+    headers.put(name, value);
+  }
+
+  public void authBasic(String user, String password) {
+    addHeader("Authorization",
+              "Basic " + java.util.Base64.getEncoder()
+                                         .encodeToString((user + ":" + password)
+                                                           .getBytes()));
   }
 }
