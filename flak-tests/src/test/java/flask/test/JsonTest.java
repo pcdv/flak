@@ -1,6 +1,8 @@
 package flask.test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,5 +81,16 @@ public class JsonTest extends AbstractAppTest {
     Assert.assertEquals("bar", r.get("foo"));
 
     client.post("/api/jsonMapVoid", new ObjectMapper().writeValueAsString(m));
+  }
+
+  @JSON
+  @Route("/api/getVersions/:group")
+  public Collection<String> getVersions(String groupKey) {
+    return Arrays.asList("foo", "bar");
+  }
+
+  @Test
+  public void testGetVersions() throws IOException {
+    Assert.assertEquals("[\"foo\",\"bar\"]", client.get("/api/getVersions/xy"));
   }
 }
