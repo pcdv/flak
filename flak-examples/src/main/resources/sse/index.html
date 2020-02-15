@@ -1,0 +1,51 @@
+<html>
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
+  <script>
+    let evtSource = null
+
+    function connect() {
+
+      if (evtSource)
+        evtSource.close()
+
+      evtSource = new EventSource("/sse");
+
+      evtSource.onopen = function () {
+        console.log("Connection to server opened.");
+        document.getElementById('status').innerHTML = "Connected"
+      };
+
+      evtSource.onerror = function () {
+        console.log("Error");
+        document.getElementById('status').innerHTML = "Disconnected"
+      };
+
+      evtSource.addEventListener("ping", function (event) {
+        console.log(event)
+        const eventList = document.getElementById("list");
+        const newElement = document.createElement("li");
+        const time = JSON.parse(event.data).time;
+        newElement.innerHTML = "ping at " + time;
+        eventList.appendChild(newElement);
+      });
+    }
+
+    function clearList() {
+      const e = document.getElementById("list");
+      while (e.firstChild) {
+        e.removeChild(e.firstChild);
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <p id="status">Disconnected</p>
+  <button onclick="connect()">Connect</button>
+  <button onclick="clearList()">Clear</button>
+  <ul id="list"></ul>
+</body>
+
+</html>
