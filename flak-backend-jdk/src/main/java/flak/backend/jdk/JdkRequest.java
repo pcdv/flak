@@ -3,6 +3,7 @@ package flak.backend.jdk;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -12,6 +13,7 @@ import com.sun.net.httpserver.HttpExchange;
 import flak.App;
 import flak.Form;
 import flak.Query;
+import flak.Request;
 import flak.Response;
 import flak.spi.SPRequest;
 import flak.spi.util.IO;
@@ -36,6 +38,8 @@ public class JdkRequest implements SPRequest, Response {
   private HeaderList headers = new HeaderList();
   private int status;
   private boolean statusFlushed;
+
+  private Method handler;
 
   public JdkRequest(App app,
                     String appRelativePath,
@@ -68,6 +72,11 @@ public class JdkRequest implements SPRequest, Response {
       b.append(split[i]);
     }
     return b.toString();
+  }
+
+  @Override
+  public void setHandler(Method handler) {
+    this.handler = handler;
   }
 
   @Override
@@ -123,6 +132,15 @@ public class JdkRequest implements SPRequest, Response {
   @Override
   public Response getResponse() {
     return this;
+  }
+
+  @Override
+  public Request getRequest() {
+    return this;
+  }
+
+  public Method getHandler() {
+    return handler;
   }
 
   @Override

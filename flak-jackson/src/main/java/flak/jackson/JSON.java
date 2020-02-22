@@ -32,4 +32,13 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JSON {}
+public @interface JSON {
+
+  /**
+   * Optional ID passed to ObjectMapper provider. Allows the Jackson plugin
+   * to return a different mapper for some requests.
+   *
+   * @see JacksonPlugin#setObjectMapperProvider(MapperProvider)
+   */
+  String value() default "";
+}

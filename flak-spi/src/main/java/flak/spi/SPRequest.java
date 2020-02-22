@@ -1,5 +1,7 @@
 package flak.spi;
 
+import java.lang.reflect.Method;
+
 import flak.Request;
 
 /**
@@ -12,4 +14,5 @@ public interface SPRequest extends Request {
 
   String getSplat(int tokenIndex);
 
+  void setHandler(Method handler);
 }

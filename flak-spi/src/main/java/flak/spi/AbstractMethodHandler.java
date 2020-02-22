@@ -172,6 +172,8 @@ public abstract class AbstractMethodHandler
     if (!isApplicable(req))
       return false;
 
+    req.setHandler(javaMethod);
+
     for (BeforeHook hook : beforeHooks) {
       hook.execute(req);
     }

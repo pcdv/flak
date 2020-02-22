@@ -4,6 +4,11 @@ import java.io.OutputStream;
 
 public interface Response {
 
+  /**
+   * Returns the associated request.
+   */
+  Request getRequest();
+
   void addHeader(String header, String value);
 
   /**

@@ -1,6 +1,7 @@
 package flak;
 
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 
 public interface Request {
@@ -46,4 +47,6 @@ public interface Request {
   Response getResponse();
 
   String getCookie(String name);
+
+  Method getHandler();
 }

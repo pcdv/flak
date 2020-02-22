@@ -1,6 +1,7 @@
 package flak.jackson;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.App;
@@ -13,7 +14,12 @@ import flak.spi.FlakPlugin;
  * @author pcdv
  */
 public class JacksonPlugin implements FlakPlugin {
-  private ObjectMapper mapper;
+
+  /**
+   * By default, create a new mapper on each call to avoid contention
+   * with concurrent requests.
+   */
+  private MapperProvider mapper = id -> new ObjectMapper();
 
   private AbstractApp app;
 
@@ -47,16 +53,22 @@ public class JacksonPlugin implements FlakPlugin {
   public static void install(App app) {
   }
 
+  public void setObjectMapperProvider(MapperProvider mapper) {
+    this.mapper = Objects.requireNonNull(mapper);
+  }
+
+  @Deprecated
   public void setObjectMapper(ObjectMapper mapper) {
-    this.mapper = mapper;
+    setObjectMapperProvider(new DefaultMapperProvider(mapper));
   }
 
   void init() {
-    if (mapper == null)
-      mapper = new ObjectMapper();
-
     app.addInputParser("JSON", new JsonInputParser(mapper));
-    app.addOutputFormatter("JSON", new JsonOutputFormatter<>(mapper));
+
+    // add an indirection so we can change the mapper provider after the output
+    // formatter has been set
+    app.addOutputFormatter("JSON",
+                           new JsonOutputFormatter<>(id -> mapper.getMapper(id)));
 
     app.addPlugin(this);
   }
