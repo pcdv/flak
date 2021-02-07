@@ -24,10 +24,11 @@ allprojects {
   }
 
   dependencies {
-    testCompile "junit:junit:4.11"
+    testImplementation "junit:junit:4.11"
   }
 
   if (PUBLISH_PROJECTS.contains(project.name)) {
+    apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: "ivy-publish"
 

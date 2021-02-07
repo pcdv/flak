@@ -6,6 +6,6 @@ package flak;
  *
  * @author pcdv
  */
-public interface InputParser {
-  Object parse(Request req, Class type) throws Exception;
+public interface InputParser<T> {
+  T parse(Request req, Class<T> type) throws Exception;
 }

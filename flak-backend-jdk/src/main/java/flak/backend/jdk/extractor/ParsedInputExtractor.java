@@ -7,21 +7,23 @@ import flak.spi.ArgExtractor;
 import flak.spi.SPRequest;
 
 /**
+ * Extracts a method argument using an InputParser.
+ *
  * @author pcdv
  */
-public class ParsedInputExtractor extends ArgExtractor<Object> {
-  private InputParser inputParser;
+public class ParsedInputExtractor<T> extends ArgExtractor<T> {
+  private final InputParser<T> inputParser;
 
-  private Class type;
+  private final Class<T> type;
 
-  public ParsedInputExtractor(int index, InputParser inputParser, Class type) {
+  public ParsedInputExtractor(int index, InputParser<T> inputParser, Class<T> type) {
     super(index);
     this.inputParser = Objects.requireNonNull(inputParser);
     this.type = type;
   }
 
   @Override
-  public Object extract(SPRequest request) throws Exception {
+  public T extract(SPRequest request) throws Exception {
     return inputParser.parse(request, type);
   }
 }

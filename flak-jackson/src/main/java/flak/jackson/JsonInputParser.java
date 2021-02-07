@@ -7,7 +7,7 @@ import flak.Request;
 /**
  * @author pcdv
  */
-public class JsonInputParser implements InputParser {
+public class JsonInputParser<T> implements InputParser<T> {
 
   private final MapperProvider mapper;
 
@@ -20,7 +20,7 @@ public class JsonInputParser implements InputParser {
   }
 
   @Override
-  public Object parse(Request req, Class type) throws Exception {
+  public T parse(Request req, Class<T> type) throws Exception {
     return mapper.getMapper(null).readValue(req.getInputStream(), type);
   }
 }

@@ -26,7 +26,6 @@ import flak.spi.util.Log;
  *
  * @author pcdv
  */
-@SuppressWarnings("unchecked")
 public class MethodHandler extends AbstractMethodHandler {
 
   private static final String[] EMPTY = {};
@@ -47,10 +46,10 @@ public class MethodHandler extends AbstractMethodHandler {
     this.splitPath = uri.isEmpty() ? EMPTY : uri.substring(1).split("/");
   }
 
-  protected ArgExtractor[] createExtractors(Method m) {
+  protected ArgExtractor<?>[] createExtractors(Method m) {
     int[] idx = calcIndexes(splitPath);
     Class<?>[] types = m.getParameterTypes();
-    ArgExtractor[] extractors = new ArgExtractor[types.length];
+    ArgExtractor<?>[] extractors = new ArgExtractor[types.length];
     AtomicInteger index = new AtomicInteger();
     for (int i = 0; i < types.length; i++) {
       extractors[i] = createExtractor(m, types[i], i, index, idx);
@@ -86,12 +85,13 @@ public class MethodHandler extends AbstractMethodHandler {
    * @param idx indexes of variables in split URI, eg. { 1 } to extract "world"
    * from
    */
-  protected ArgExtractor createExtractor(Method m,
-                                         Class<?> type,
-                                         int i,
-                                         AtomicInteger urlParam,
-                                         int[] idx) {
-    ArgExtractor ex = app.getCustomExtractor(m, type);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  protected ArgExtractor<?> createExtractor(Method m,
+                                            Class<?> type,
+                                            int i,
+                                            AtomicInteger urlParam,
+                                            int[] idx) {
+    ArgExtractor<?> ex = app.getCustomExtractor(m, type);
     if (ex != null)
       return ex;
 
@@ -115,7 +115,7 @@ public class MethodHandler extends AbstractMethodHandler {
       return new IntExtractor(i, idx[urlParam.getAndIncrement()]);
     }
     else {
-      InputParser inputParser;
+      InputParser<?> inputParser;
       if (type == Form.class) {
         inputParser = new FormParser();
       }

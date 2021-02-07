@@ -27,9 +27,9 @@ public interface App {
    * type of an argument of the route handler. The method must be decorated
    * with {@link flak.annotations.InputFormat}.
    */
-  App addInputParser(String name, InputParser inputParser);
+  App addInputParser(String name, InputParser<?> inputParser);
 
-  InputParser getInputParser(String name);
+  <T> InputParser<T> getInputParser(String name);
 
   /**
    * Starts the application.

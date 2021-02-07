@@ -30,7 +30,7 @@ public abstract class AbstractApp implements App {
   private final Map<String, OutputFormatter<?>> outputFormatterMap =
     new Hashtable<>();
 
-  private final Map<String, InputParser> inputParserMap = new Hashtable<>();
+  private final Map<String, InputParser<?>> inputParserMap = new Hashtable<>();
 
   private final Vector<ErrorHandler> errorHandlers = new Vector<>();
 
@@ -38,7 +38,7 @@ public abstract class AbstractApp implements App {
 
   protected UnknownPageHandler unknownPageHandler;
 
-  private final Map<Class, ArgExtractor> extractors = new HashMap<>();
+  private final Map<Class<?>, ArgExtractor<?>> extractors = new HashMap<>();
 
   private final List<FlakPlugin> plugins = new ArrayList<>();
 
@@ -103,8 +103,9 @@ public abstract class AbstractApp implements App {
     return this;
   }
 
-  public InputParser getInputParser(String name) {
-    return inputParserMap.get(name);
+  @SuppressWarnings("unchecked")
+  public <T> InputParser<T> getInputParser(String name) {
+    return (InputParser<T>) inputParserMap.get(name);
   }
 
   public String makeAbsoluteUrl(String uri) {
@@ -181,11 +182,11 @@ public abstract class AbstractApp implements App {
     return rootUrl == null || rootUrl.equals("/") ? path : rootUrl + path;
   }
 
-  public ArgExtractor getCustomExtractor(Method m, Class<?> type) {
+  public ArgExtractor<?> getCustomExtractor(Method m, Class<?> type) {
     return extractors.get(type);
   }
 
-  public void addCustomExtractor(Class<?> type, ArgExtractor extractor) {
+  public <T> void addCustomExtractor(Class<T> type, ArgExtractor<T> extractor) {
     extractors.put(type, extractor);
   }
 
@@ -193,6 +194,7 @@ public abstract class AbstractApp implements App {
     plugins.add(plugin);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> T getPlugin(Class<T> clazz) {
     return (T) plugins.stream()

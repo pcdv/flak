@@ -58,7 +58,7 @@ public class JsonTest extends AbstractAppTest {
   @Route("/api/jsonMap")
   @Post
   @JSON
-  public Map postMap(Map map) {
+  public Map<?,?> postMap(Map<String, Object> map) {
     map.put("status", "ok");
     return map;
   }
@@ -66,17 +66,17 @@ public class JsonTest extends AbstractAppTest {
   @Route("/api/jsonMapVoid")
   @Post
   @JSON
-  public void postMapVoid(Map map) {
+  public void postMapVoid(Map<String, Object> map) {
     map.put("status", "ok");
   }
 
   @Test
   public void testJsonMap() throws Exception {
-    Map m = new HashMap();
+    Map<String, Object> m = new HashMap<>();
     m.put("foo", "bar");
     String reply = client.post("/api/jsonMap", new ObjectMapper().writeValueAsString(m));
 
-    Map r = new ObjectMapper().readValue(reply, Map.class);
+    Map<?, ?> r = new ObjectMapper().readValue(reply, Map.class);
     Assert.assertEquals("ok", r.get("status"));
     Assert.assertEquals("bar", r.get("foo"));
 

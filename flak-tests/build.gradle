@@ -1,10 +1,11 @@
 version version_flak
 
 dependencies {
-  compile project(":flak-api")
-  compile project(":flak-jackson")
-  compile project(":flak-login")
-  compile project(":flak-resource")
-  runtime project(":flak-backend-jdk")
-  compile project(":flak-util")
+  implementation project(":flak-api")
+  implementation project(":flak-spi")
+  implementation project(":flak-jackson")
+  implementation project(":flak-login")
+  implementation project(":flak-resource")
+  runtimeOnly project(":flak-backend-jdk")
+  implementation project(":flak-util")
 }

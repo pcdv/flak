@@ -30,9 +30,9 @@ public class FlakLogin implements FlakPlugin {
 
     app.addPlugin(this);
 
-    app.addCustomExtractor(SessionManager.class, new ArgExtractor(-1) {
+    app.addCustomExtractor(SessionManager.class, new ArgExtractor<SessionManager>(-1) {
       @Override
-      public Object extract(SPRequest request) {
+      public SessionManager extract(SPRequest request) {
         return sessionManager;
       }
     });

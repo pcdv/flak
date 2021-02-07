@@ -1,7 +1,7 @@
 dependencies {
-  compile project(':flak-api')
-  compile project(':flak-resource')
-  runtime project(':flak-backend-jdk')
+  implementation project(':flak-api')
+  implementation project(':flak-resource')
+  runtimeOnly project(':flak-backend-jdk')
 }
 
 // consider app as resource so it is automatically included in jar and copied
@@ -20,7 +20,7 @@ jar {
   from "$buildDir/classes/main"
   from {
     // TODO: is there a way to include only required classes?
-    configurations.runtime.collect {
+    configurations.runtimeClasspath.collect {
       it.isDirectory() ? it : project.zipTree(it)
     }
   }
