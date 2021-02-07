@@ -1,5 +1,7 @@
 # Flak - A lightweight and modular web framework for Java
 
+[![Release](https://jitpack.io/v/pcdv/flak.svg)](https://jitpack.io/#pcdv/flak)
+
 Flak allows to easily write lightweight web applications. It is composed
 of a generic API, a default implementation and some add-ons. In a minimal 
 setup, the total size of dependencies is around 40KiB.
@@ -40,17 +42,15 @@ Here is the obligatory
  [HelloWorld](https://github.com/pcdv/flak/blob/master/flak-examples/src/main/java/flak/examples/HelloWorld.java) application.
 
 Here is the minimal set of dependencies needs to be included in `build.gradle`.
-If you want to download jars by hand, you can find them
-[here](https://bintray.com/paulcdv/maven).
 
 ```groovy
 repositories {
-  jcenter()
+  maven { url "https://jitpack.io" }
 }
 
 dependencies {
-  compile "com.github.pcdv.flak:flak-api:1.0.0-beta5"
-  runtime "com.github.pcdv.flak:flak-backend-jdk:1.0.0-beta5"
+  compile "com.github.pcdv.flak:flak-api:1.2.0"
+  runtime "com.github.pcdv.flak:flak-backend-jdk:1.2.0"
 }
 ```
 
