@@ -1,6 +1,5 @@
 package flask.test;
 
-import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -19,6 +18,7 @@ import flak.annotations.Route;
 import flask.test.util.SimpleClient;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -33,6 +33,19 @@ public class SSLTest {
     return "OK";
   }
 
+  @Before
+  public void setUp() throws Exception {
+    SSLContext context = getSslContext("/test-resources/lig.keystore", "simulator");
+
+    AppFactory factory = Flak.getFactory();
+    factory.getServer().setSSLContext(context);
+    factory.setPort(9191);
+
+    app = factory.createApp();
+    app.scan(this);
+    app.start();
+  }
+
   @After
   public void tearDown() {
     app.stop();
@@ -40,37 +53,30 @@ public class SSLTest {
 
   @Test
   public void testIt() throws Exception {
-
+    // this test uses a self-signed certificate, so disable checks in client
     trustAllCertificates();
-
-    AppFactory factory = Flak.getFactory();
-    factory.getServer().setSSLContext(getSslContext());
-
-    factory.setPort(9191);
-    app = factory.createApp();
-    app.scan(this);
-    app.start();
-
+    Assert.assertTrue(app.getRootUrl().contains("https://"));
     Assert.assertEquals("OK", new SimpleClient(app.getRootUrl()).get("/"));
   }
 
   // https://stackoverflow.com/questions/2308479/simple-java-https-server
-  private SSLContext getSslContext() throws Exception {
+  @SuppressWarnings("SameParameterValue")
+  private SSLContext getSslContext(String keyStorePath, String pwd) throws Exception {
+    char[] password = pwd.toCharArray();
+
     SSLContext sslContext = SSLContext.getInstance("TLS");
 
     // initialise the keystore
-    char[] password = "simulator".toCharArray();
-    KeyStore ks = KeyStore.getInstance("JKS");
-    InputStream fis = getClass().getResourceAsStream("/test-resources/lig.keystore");
-    ks.load(fis, password);
+    KeyStore keyStore = KeyStore.getInstance("JKS");
+    keyStore.load(getClass().getResourceAsStream(keyStorePath), password);
 
     // setup the key manager factory
     KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-    kmf.init(ks, password);
+    kmf.init(keyStore, password);
 
     // setup the trust manager factory
     TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-    tmf.init(ks);
+    tmf.init(keyStore);
 
     // setup the HTTPS context and parameters
     sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
