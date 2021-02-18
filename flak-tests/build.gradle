@@ -1,5 +1,3 @@
-version version_flak
-
 dependencies {
   implementation project(":flak-api")
   implementation project(":flak-spi")
