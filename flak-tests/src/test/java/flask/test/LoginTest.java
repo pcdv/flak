@@ -39,8 +39,8 @@ public class LoginTest extends AbstractAppTest {
 
   @Route("/app")
   @LoginRequired
-  public String appPage() {
-    return "Welcome";
+  public String appPage(FlakUser user) {
+    return "Welcome " + user.getId();
   }
 
   @Post
@@ -69,11 +69,11 @@ public class LoginTest extends AbstractAppTest {
                         client.post("/login", "login=foo&password="));
 
     // good login/password redirects to app
-      Assert.assertEquals("Welcome",
+      Assert.assertEquals("Welcome foo",
                         client.post("/login", "login=foo&password=bar"));
 
     // app remains accessible thanks to session cookie
-    Assert.assertEquals("Welcome", client.get("/app"));
+    Assert.assertEquals("Welcome foo", client.get("/app"));
 
     // logout link redirects to login page
     Assert.assertEquals("Please login", client.get("/logout"));
