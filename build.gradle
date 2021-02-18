@@ -1,5 +1,3 @@
-apply plugin: 'eclipse'
-
 def PUBLISH_PROJECTS = [
   'flak-api',
   'flak-spi',
@@ -29,8 +27,8 @@ allprojects {
 
   if (PUBLISH_PROJECTS.contains(project.name)) {
     apply plugin: 'java-library'
-    apply plugin: 'maven-publish'
     apply plugin: "ivy-publish"
+    apply plugin: "maven-publish"
 
     publishing {
       repositories {
@@ -43,6 +41,12 @@ allprojects {
         // allows to do a local publish
         ivy(IvyPublication) {
           organisation "com.github.pcdv.flak"
+          from components.java
+        }
+
+        // publishToMavenLocal (or jitpack.io)
+        maven(MavenPublication) {
+          groupId = 'com.github.pcdv.flak'
           from components.java
         }
       }
