@@ -37,6 +37,14 @@ public class FlakLogin implements FlakPlugin {
       }
     });
 
+    app.addCustomExtractor(FlakUser.class, new ArgExtractor<FlakUser>(-1) {
+      @Override
+      public FlakUser extract(SPRequest request) {
+        FlakSession session = sessionManager.getCurrentSession(request);
+        return session == null ? null : session.getUser();
+      }
+    });
+
     return this;
   }
 
