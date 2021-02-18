@@ -15,8 +15,6 @@ allprojects {
   sourceCompatibility = 1.8
   targetCompatibility = 1.8
 
-  version = "${version_flak}" // see gradle.properties
-
   repositories {
     mavenCentral()
   }
@@ -44,7 +42,7 @@ allprojects {
           from components.java
         }
 
-        // publishToMavenLocal (or jitpack.io)
+        // publishToMavenLocal (or jitpack.io) using -Pversion=x.y.z
         maven(MavenPublication) {
           groupId = 'com.github.pcdv.flak'
           from components.java
