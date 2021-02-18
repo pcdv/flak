@@ -21,4 +21,9 @@ public class DefaultFlakSession implements FlakSession {
   public FlakUser getUser() {
     return user;
   }
+
+  @Override
+  public String toString() {
+    return "DefaultFlakSession{user=" + user + '}';
+  }
 }
