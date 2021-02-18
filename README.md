@@ -216,7 +216,7 @@ available, you can find examples in the
  * error handlers
  * HTTP redirection
  * pluggable user authentication
- * direct serving of static resources from directory or jar
+ * direct serving of static resources from a directory or jar
  * HTTPS support (experimental)
  * ...
 
@@ -226,7 +226,7 @@ I'm a big fan of lightweight and simple. I've always liked the simplicity
 of Flask applications and missed an equivalent solution for Java. Most existing
 frameworks were very heavy in terms of dependencies 
 (e.g. [Play](https://www.playframework.com/), 
-[Sprint Boot](https://projects.spring.io/spring-boot/), etc). 
+[Spring Boot](https://projects.spring.io/spring-boot/), etc). 
 [Spark](http://sparkjava.com/) was a better fit but it brings ~2.5MiB of
 dependencies.
 
