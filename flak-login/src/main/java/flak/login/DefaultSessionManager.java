@@ -11,21 +11,20 @@ import flak.Response;
 import flak.spi.util.Log;
 
 /**
- * Default, non-persistent, implementation of SessionManager.
- *
- * @author pcdv
+ * Default, non-persistent, implementation of SessionManager. Feel free to
+ * extend it, or replace it.
  */
 public class DefaultSessionManager implements SessionManager {
 
-  private Map<String, FlakSession> sessions = new Hashtable<>();
+  protected final Map<String, FlakSession> sessions = new Hashtable<>();
 
-  private String sessionCookieName = "sessionToken";
+  protected final Map<String, FlakUser> users = new Hashtable<>();
 
-  private String loginPage;
+  protected String sessionCookieName = "sessionToken";
 
-  private boolean requireLoggedInByDefault;
+  protected String loginPage;
 
-  private Map<String, FlakUser> users = new Hashtable<>();
+  protected boolean requireLoggedInByDefault;
 
   /**
    * Changes the name of the cookie in which the session token is stored. This
