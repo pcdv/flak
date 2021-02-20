@@ -12,17 +12,21 @@ import flak.spi.SPRequest;
  */
 public class FlakLogin implements SPPlugin {
 
-  private DefaultSessionManager sessionManager;
+  /**
+   * We use a delegate because if setSessionManager() is called, the
+   * previous manager may have been leaked in some handlers.
+   */
+  private final SessionManagerDelegate sessionManager;
 
   private final AbstractApp app;
 
   public FlakLogin(App app) {
     this.app = (AbstractApp) app;
-    this.sessionManager = new DefaultSessionManager();
+    this.sessionManager = new SessionManagerDelegate(new DefaultSessionManager());
   }
 
-  public FlakLogin setSessionManager(DefaultSessionManager sessionManager) {
-    this.sessionManager = sessionManager;
+  public FlakLogin setSessionManager(SessionManager sessionManager) {
+    this.sessionManager.setDelegate(sessionManager);
     return this;
   }
 
@@ -48,7 +52,7 @@ public class FlakLogin implements SPPlugin {
     return this;
   }
 
-  public DefaultSessionManager getSessionManager() {
+  public SessionManager getSessionManager() {
     return sessionManager;
   }
 

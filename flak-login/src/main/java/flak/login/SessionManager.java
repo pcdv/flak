@@ -39,4 +39,10 @@ public interface SessionManager {
   void closeCurrentSession(Request request);
 
   FlakUser getUser(String id);
+
+  FlakUser createUser(String id);
+
+  void addUser(FlakUser user);
+
+  String getAuthTokenCookieName();
 }
