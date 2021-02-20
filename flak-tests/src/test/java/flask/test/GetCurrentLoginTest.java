@@ -28,7 +28,7 @@ public class GetCurrentLoginTest extends AbstractAppTest {
 
   @Override
   protected void preScan() {
-    installFlakLogin();
+    initFlakLogin();
     sessionManager = flakLogin.getSessionManager();
   }
 

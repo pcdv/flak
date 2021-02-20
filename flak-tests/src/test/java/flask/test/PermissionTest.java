@@ -17,7 +17,7 @@ import org.junit.Test;
 public class PermissionTest extends AbstractAppTest {
   @Override
   protected void preScan() {
-    installFlakLogin();
+    initFlakLogin();
 
     FlakUser foo = sessionManager.createUser("foo");
     FlakUser joe = sessionManager.createUser("joe");

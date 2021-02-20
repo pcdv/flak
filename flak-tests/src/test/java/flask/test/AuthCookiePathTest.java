@@ -15,7 +15,7 @@ public class AuthCookiePathTest extends AbstractAppTest {
 
   @Override
   protected void preScan() {
-    installFlakLogin();
+    initFlakLogin();
     sessionManager.setLoginPage("/");
     sessionManager.setRequireLoggedInByDefault(true);
   }

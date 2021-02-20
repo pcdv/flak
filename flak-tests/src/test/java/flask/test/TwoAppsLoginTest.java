@@ -33,15 +33,13 @@ public class TwoAppsLoginTest {
 
   private WebServer ws;
 
-  private App app1, app2;
-
   @Before
   public void setUp() throws Exception {
     AppFactory fac = Flak.getFactory();
     fac.setPort(9191);
     ws = fac.getServer();
-    app1 = fac.createApp("/app1");
-    app2 = fac.createApp("/app2");
+    App app1 = fac.createApp("/app1");
+    App app2 = fac.createApp("/app2");
 
     DefaultSessionManager dsm = new DefaultSessionManager();
     dsm.setRequireLoggedInByDefault(true);

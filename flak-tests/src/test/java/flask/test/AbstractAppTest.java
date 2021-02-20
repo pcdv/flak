@@ -2,8 +2,8 @@ package flask.test;
 
 import flak.App;
 import flak.Flak;
-import flak.login.DefaultSessionManager;
 import flak.login.FlakLogin;
+import flak.login.SessionManager;
 import flask.test.util.SimpleClient;
 import flask.test.util.ThreadState;
 import org.junit.After;
@@ -25,7 +25,7 @@ public class AbstractAppTest {
 
   protected FlakLogin flakLogin;
 
-  protected DefaultSessionManager sessionManager;
+  protected SessionManager sessionManager;
 
   @Before
   public void setUp() throws Exception {
@@ -40,7 +40,7 @@ public class AbstractAppTest {
     client = new SimpleClient(app.getRootUrl());
   }
 
-  protected void installFlakLogin() {
+  protected void initFlakLogin() {
     this.flakLogin = app.getPlugin(FlakLogin.class);
     this.sessionManager = flakLogin.getSessionManager();
   }

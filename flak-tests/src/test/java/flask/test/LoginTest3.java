@@ -4,7 +4,6 @@ import flak.Form;
 import flak.Response;
 import flak.annotations.Post;
 import flak.annotations.Route;
-import flak.login.DefaultSessionManager;
 import flak.login.LoginNotRequired;
 import flak.login.LoginPage;
 import flak.login.LoginRequired;
@@ -22,7 +21,7 @@ public class LoginTest3 extends AbstractAppTest {
 
   @Override
   protected void preScan() {
-    installFlakLogin();
+    initFlakLogin();
   }
 
   @LoginPage
@@ -46,13 +45,12 @@ public class LoginTest3 extends AbstractAppTest {
   @Post
   @LoginNotRequired
   @Route(value = "/login")
-  public void login(Response r, Form form, SessionManager sessionManager) {
+  public void login(Response r, Form form, SessionManager sm) {
     String login = form.get("login");
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      DefaultSessionManager dsm = (DefaultSessionManager) sessionManager;
-      sessionManager.openSession(app, dsm.createUser(login), r);
+      sm.openSession(app, sm.createUser(login), r);
       r.redirect("/app");
     }
     else

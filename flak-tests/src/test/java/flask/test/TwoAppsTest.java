@@ -32,7 +32,7 @@ public class TwoAppsTest {
   @Rule
   public TemporaryFolder tmp = new TemporaryFolder();
 
-  private App app1, app2;
+  private App app1;
 
   @Before
   public void setUp() throws Exception {
@@ -52,7 +52,7 @@ public class TwoAppsTest {
       }
     });
 
-    app2 = fac.createApp("/app2").scan(new Object() {
+    App app2 = fac.createApp("/app2").scan(new Object() {
       @Route("/hello")
       public String hello(Request req) {
         return "Hello from app2 - path = " + req.getPath();

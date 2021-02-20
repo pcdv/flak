@@ -5,8 +5,8 @@ import flak.AppFactory;
 import flak.Flak;
 import flak.WebServer;
 import flak.annotations.Route;
-import flak.login.DefaultSessionManager;
 import flak.login.FlakLogin;
+import flak.login.SessionManager;
 import flak.plugin.resource.FlakResourceImpl;
 import flask.test.util.SimpleClient;
 import org.junit.After;
@@ -17,7 +17,7 @@ public class ServePathTest {
 
   private App app;
 
-  private DefaultSessionManager sessionManager;
+  private SessionManager sessionManager;
 
   @After
   public void tearDown() {

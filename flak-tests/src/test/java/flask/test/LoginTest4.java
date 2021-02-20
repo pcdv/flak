@@ -2,7 +2,6 @@ package flask.test;
 
 import flak.annotations.Post;
 import flak.annotations.Route;
-import flak.login.DefaultSessionManager;
 import flak.login.LoginNotRequired;
 import flak.login.SessionManager;
 import org.junit.Assert;
@@ -16,15 +15,14 @@ import org.junit.Test;
 public class LoginTest4 extends AbstractAppTest {
   @Override
   protected void preScan() {
-    installFlakLogin();
+    initFlakLogin();
   }
 
   @LoginNotRequired
   @Post
   @Route(value = "/auth/login")
-  public void login(SessionManager sessionManager) {
-    DefaultSessionManager dsm = (DefaultSessionManager) sessionManager;
-    sessionManager.openSession(app, dsm.createUser("foo"), app.getResponse());
+  public void login(SessionManager dsm) {
+    dsm.openSession(app, dsm.createUser("foo"), app.getResponse());
     app.getResponse().redirect("/hello");
   }
 

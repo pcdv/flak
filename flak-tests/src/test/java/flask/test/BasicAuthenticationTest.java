@@ -56,7 +56,7 @@ public class BasicAuthenticationTest extends AbstractAppTest {
   }
 
   @Override
-  protected void installFlakLogin() {
+  protected void initFlakLogin() {
     this.flakLogin = app.getPlugin(FlakLogin.class);
     sessionManager = new BasicAuthSessionManager();
     sessionManager.addUser(new DefaultUser("foo"));
@@ -65,7 +65,7 @@ public class BasicAuthenticationTest extends AbstractAppTest {
 
   @Override
   protected void preScan() {
-    installFlakLogin();
+    initFlakLogin();
   }
 
   @Test

@@ -5,7 +5,6 @@ import flak.Flak;
 import flak.annotations.Route;
 import flak.login.DefaultSessionManager;
 import flak.login.FlakLogin;
-import flak.spi.AbstractApp;
 import flask.test.util.SimpleClient;
 import org.junit.Test;
 
@@ -42,7 +41,7 @@ public class LoginCheckBreachTest extends AbstractAppTest {
       }
     });
 
-    ((AbstractApp) app).addPlugin(new FlakLogin(app));
+    app.addPlugin(new FlakLogin(app));
     initFlakLogin();
     app.start();
 

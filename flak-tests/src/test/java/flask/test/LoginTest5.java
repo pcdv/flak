@@ -5,7 +5,6 @@ import flak.Request;
 import flak.Response;
 import flak.annotations.Post;
 import flak.annotations.Route;
-import flak.login.DefaultSessionManager;
 import flak.login.LoginNotRequired;
 import flak.login.SessionManager;
 import org.junit.Assert;
@@ -25,7 +24,7 @@ public class LoginTest5 extends AbstractAppTest {
 
   @Override
   protected void preScan() {
-    installFlakLogin();
+    initFlakLogin();
     sm = flakLogin.getSessionManager();
   }
 
@@ -37,8 +36,7 @@ public class LoginTest5 extends AbstractAppTest {
     String pass = form.get("password");
 
     if (login.equals("foo") && pass.equals("bar")) {
-      DefaultSessionManager dsm = (DefaultSessionManager) sm;
-      sm.openSession(app, dsm.createUser(login), r);
+      sm.openSession(app, sm.createUser(login), r);
       r.redirect("/hello");
     }
     else

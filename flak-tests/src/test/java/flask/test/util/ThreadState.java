@@ -126,12 +126,12 @@ public class ThreadState {
     ArrayList<String> removed = new ArrayList<>();
 
     for (String name : previous.keySet())
-      if (!actual.containsKey(name) && !isIgnored(name))
+      if (!actual.containsKey(name) && isIncluded(name))
         removed.add(name);
 
     for (String name : actual.keySet()) {
       Thread thread = actual.get(name);
-      if (!previous.containsKey(name) && !isIgnored(name) && thread.isAlive()) {
+      if (!previous.containsKey(name) && isIncluded(name) && thread.isAlive()) {
         added.add(name);
         System.err.println(stack(thread));
       }
@@ -145,12 +145,12 @@ public class ThreadState {
     return res;
   }
 
-  private boolean isIgnored(String name) {
+  private boolean isIncluded(String name) {
     for (Pattern pat : ignoredThreads) {
       if (pat.matcher(name).matches())
-        return true;
+        return false;
     }
-    return false;
+    return true;
   }
 
   @Override

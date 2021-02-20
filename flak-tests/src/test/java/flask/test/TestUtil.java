@@ -19,12 +19,14 @@ public class TestUtil {
       callable.call();
       Assert.fail("An exception was supposed to be thrown (with message: " + message + ")");
     }
-    catch (Throwable e) {
+    catch (Exception e) {
+      Throwable t = e;
       if (getCause && e.getCause() != null)
-        e = e.getCause();
-      if (!Objects.equals(message, e.getMessage()))
+        t = e.getCause();
+      boolean contains = t.toString().contains(message);
+      if (!contains)
         e.printStackTrace();
-      Assert.assertEquals(e.toString(), message, e.getMessage());
+      Assert.assertTrue(e.toString(), contains);
     }
   }
 
