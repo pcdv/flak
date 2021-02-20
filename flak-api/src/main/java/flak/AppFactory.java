@@ -1,5 +1,7 @@
 package flak;
 
+import java.util.function.Predicate;
+
 /**
  * This is Flak's entry point for creating a web application. The
  * implementation depends on the backend being used (there is only one for now).
@@ -13,6 +15,8 @@ public interface AppFactory {
    * Returns the associated web server (there is one per factory).
    */
   WebServer getServer();
+
+  void setPluginValidator(Predicate<Class<? extends FlakPlugin>> pluginValidator);
 
   /**
    * Creates a new web app, with an implicit root path.

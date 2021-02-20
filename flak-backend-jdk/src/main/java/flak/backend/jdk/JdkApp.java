@@ -5,8 +5,8 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.stream.Stream;
 
-import flak.spi.PluginUtil;
 import flak.Request;
 import flak.Response;
 import flak.spi.AbstractApp;
@@ -35,9 +35,6 @@ public class JdkApp extends AbstractApp {
   JdkApp(String rootUrl, JdkWebServer server) {
     super(rootUrl);
     this.srv = server;
-
-    PluginUtil.loadPlugins(this);
-
     // in case we are extended by a subclass with annotations
     scan(this);
   }
@@ -85,6 +82,11 @@ public class JdkApp extends AbstractApp {
     }
 
     return c;
+  }
+
+  @Override
+  protected Stream<AbstractMethodHandler> getMethodHandlers() {
+    return handlers.values().stream().flatMap(c -> c.handlers.stream());
   }
 
   /**
