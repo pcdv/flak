@@ -59,5 +59,7 @@ public interface App {
 
   String absolutePath(String path);
 
-  <T> T getPlugin(Class<T> clazz);
+  <T extends FlakPlugin> T getPlugin(Class<T> clazz);
+
+  void addPlugin(FlakPlugin plugin);
 }

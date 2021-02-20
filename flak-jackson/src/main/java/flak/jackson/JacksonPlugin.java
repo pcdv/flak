@@ -8,12 +8,12 @@ import flak.App;
 import flak.OutputFormatter;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
-import flak.spi.FlakPlugin;
+import flak.spi.SPPlugin;
 
 /**
  * @author pcdv
  */
-public class JacksonPlugin implements FlakPlugin {
+public class JacksonPlugin implements SPPlugin {
 
   /**
    * By default, create a new mapper on each call to avoid contention

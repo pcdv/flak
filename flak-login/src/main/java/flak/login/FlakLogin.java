@@ -4,13 +4,13 @@ import flak.App;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
 import flak.spi.ArgExtractor;
-import flak.spi.FlakPlugin;
+import flak.spi.SPPlugin;
 import flak.spi.SPRequest;
 
 /**
  * @author pcdv
  */
-public class FlakLogin implements FlakPlugin {
+public class FlakLogin implements SPPlugin {
 
   private DefaultSessionManager sessionManager;
 

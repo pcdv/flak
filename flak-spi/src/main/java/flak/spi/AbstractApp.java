@@ -7,16 +7,9 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.stream.Stream;
 
-import flak.App;
-import flak.ErrorHandler;
-import flak.InputParser;
-import flak.OutputFormatter;
-import flak.Request;
-import flak.ScanException;
-import flak.SuccessHandler;
-import flak.UnknownPageHandler;
-import flak.WebServer;
+import flak.*;
 import flak.annotations.Route;
 import flak.spi.util.Log;
 
@@ -40,7 +33,7 @@ public abstract class AbstractApp implements App {
 
   private final Map<Class<?>, ArgExtractor<?>> extractors = new HashMap<>();
 
-  private final List<FlakPlugin> plugins = new ArrayList<>();
+  private final List<SPPlugin> plugins = new ArrayList<>();
 
   public AbstractApp(String rootUrl) {
     this.rootUrl = rootUrl;
@@ -78,7 +71,7 @@ public abstract class AbstractApp implements App {
 
   public void addHandler0(String route, Method method, Object obj) {
     AbstractMethodHandler handler = addHandler(route, method, obj);
-    for (FlakPlugin plugin : plugins) {
+    for (SPPlugin plugin : plugins) {
       plugin.preInit(handler);
     }
     handler.init();
@@ -98,7 +91,7 @@ public abstract class AbstractApp implements App {
   }
 
   @Override
-  public App addInputParser(String name, InputParser inputParser) {
+  public App addInputParser(String name, InputParser<?> inputParser) {
     inputParserMap.put(name, inputParser);
     return this;
   }
@@ -182,6 +175,7 @@ public abstract class AbstractApp implements App {
     return rootUrl == null || rootUrl.equals("/") ? path : rootUrl + path;
   }
 
+  @SuppressWarnings("unused")
   public ArgExtractor<?> getCustomExtractor(Method m, Class<?> type) {
     return extractors.get(type);
   }
@@ -191,12 +185,16 @@ public abstract class AbstractApp implements App {
   }
 
   public void addPlugin(FlakPlugin plugin) {
-    plugins.add(plugin);
+    plugins.add((SPPlugin) plugin);
+
+    getMethodHandlers().forEach(((SPPlugin) plugin)::preInit);
   }
+
+  protected abstract Stream<AbstractMethodHandler> getMethodHandlers();
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> T getPlugin(Class<T> clazz) {
+  public <T extends FlakPlugin> T getPlugin(Class<T> clazz) {
     return (T) plugins.stream()
                       .filter(p -> p.getClass() == clazz)
                       .findFirst()
