@@ -35,7 +35,7 @@ public class JdkWebServer implements WebServer {
 
   private final Map<String, Context> handlers = new Hashtable<>();
 
-  private Vector<JdkApp> apps = new Vector<>();
+  private final Vector<JdkApp> apps = new Vector<>();
 
   private SSLContext sslContext;
 

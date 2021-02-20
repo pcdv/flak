@@ -1,14 +1,14 @@
 package flak.jackson;
 
-import java.lang.reflect.Method;
-import java.util.Objects;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.App;
 import flak.OutputFormatter;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
 import flak.spi.SPPlugin;
+
+import java.lang.reflect.Method;
+import java.util.Objects;
 
 /**
  * @author pcdv
@@ -21,7 +21,7 @@ public class JacksonPlugin implements SPPlugin {
    */
   private MapperProvider mapper = id -> new ObjectMapper();
 
-  private AbstractApp app;
+  private final AbstractApp app;
 
   public JacksonPlugin(App app) {
     this.app = (AbstractApp) app;
@@ -45,25 +45,12 @@ public class JacksonPlugin implements SPPlugin {
     }
   }
 
-  /**
-   * @deprecated This method should not be called anymore as since 1.0 the
-   * Jackson plugin is automatically installed when present in classpath.
-   */
-  @Deprecated
-  public static void install(App app) {
-  }
-
   public void setObjectMapperProvider(MapperProvider mapper) {
     this.mapper = Objects.requireNonNull(mapper);
   }
 
-  @Deprecated
-  public void setObjectMapper(ObjectMapper mapper) {
-    setObjectMapperProvider(new DefaultMapperProvider(mapper));
-  }
-
   void init() {
-    app.addInputParser("JSON", new JsonInputParser(mapper));
+    app.addInputParser("JSON", new JsonInputParser<>(mapper));
 
     // add an indirection so we can change the mapper provider after the output
     // formatter has been set

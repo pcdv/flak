@@ -30,7 +30,7 @@ public class FlakLogin implements SPPlugin {
     return this;
   }
 
-  public FlakLogin install() {
+  void install() {
 
     app.addPlugin(this);
 
@@ -49,7 +49,6 @@ public class FlakLogin implements SPPlugin {
       }
     });
 
-    return this;
   }
 
   public SessionManager getSessionManager() {

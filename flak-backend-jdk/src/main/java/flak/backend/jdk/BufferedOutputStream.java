@@ -13,7 +13,7 @@ class BufferedOutputStream extends FilterOutputStream {
   /**
    * The internal buffer where data is stored.
    */
-  protected byte buf[];
+  protected byte[] buf;
 
   /**
    * The number of valid bytes in the buffer. This value is always
@@ -79,7 +79,7 @@ class BufferedOutputStream extends FilterOutputStream {
    * @param len the number of bytes to write.
    * @throws IOException if an I/O error occurs.
    */
-  public synchronized void write(byte b[], int off, int len) throws IOException {
+  public synchronized void write(byte[] b, int off, int len) throws IOException {
     if (len >= buf.length) {
             /* If the request length exceeds the size of the output buffer,
                flush the output buffer and then write the data directly.

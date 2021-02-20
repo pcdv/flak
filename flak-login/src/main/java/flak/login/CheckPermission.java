@@ -11,7 +11,6 @@ import flak.spi.SPRequest;
  * @author pcdv
  */
 public class CheckPermission implements BeforeHook {
-  private final AbstractMethodHandler handler;
 
   private final SessionManager manager;
 
@@ -19,7 +18,6 @@ public class CheckPermission implements BeforeHook {
 
   public CheckPermission(AbstractMethodHandler handler,
                          SessionManager manager) {
-    this.handler = handler;
     this.manager = manager;
 
     WithPermission perm =
@@ -30,7 +28,7 @@ public class CheckPermission implements BeforeHook {
   }
 
   @Override
-  public void execute(SPRequest request) throws StopProcessingException {
+  public void execute(SPRequest request) {
     if (permission != null) {
       FlakSession session = manager.getCurrentSession(request);
       if (session == null || !session.getUser().hasPermission(permission)) {

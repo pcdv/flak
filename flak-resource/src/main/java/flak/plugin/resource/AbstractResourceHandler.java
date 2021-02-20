@@ -19,7 +19,7 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
 
   private final String rootURI;
 
-  private boolean restricted;
+  private final boolean restricted;
 
   private final ContentTypeProvider mime;
 

@@ -11,7 +11,7 @@ public interface BeforeHook {
   class StopProcessingException extends Exception {}
 
   /**
-   * Throw this from execute() to reject a request. Youare supposed to set
+   * Throw this from execute() to reject a request. You are supposed to set
    * a status and/or reply some data before doing so.
    */
   StopProcessingException STOP = new StopProcessingException();

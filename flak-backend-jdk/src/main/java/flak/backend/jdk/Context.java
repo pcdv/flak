@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,7 +84,7 @@ public class Context implements HttpHandler {
 
       if (t instanceof HttpException) {
         req.setStatus(((HttpException) t).getResponseCode());
-        req.getOutputStream().write(t.getMessage().getBytes("UTF-8"));
+        req.getOutputStream().write(t.getMessage().getBytes(StandardCharsets.UTF_8));
         return;
       }
 

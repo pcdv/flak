@@ -3,6 +3,7 @@ package flak.spi;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -58,11 +59,11 @@ public abstract class AbstractMethodHandler
    */
   private final String route;
 
-  private ArgExtractor[] extractors;
+  private ArgExtractor<?>[] extractors;
 
   private final List<BeforeHook> beforeHooks = new Vector<>();
 
-  protected InputParser inputParser;
+  protected InputParser<?> inputParser;
 
   public AbstractMethodHandler(AbstractApp app,
                                String route,
@@ -94,7 +95,7 @@ public abstract class AbstractMethodHandler
     }
   }
 
-  protected abstract ArgExtractor[] createExtractors(Method m);
+  protected abstract ArgExtractor<?>[] createExtractors(Method m);
 
   /**
    * @param type the type of argument in method
@@ -102,7 +103,7 @@ public abstract class AbstractMethodHandler
    * @param idx indexes of variables in split URI, eg. { 1 } to extract "world"
    * from
    */
-  protected abstract ArgExtractor createExtractor(Method m,
+  protected abstract ArgExtractor<?> createExtractor(Method m,
                                                   Class<?> type,
                                                   int i,
                                                   AtomicInteger urlParam,
@@ -133,7 +134,7 @@ public abstract class AbstractMethodHandler
     this.outputFormat = outputFormatter;
   }
 
-  public void setInputParser(InputParser inputParser) {
+  public void setInputParser(InputParser<?> inputParser) {
     this.inputParser = inputParser;
   }
 
@@ -141,7 +142,7 @@ public abstract class AbstractMethodHandler
     return type != String.class && type != byte[].class && type != InputStream.class && type != Response.class && type != void.class;
   }
 
-  private InputParser initInputParser() {
+  private InputParser<?> initInputParser() {
     InputFormat input = javaMethod.getAnnotation(InputFormat.class);
     if (input != null)
       return app.getInputParser(input.value());
@@ -166,7 +167,6 @@ public abstract class AbstractMethodHandler
    * @return true when request was handled, false when it was ignored (eg. not
    * applicable)
    */
-  @SuppressWarnings("unchecked")
   public boolean handle(SPRequest req) throws Exception {
 
     if (!isApplicable(req))
@@ -206,7 +206,7 @@ public abstract class AbstractMethodHandler
     }
     else if (res instanceof String) {
       r.setStatus(HttpURLConnection.HTTP_OK);
-      r.getOutputStream().write(((String) res).getBytes("UTF-8"));
+      r.getOutputStream().write(((String) res).getBytes(StandardCharsets.UTF_8));
     }
     else if (res instanceof byte[]) {
       r.setStatus(HttpURLConnection.HTTP_OK);
