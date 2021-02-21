@@ -13,7 +13,6 @@ import javax.net.ssl.X509TrustManager;
 
 import flak.App;
 import flak.AppFactory;
-import flak.Flak;
 import flak.annotations.Route;
 import flask.test.util.SimpleClient;
 import org.junit.After;
@@ -37,7 +36,7 @@ public class SSLTest {
   public void setUp() throws Exception {
     SSLContext context = getSslContext("/test-resources/lig.keystore", "simulator");
 
-    AppFactory factory = Flak.getFactory();
+    AppFactory factory = TestUtil.getFactory();
     factory.getServer().setSSLContext(context);
     factory.setPort(9191);
 

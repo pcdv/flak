@@ -22,7 +22,7 @@ public class LoginCheckBreachTest extends AbstractAppTest {
   @Override
   public void setUp() throws Exception {
     // disable default setup to produce an init race between handlers and FlakLogin
-    AppFactory factory = Flak.getFactory();
+    AppFactory factory = TestUtil.getFactory();
     factory.setPort(9191);
     // prevent automatic addition of FlakLogin plugin
     factory.setPluginValidator(cls -> false);

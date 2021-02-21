@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import flak.AppFactory;
+import flak.Flak;
 import org.junit.Assert;
 
 public class TestUtil {
@@ -56,5 +58,14 @@ public class TestUtil {
     catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * Returns a factory implementation for running tests: jdk by default, or specified
+   * by system property "backend"
+   */
+  public static AppFactory getFactory() {
+    String backend = System.getProperty("backend", "jdk");
+    return Flak.getFactory(cls -> cls.getName().contains(backend));
   }
 }

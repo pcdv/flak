@@ -165,17 +165,20 @@ public class ThreadState {
   }
 
   public void assertNoChange() throws InterruptedException {
-    ThreadState newState = new ThreadState();
-    if (!newState.equals(this)) {
-      Thread.sleep(5);
-      newState = new ThreadState();
-      String diff = diff(newState);
-      if (diff.length() > 0) {
-        refreshThreads();
-        System.err.println("Active threads: " + Arrays.toString(threads));
-        throw new IllegalStateException("Thread state has changed: " + diff +
-                                        ". Use -DcheckNewThreads=false to disable check.");
+    long stop = System.currentTimeMillis() + 1000;
+    while (System.currentTimeMillis() < stop) {
+      if (! new ThreadState().equals(this)) {
+        Thread.sleep(10);
       }
+      else return;
+    }
+
+    String diff = diff(new ThreadState());
+    if (diff.length() > 0) {
+      refreshThreads();
+      System.err.println("Active threads: " + Arrays.toString(threads));
+      throw new IllegalStateException("Thread state has changed: " + diff +
+        ". Use -DcheckNewThreads=false to disable check.");
     }
   }
 

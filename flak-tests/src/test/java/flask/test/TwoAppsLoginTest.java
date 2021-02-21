@@ -1,10 +1,7 @@
 package flask.test;
 
-import java.io.IOException;
-
 import flak.App;
 import flak.AppFactory;
-import flak.Flak;
 import flak.Form;
 import flak.Request;
 import flak.Response;
@@ -18,6 +15,8 @@ import flask.test.util.SimpleClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -35,7 +34,7 @@ public class TwoAppsLoginTest {
 
   @Before
   public void setUp() throws Exception {
-    AppFactory fac = Flak.getFactory();
+    AppFactory fac = TestUtil.getFactory();
     fac.setPort(9191);
     ws = fac.getServer();
     App app1 = fac.createApp("/app1");

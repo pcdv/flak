@@ -5,5 +5,10 @@ dependencies {
   implementation project(":flak-login")
   implementation project(":flak-resource")
   runtimeOnly project(":flak-backend-jdk")
+  runtimeOnly project(":flak-backend-netty")
   implementation project(":flak-util")
+}
+
+test {
+  systemProperty "backend", project.property("backend")
 }
