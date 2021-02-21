@@ -35,6 +35,8 @@ public abstract class AbstractApp implements App {
 
   private final List<SPPlugin> plugins = new ArrayList<>();
 
+  private final ThreadLocal<Request> localRequest = new ThreadLocal<>();
+
   public AbstractApp(String rootUrl) {
     this.rootUrl = rootUrl;
   }
@@ -199,5 +201,18 @@ public abstract class AbstractApp implements App {
                       .filter(p -> p.getClass() == clazz)
                       .findFirst()
                       .get();
+  }
+
+  public void setThreadLocalRequest(Request req) {
+    localRequest.set(req);
+  }
+
+  @Override
+  public Request getRequest() {
+    return localRequest.get();
+  }
+
+  public Response getResponse() {
+    return getRequest().getResponse();
   }
 }

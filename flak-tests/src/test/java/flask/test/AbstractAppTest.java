@@ -1,14 +1,17 @@
 package flask.test;
 
 import flak.App;
-import flak.Flak;
+import flak.AppFactory;
 import flak.login.FlakLogin;
 import flak.login.SessionManager;
+import flask.test.util.DebugProxy;
 import flask.test.util.SimpleClient;
 import flask.test.util.ThreadState;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+
+import java.io.IOException;
 
 public class AbstractAppTest {
 
@@ -26,10 +29,15 @@ public class AbstractAppTest {
   protected FlakLogin flakLogin;
 
   protected SessionManager sessionManager;
+  protected DebugProxy proxy;
+
+  private static boolean USE_PROXY = Boolean.getBoolean("useDebugProxy");
 
   @Before
   public void setUp() throws Exception {
-    app = Flak.createHttpApp(9191);
+    AppFactory factory = TestUtil.getFactory();
+    factory.setPort(9191);
+    app = factory.createApp();
 
     preScan();
     app.scan(this);
@@ -37,7 +45,13 @@ public class AbstractAppTest {
     preStart();
     app.start();
 
-    client = new SimpleClient(app.getRootUrl());
+    if (USE_PROXY) {
+      proxy = new DebugProxy(9092, "localhost", 9191);
+      client = new SimpleClient(app.getRootUrl().replace("9191", "9092"));
+    }
+    else {
+      client = new SimpleClient(app.getRootUrl());
+    }
   }
 
   protected void initFlakLogin() {
@@ -59,8 +73,10 @@ public class AbstractAppTest {
   }
 
   @After
-  public void tearDown() {
-    app.stop();
+  public void tearDown() throws IOException {
+    if (app != null)
+      app.stop();
+    if (proxy != null)
+      proxy.close();
   }
-
 }

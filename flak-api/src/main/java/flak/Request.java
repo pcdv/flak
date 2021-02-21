@@ -40,7 +40,14 @@ public interface Request {
 
   InputStream getInputStream();
 
-  String getHttpMethod();
+  /**
+   * Same as getMethod() :/
+   * @deprecated
+   */
+  @Deprecated
+  default String getHttpMethod() {
+    return getMethod();
+  }
 
   Form getForm();
 

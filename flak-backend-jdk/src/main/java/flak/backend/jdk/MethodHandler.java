@@ -1,24 +1,15 @@
 package flak.backend.jdk;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import flak.Form;
-import flak.InputParser;
-import flak.Query;
-import flak.Request;
 import flak.Response;
-import flak.backend.jdk.extractor.IntExtractor;
-import flak.backend.jdk.extractor.ParsedInputExtractor;
-import flak.backend.jdk.extractor.RequestExtractor;
-import flak.backend.jdk.extractor.ResponseExtractor;
-import flak.backend.jdk.extractor.SplatExtractor;
-import flak.backend.jdk.extractor.StringExtractor;
 import flak.spi.AbstractMethodHandler;
-import flak.spi.ArgExtractor;
 import flak.spi.SPRequest;
+import flak.spi.util.IO;
 import flak.spi.util.Log;
+
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Handles a request submitted by the Context, if compatible with the HTTP
@@ -30,143 +21,69 @@ public class MethodHandler extends AbstractMethodHandler {
 
   private static final String[] EMPTY = {};
 
-  private final String uri;
-
-  /**
-   * The split URI, eg. { "hello", ":name" }
-   */
-  private final String[] splitPath;
-
-  private int splat = -1;
-
   MethodHandler(Context ctx, String uri, Method m, Object target) {
-    super(ctx.app, ctx.getRootURI() + uri, m, target);
-
-    this.uri = uri;
-    this.splitPath = uri.isEmpty() ? EMPTY : uri.substring(1).split("/");
-  }
-
-  protected ArgExtractor<?>[] createExtractors(Method m) {
-    int[] idx = calcIndexes(splitPath);
-    Class<?>[] types = m.getParameterTypes();
-    ArgExtractor<?>[] extractors = new ArgExtractor[types.length];
-    AtomicInteger index = new AtomicInteger();
-    for (int i = 0; i < types.length; i++) {
-      extractors[i] = createExtractor(m, types[i], i, index, idx);
-    }
-    if (index.get() < idx.length) {
-      throw new IllegalArgumentException("Not enough method parameters");
-    }
-    return extractors;
-  }
-
-  private int[] calcIndexes(String[] tok) {
-    int[] res = new int[tok.length];
-    int j = 0;
-    for (int i = 0; i < tok.length; i++) {
-      if (tok[i].charAt(0) == ':') {
-        if (splat != -1)
-          throw new IllegalArgumentException("Invalid route: " + uri);
-        res[j++] = i;
-      }
-      if (tok[i].charAt(0) == '*') {
-        if (i != tok.length - 1)
-          throw new IllegalArgumentException("Invalid route: " + uri);
-        res[j++] = i;
-        splat = i;
-      }
-    }
-    return Arrays.copyOf(res, j);
-  }
-
-  /**
-   * @param type the type of argument in method
-   * @param i the extractor's index (i.e. index of argument in method)
-   * @param idx indexes of variables in split URI, eg. { 1 } to extract "world"
-   * from
-   */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  protected ArgExtractor<?> createExtractor(Method m,
-                                            Class<?> type,
-                                            int i,
-                                            AtomicInteger urlParam,
-                                            int[] idx) {
-    ArgExtractor<?> ex = app.getCustomExtractor(m, type);
-    if (ex != null)
-      return ex;
-
-    if (type == Request.class) {
-      return new RequestExtractor(i);
-    }
-    else if (type == Response.class) {
-      return new ResponseExtractor(app, i);
-    }
-    else if (type == String.class) {
-      if (urlParam.get() >= idx.length) {
-        throw new IllegalArgumentException("Too many method parameters");
-      }
-      int tokenIndex = idx[urlParam.getAndIncrement()];
-      if (splat == tokenIndex)
-        return new SplatExtractor(i, tokenIndex);
-      else
-        return new StringExtractor(i, tokenIndex);
-    }
-    else if (type == int.class) {
-      return new IntExtractor(i, idx[urlParam.getAndIncrement()]);
-    }
-    else {
-      InputParser<?> inputParser;
-      if (type == Form.class) {
-        inputParser = new FormParser();
-      }
-      else if (type == Query.class) {
-        inputParser = new QueryParser();
-      }
-      else
-        inputParser = super.inputParser;
-
-      if (inputParser == null)
-        throw new IllegalArgumentException(
-          "No @InputFormat or @JSON found around method " + m.getName() + "()");
-
-      return new ParsedInputExtractor(i, inputParser, type);
-    }
-  }
-
-  private boolean hasSplat() {
-    return splat != -1;
-  }
-
-  private String[] getSplitPath() {
-    return splitPath;
+    super(ctx.app,
+          ctx.getRootURI() + uri,
+          uri.isEmpty() ? EMPTY : uri.substring(1).split("/"),
+          m,
+          target);
   }
 
   /**
    * Checks whether current handler should respond to specified request.
    */
-  @Override
   protected boolean isApplicable(SPRequest req) {
 
     Log.debug("isApplicable ? " + req.getPath() + " vs " + getRoute());
 
-    if (!req.getHttpMethod().equals(getHttpMethod()))
+    if (!req.getMethod().equals(getHttpMethod()))
       return false;
 
     String[] uri = req.getSplitUri();
-    String[] tok = getSplitPath();
-    if (uri.length != tok.length && !hasSplat())
+    String[] tok = splitPath;
+    if (uri.length != tok.length && splatIndex == -1)
       return false;
 
-    if (uri.length <= splat)
+    if (uri.length <= splatIndex)
       return false;
 
     for (int i = 0; i < tok.length; i++) {
-      if (tok[i].charAt(0) != ':' && tok[i].charAt(0) != '*' && !tok[i].equals(
-        uri[i]))
+      if (tok[i].charAt(0) != ':' && tok[i].charAt(0) != '*' && !tok[i].equals(uri[i]))
         return false;
     }
 
     return true;
   }
+
+  @SuppressWarnings({"StatementWithEmptyBody", "unchecked"})
+  protected void processResponse(Response r, Object res) throws Exception {
+    if (outputFormat != null) {
+      outputFormat.convert(res, r);
+    }
+    else if (res instanceof Response) {
+      // do nothing: status and headers should already be set
+    }
+    else if (res instanceof String) {
+      r.setStatus(HttpURLConnection.HTTP_OK);
+      r.getOutputStream().write(((String) res).getBytes(StandardCharsets.UTF_8));
+    }
+    else if (res instanceof byte[]) {
+      r.setStatus(HttpURLConnection.HTTP_OK);
+      r.getOutputStream().write((byte[]) res);
+    }
+    else if (res instanceof InputStream) {
+      r.setStatus(HttpURLConnection.HTTP_OK);
+      IO.pipe((InputStream) res, r.getOutputStream(), false);
+    }
+    else if (res == null) {
+      if (!r.isStatusSet())
+        r.setStatus(200);
+    }
+    else
+      throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod
+        .toGenericString());
+
+  }
+
 
 }

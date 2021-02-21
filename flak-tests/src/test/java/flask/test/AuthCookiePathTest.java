@@ -25,6 +25,7 @@ public class AuthCookiePathTest extends AbstractAppTest {
     return "OK";
   }
 
+  @LoginNotRequired
   @Route("/")
   public String loginPage() {
     return "Please login";

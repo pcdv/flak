@@ -20,8 +20,15 @@ public interface WebServer {
 
   int getPort();
 
+  /**
+   * @return "http" or "https" depending on whether a SSLContext is in use
+   */
   String getProtocol();
 
+  /**
+   * Defaults to "localhost". Can be overridden with setHostName(). Allows to
+   * build URLs.
+   */
   String getHostName();
 
   void setHostName(String hostName);

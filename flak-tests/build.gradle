@@ -4,7 +4,11 @@ dependencies {
   implementation project(":flak-jackson")
   implementation project(":flak-login")
   implementation project(":flak-resource")
-
   implementation project(":flak-backend-jdk") // got one test accessing JdkApp
+  runtimeOnly project(":flak-backend-netty")
   implementation project(":flak-util")
+}
+
+test {
+  systemProperty "backend", project.property("backend")
 }

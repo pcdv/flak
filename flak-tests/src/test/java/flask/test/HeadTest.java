@@ -1,5 +1,6 @@
 package flask.test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +43,7 @@ public class HeadTest extends AbstractAppTest {
   }
 
   @After
-  public void tearDown() {
+  public void tearDown() throws IOException {
     super.tearDown();
     Logger.getLogger("").removeHandler(logListener);
   }

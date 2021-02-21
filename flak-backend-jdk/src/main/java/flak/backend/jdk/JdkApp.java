@@ -1,17 +1,15 @@
 package flak.backend.jdk;
 
+import flak.spi.AbstractApp;
+import flak.spi.AbstractMethodHandler;
+import flak.spi.util.Log;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import flak.Request;
-import flak.Response;
-import flak.spi.AbstractApp;
-import flak.spi.AbstractMethodHandler;
-import flak.spi.util.Log;
 
 /**
  * Implements flak App with the JDK backend.
@@ -21,8 +19,6 @@ import flak.spi.util.Log;
 public class JdkApp extends AbstractApp {
 
   private final JdkWebServer srv;
-
-  private final ThreadLocal<JdkRequest> localRequest = new ThreadLocal<>();
 
   private final Map<String, Context> handlers = new Hashtable<>();
 
@@ -97,6 +93,7 @@ public class JdkApp extends AbstractApp {
     if (started)
       throw new IllegalStateException("Already started");
     started = true;
+    srv.addApp(this);
 
     if (!srv.isStarted())
       srv.start();
@@ -115,18 +112,6 @@ public class JdkApp extends AbstractApp {
 
   private void addHandlerInServer(String uri, Context h) {
     srv.addHandler(makeAbsoluteUrl(uri), h);
-  }
-
-  public void setThreadLocalRequest(JdkRequest req) {
-    localRequest.set(req);
-  }
-
-  public Request getRequest() {
-    return localRequest.get();
-  }
-
-  public Response getResponse() {
-    return localRequest.get();
   }
 
   public JdkWebServer getServer() {

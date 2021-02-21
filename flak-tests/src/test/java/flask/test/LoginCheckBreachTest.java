@@ -5,6 +5,7 @@ import flak.Flak;
 import flak.annotations.Route;
 import flak.login.DefaultSessionManager;
 import flak.login.FlakLogin;
+import flask.test.util.DebugProxy;
 import flask.test.util.SimpleClient;
 import org.junit.Test;
 
@@ -22,12 +23,13 @@ public class LoginCheckBreachTest extends AbstractAppTest {
   @Override
   public void setUp() throws Exception {
     // disable default setup to produce an init race between handlers and FlakLogin
-    AppFactory factory = Flak.getFactory();
+    AppFactory factory = TestUtil.getFactory();
     factory.setPort(9191);
     // prevent automatic addition of FlakLogin plugin
     factory.setPluginValidator(cls -> false);
     app = factory.createApp();
-    client = new SimpleClient(app.getRootUrl());
+    proxy = new DebugProxy(9092, "localhost", 9191);
+    client = new SimpleClient(app.getRootUrl().replace("9191", "9092"));
   }
 
   @Test
@@ -59,7 +61,7 @@ public class LoginCheckBreachTest extends AbstractAppTest {
       }
     });
 
-    TestUtil.assertFails(() -> client.get("/test2"), "403");
     TestUtil.assertFails(() -> client.get("/test1"), "403");
+    TestUtil.assertFails(() -> client.get("/test2"), "403");
   }
 }

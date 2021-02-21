@@ -1,5 +1,6 @@
 package flask.test.util;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.CookieHandler;
@@ -69,7 +70,7 @@ public class SimpleClient {
     Map<String, List<String>> responseHeaders = new HashMap<>();
     try {
       doHTTP(path, null, "HEAD", responseHeaders).close();
-    } catch (IOException ignored) {
+    } catch (FileNotFoundException ignored) {
 
     }
     return responseHeaders;

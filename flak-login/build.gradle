@@ -2,5 +2,5 @@ description = "Session management for flak"
 
 dependencies {
   implementation project(":flak-api")
-  api project(":flak-spi")
+  implementation project(":flak-spi")
 }

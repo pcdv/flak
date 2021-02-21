@@ -1,17 +1,10 @@
 package flak.spi;
 
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Vector;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import flak.Form;
 import flak.InputParser;
 import flak.OutputFormatter;
+import flak.Query;
+import flak.Request;
 import flak.Response;
 import flak.annotations.Delete;
 import flak.annotations.Head;
@@ -20,8 +13,23 @@ import flak.annotations.OutputFormat;
 import flak.annotations.Patch;
 import flak.annotations.Post;
 import flak.annotations.Put;
-import flak.spi.util.IO;
+import flak.spi.extractor.IntExtractor;
+import flak.spi.extractor.ParsedInputExtractor;
+import flak.spi.extractor.RequestExtractor;
+import flak.spi.extractor.ResponseExtractor;
+import flak.spi.extractor.SplatExtractor;
+import flak.spi.extractor.StringExtractor;
+import flak.spi.parsers.FormParser;
+import flak.spi.parsers.QueryParser;
 import flak.spi.util.Log;
+
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handles a request submitted by the Context, if compatible with the HTTP
@@ -33,44 +41,59 @@ import flak.spi.util.Log;
 public abstract class AbstractMethodHandler
   implements Comparable<AbstractMethodHandler> {
 
-  protected final AbstractApp app;
+  public final AbstractApp app;
+
+  /**
+   * The split URI, starting at the first path variable, eg. [ ":name", "foo" ] for
+   * "/hello/:name/foo"
+   */
+  protected final String[] splitPath;
 
   /**
    * The HTTP method (GET, POST, ...)
    */
-  private final String httpMethod;
+  protected final String httpMethod;
 
   /**
    * The method to invoke to process requests.
    */
-  private final Method javaMethod;
+  protected final Method javaMethod;
 
   /**
    * The object to invoke method on (i.e. the actual handler).
    */
-  private final Object target;
+  protected final Object target;
 
-  private OutputFormatter outputFormat;
+  @SuppressWarnings("rawtypes")
+  protected OutputFormatter outputFormat;
 
   /**
    * The route as defined with the Route annotation. It is an absolute route
    * for the enclosing app so it may not match the original request path if
    * several apps share a given web server.
    */
-  private final String route;
+  protected final String path;
 
+  /**
+   * These will extract from the request all the arguments that must be passed
+   * to the target method.
+   */
   private ArgExtractor<?>[] extractors;
 
   private final List<BeforeHook> beforeHooks = new Vector<>();
 
   protected InputParser<?> inputParser;
 
+  protected int splatIndex = -1;
+
   public AbstractMethodHandler(AbstractApp app,
-                               String route,
+                               String path,
+                               String[] splitPath,
                                Method m,
                                Object target) {
     this.app = app;
-    this.route = route;
+    this.path = path;
+    this.splitPath = splitPath;
     this.httpMethod = getHttpMethod(m);
     this.outputFormat = getOutputFormat(m);
     this.javaMethod = m;
@@ -95,19 +118,92 @@ public abstract class AbstractMethodHandler
     }
   }
 
-  protected abstract ArgExtractor<?>[] createExtractors(Method m);
+  protected ArgExtractor<?>[] createExtractors(Method m) {
+    int[] idx = calcIndexes(splitPath);
+    Class<?>[] types = m.getParameterTypes();
+    ArgExtractor<?>[] extractors = new ArgExtractor[types.length];
+    AtomicInteger index = new AtomicInteger();
+    for (int i = 0; i < types.length; i++) {
+      extractors[i] = createExtractor(m, types[i], i, index, idx);
+    }
+    if (index.get() < idx.length) {
+      throw new IllegalArgumentException("Not enough method parameters");
+    }
+    return extractors;
+  }
+
+  private int[] calcIndexes(String[] tok) {
+    int[] res = new int[tok.length];
+    int j = 0;
+    for (int i = 0; i < tok.length; i++) {
+      if (tok[i].charAt(0) == ':') {
+        if (splatIndex != -1)
+          throw new IllegalArgumentException("Invalid route: " + path);
+        res[j++] = i;
+      }
+      if (tok[i].charAt(0) == '*') {
+        if (i != tok.length - 1)
+          throw new IllegalArgumentException("Invalid route: " + path);
+        res[j++] = i;
+        splatIndex = i;
+      }
+    }
+    return Arrays.copyOf(res, j);
+  }
 
   /**
    * @param type the type of argument in method
-   * @param i the extractor's index (i.e. index of argument in method)
-   * @param idx indexes of variables in split URI, eg. { 1 } to extract "world"
-   * from
+   * @param i    the extractor's index (i.e. index of argument in method)
+   * @param idx  indexes of variables in split URI, eg. { 1 } to extract "world"
+   *             from /hello/:name
    */
-  protected abstract ArgExtractor<?> createExtractor(Method m,
-                                                  Class<?> type,
-                                                  int i,
-                                                  AtomicInteger urlParam,
-                                                  int[] idx);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  protected ArgExtractor<?> createExtractor(Method m,
+                                            Class<?> type,
+                                            int i,
+                                            AtomicInteger urlParam,
+                                            int[] idx) {
+    ArgExtractor<?> ex = app.getCustomExtractor(m, type);
+    if (ex != null)
+      return ex;
+
+    if (type == Request.class) {
+      return new RequestExtractor(i);
+    }
+    else if (type == Response.class) {
+      return new ResponseExtractor(app, i);
+    }
+    else if (type == String.class) {
+      if (urlParam.get() >= idx.length) {
+        throw new IllegalArgumentException("Too many method parameters");
+      }
+      int tokenIndex = idx[urlParam.getAndIncrement()];
+      if (splatIndex == tokenIndex)
+        return new SplatExtractor(i, tokenIndex);
+      else
+        return new StringExtractor(i, tokenIndex);
+    }
+    else if (type == int.class) {
+      return new IntExtractor(i, idx[urlParam.getAndIncrement()]);
+    }
+    else {
+      InputParser<?> inputParser;
+      if (type == Form.class) {
+        inputParser = new FormParser();
+      }
+      else if (type == Query.class) {
+        inputParser = new QueryParser();
+      }
+      else
+        inputParser = this.inputParser;
+
+      if (inputParser == null)
+        throw new IllegalArgumentException(
+          "No @InputFormat or @JSON found around method " + m.getName() + "()");
+
+      return new ParsedInputExtractor(i, inputParser, type);
+    }
+  }
 
   private OutputFormatter<?> getOutputFormat(Method m) {
     OutputFormat output = m.getAnnotation(OutputFormat.class);
@@ -149,7 +245,7 @@ public abstract class AbstractMethodHandler
     return null;
   }
 
-  private static String getHttpMethod(Method m) {
+  public static String getHttpMethod(Method m) {
     if (m.getAnnotation(Post.class) != null)
       return "POST";
     if (m.getAnnotation(Put.class) != null)
@@ -163,15 +259,7 @@ public abstract class AbstractMethodHandler
     return "GET";
   }
 
-  /**
-   * @return true when request was handled, false when it was ignored (eg. not
-   * applicable)
-   */
-  public boolean handle(SPRequest req) throws Exception {
-
-    if (!isApplicable(req))
-      return false;
-
+  public Object execute(SPRequest req) throws Exception {
     req.setHandler(javaMethod);
 
     for (BeforeHook hook : beforeHooks) {
@@ -189,47 +277,13 @@ public abstract class AbstractMethodHandler
     Object res = javaMethod.invoke(target, args);
 
     app.fireSuccess(req, javaMethod, args, res);
-
-    processResponse(req.getResponse(), res);
-    return true;
-  }
-
-  protected abstract boolean isApplicable(SPRequest req);
-
-  @SuppressWarnings("StatementWithEmptyBody")
-  private void processResponse(Response r, Object res) throws Exception {
-    if (outputFormat != null) {
-      outputFormat.convert(res, r);
-    }
-    else if (res instanceof Response) {
-      // do nothing: status and headers should already be set
-    }
-    else if (res instanceof String) {
-      r.setStatus(HttpURLConnection.HTTP_OK);
-      r.getOutputStream().write(((String) res).getBytes(StandardCharsets.UTF_8));
-    }
-    else if (res instanceof byte[]) {
-      r.setStatus(HttpURLConnection.HTTP_OK);
-      r.getOutputStream().write((byte[]) res);
-    }
-    else if (res instanceof InputStream) {
-      r.setStatus(HttpURLConnection.HTTP_OK);
-      IO.pipe((InputStream) res, r.getOutputStream(), false);
-    }
-    else if (res == null) {
-      if (!r.isStatusSet())
-        r.setStatus(200);
-    }
-    else
-      throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod
-                                                                                  .toGenericString());
-
+    return res;
   }
 
   /**
    * Computes the list of arguments to pass to the decorated method.
    */
-  private Object[] extractArgs(SPRequest r) throws Exception {
+  protected Object[] extractArgs(SPRequest r) throws Exception {
     Object[] args = new Object[extractors.length];
     for (int i = 0; i < args.length; i++) {
       args[i] = extractors[i].extract(r);
@@ -238,13 +292,13 @@ public abstract class AbstractMethodHandler
   }
 
   public int compareTo(AbstractMethodHandler o) {
-    if (Objects.equals(route, o.route))
+    if (Objects.equals(path, o.path))
       return httpMethod.compareTo(o.httpMethod);
-    return route.compareTo(o.route);
+    return path.compareTo(o.path);
   }
 
   public String getRoute() {
-    return route;
+    return path;
   }
 
   public String getHttpMethod() {

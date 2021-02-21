@@ -2,7 +2,6 @@ package flask.test;
 
 import flak.App;
 import flak.AppFactory;
-import flak.Flak;
 import flak.WebServer;
 import flak.annotations.Route;
 import flak.login.FlakLogin;
@@ -35,7 +34,7 @@ public class ServePathTest {
    */
   @Test
   public void testStartServerBeforeServePath() throws Exception {
-    AppFactory fac = Flak.getFactory();
+    AppFactory fac = TestUtil.getFactory();
     fac.setPort(9191);
     WebServer ws = fac.getServer();
     ws.start();
@@ -49,7 +48,7 @@ public class ServePathTest {
 
   @Test
   public void testRedirectLoginToResource() throws Exception {
-    AppFactory factory = Flak.getFactory();
+    AppFactory factory = TestUtil.getFactory();
     factory.setPort(9191);
     WebServer ws = factory.getServer();
     ws.start();
@@ -104,8 +103,8 @@ public class ServePathTest {
     Assert.assertEquals("Please login", client.get("/static/anything"));
   }
 
-  private App createApp() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-    AppFactory factory = Flak.getFactory();
+  private App createApp() {
+    AppFactory factory = TestUtil.getFactory();
     factory.setPort(9191);
     App app = factory.createApp();
     sessionManager = app.getPlugin(FlakLogin.class).getSessionManager();

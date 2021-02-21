@@ -14,18 +14,17 @@ import org.junit.Test;
 public class AsyncResponseTest extends AbstractAppTest {
 
   @Route("/sync")
-  public Response replySync() throws IOException {
-    return reply(app.getResponse());
+  public void replySync(Response r) throws IOException {
+    reply(r);
   }
 
-  private Response reply(Response resp) throws IOException {
+  private void reply(Response resp) throws IOException {
     resp.setStatus(200);
     resp.getOutputStream().write("foobar".getBytes());
     // NB: this does nothing now (since it would mess up the response, the output
     // stream is closed automatically at the end). Leave it for non regression, in
     // case some pre-existing handlers do that.
     resp.getOutputStream().close();
-    return resp;
   }
 
   @Route("/async")

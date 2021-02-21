@@ -171,11 +171,6 @@ public class JdkRequest implements SPRequest, Response {
     return exchange.getRequestBody();
   }
 
-  @Override
-  public String getHttpMethod() {
-    return exchange.getRequestMethod();
-  }
-
   // /////////// Response methods
 
   public void addHeader(String header, String value) {

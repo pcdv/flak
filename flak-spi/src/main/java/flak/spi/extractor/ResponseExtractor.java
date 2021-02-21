@@ -1,4 +1,4 @@
-package flak.backend.jdk.extractor;
+package flak.spi.extractor;
 
 import flak.Response;
 import flak.spi.AbstractApp;
@@ -18,6 +18,6 @@ public class ResponseExtractor extends ArgExtractor<Response> {
 
   @Override
   public Response extract(SPRequest request) {
-    return app.getResponse();
+    return request.getResponse();
   }
 }

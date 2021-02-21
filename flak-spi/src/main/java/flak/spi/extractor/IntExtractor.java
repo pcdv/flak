@@ -1,4 +1,4 @@
-package flak.backend.jdk.extractor;
+package flak.spi.extractor;
 
 import flak.spi.ArgExtractor;
 import flak.spi.SPRequest;

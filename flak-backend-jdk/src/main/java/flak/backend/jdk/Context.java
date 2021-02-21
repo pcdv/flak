@@ -65,7 +65,8 @@ public class Context implements HttpHandler {
     app.setThreadLocalRequest(req);
     try {
       for (MethodHandler h : handlers) {
-        if (h.handle(req)) {
+        if (h.isApplicable(req)) {
+          h.processResponse(req.getResponse(), h.execute(req));
           return;
         }
       }

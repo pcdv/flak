@@ -1,20 +1,20 @@
 package flask.test;
 
-import java.nio.file.Files;
-
 import flak.App;
 import flak.AppFactory;
-import flak.Flak;
 import flak.Request;
 import flak.WebServer;
 import flak.annotations.Route;
 import flak.plugin.resource.FlakResourceImpl;
 import flask.test.util.SimpleClient;
+import flask.test.util.ThreadState;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import java.nio.file.Files;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,6 +24,9 @@ import static org.junit.Assert.assertEquals;
  * @author pcdv
  */
 public class TwoAppsTest {
+
+  @Rule
+  public ThreadState.ThreadStateRule noZombies = new ThreadState.ThreadStateRule();
 
   private SimpleClient client;
 
@@ -36,7 +39,7 @@ public class TwoAppsTest {
 
   @Before
   public void setUp() throws Exception {
-    AppFactory fac = Flak.getFactory();
+    AppFactory fac = TestUtil.getFactory();
     fac.setPort(9191);
     ws = fac.getServer();
 
@@ -67,7 +70,8 @@ public class TwoAppsTest {
 
   @After
   public void tearDown() {
-    ws.stop();
+    if (ws != null)
+      ws.stop();
   }
 
   @Test
