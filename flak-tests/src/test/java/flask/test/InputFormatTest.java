@@ -1,13 +1,14 @@
 package flask.test;
 
-import java.io.IOException;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.annotations.InputFormat;
 import flak.annotations.Post;
 import flak.annotations.Route;
-import flak.jackson.JsonInputParser;
+import flak.jackson.JsonInputMapper;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * @author pcdv
@@ -27,7 +28,7 @@ public class InputFormatTest extends AbstractAppTest {
 
   @Override
   protected void preScan() {
-    app.addInputParser("JSON", new JsonInputParser());
+    app.addInputParser("JSON", new JsonInputMapper<>(id -> new ObjectMapper()));
   }
 
   @Test

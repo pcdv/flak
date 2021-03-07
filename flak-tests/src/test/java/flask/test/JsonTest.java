@@ -10,7 +10,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.Route;
+import flak.backend.jdk.JdkApp;
 import flak.jackson.JSON;
+import flak.jackson.JsonInputReader;
+import flak.spi.AbstractMethodHandler;
 import flask.test.OutputFormatTest.Foo;
 import org.junit.Assert;
 import org.junit.Test;
@@ -58,9 +61,15 @@ public class JsonTest extends AbstractAppTest {
   @Route("/api/jsonMap")
   @Post
   @JSON
-  public Map<?,?> postMap(Map<String, Object> map) {
+  public Map<?, ?> postMap(Map<String, Object> map) {
     map.put("status", "ok");
     return map;
+  }
+
+  @Route("/api/jsonMapVoid2")
+  @Post
+  public void postMapVoid2(@JSON Map<String, Object> map) {
+    map.put("status", "ok");
   }
 
   @Route("/api/jsonMapVoid")
@@ -76,11 +85,21 @@ public class JsonTest extends AbstractAppTest {
     m.put("foo", "bar");
     String reply = client.post("/api/jsonMap", new ObjectMapper().writeValueAsString(m));
 
+    // checks that the parser uses an ObjectReader (more performant than using ObjectMapper)
+    Assert.assertTrue(getMethodHandler("postMap").getInputParser() instanceof JsonInputReader);
+    Assert.assertTrue(getMethodHandler("postMapVoid").getInputParser() instanceof JsonInputReader);
+    Assert.assertTrue(getMethodHandler("postMapVoid2").getInputParser() instanceof JsonInputReader);
+
     Map<?, ?> r = new ObjectMapper().readValue(reply, Map.class);
     Assert.assertEquals("ok", r.get("status"));
     Assert.assertEquals("bar", r.get("foo"));
 
     client.post("/api/jsonMapVoid", new ObjectMapper().writeValueAsString(m));
+    client.post("/api/jsonMapVoid2", new ObjectMapper().writeValueAsString(m));
+  }
+
+  AbstractMethodHandler getMethodHandler(String name) {
+    return ((JdkApp) app).getMethodHandlers().filter(h -> h.getJavaMethod().getName().equals(name)).findAny().get();
   }
 
   @JSON

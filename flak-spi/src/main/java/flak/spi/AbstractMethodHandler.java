@@ -258,4 +258,8 @@ public abstract class AbstractMethodHandler
   public AbstractApp getApp() {
     return app;
   }
+
+  public InputParser<?> getInputParser() {
+    return inputParser;
+  }
 }

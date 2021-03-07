@@ -4,6 +4,7 @@ dependencies {
   implementation project(":flak-jackson")
   implementation project(":flak-login")
   implementation project(":flak-resource")
-  runtimeOnly project(":flak-backend-jdk")
+
+  implementation project(":flak-backend-jdk") // got one test accessing JdkApp
   implementation project(":flak-util")
 }

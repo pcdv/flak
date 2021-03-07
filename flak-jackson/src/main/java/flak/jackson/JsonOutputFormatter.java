@@ -1,37 +1,31 @@
 package flak.jackson;
 
-import java.io.IOException;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import flak.OutputFormatter;
 import flak.Response;
 
 /**
- * @author pcdv
+ * An output formatter using an ObjectWriter, which is the recommended way of
+ * generating JSON.
+ * <p>
+ * https://github.com/FasterXML/jackson-docs/wiki/Presentation:-Jackson-Performance
+ * <p>
+ * Historically we used an ObjectMapper, which caused performance issues as it is
+ * stateful and synchronized. The first workaround was to create ObjectMapper objects
+ * on-the-fly, which is costly.
  */
 public class JsonOutputFormatter<T> implements OutputFormatter<T> {
 
-  private final MapperProvider mapper;
+  private final ObjectWriter writer;
 
-  public JsonOutputFormatter() {
-    this(new DefaultMapperProvider(new ObjectMapper()));
-  }
-
-  public JsonOutputFormatter(MapperProvider mapper) {
-    this.mapper = mapper;
+  public JsonOutputFormatter(ObjectWriter writer) {
+    this.writer = writer;
   }
 
   @Override
   public void convert(T data, Response resp) throws Exception {
-    JSON ann = resp.getRequest().getHandler().getAnnotation(JSON.class);
-    String id = ann == null ? null : ann.value();
-    convert(data, resp, id);
-  }
-
-  private void convert(T data, Response resp, String id) throws IOException {
-    ObjectMapper mapper = this.mapper.getMapper(id);
     resp.addHeader("Content-Type", "application/json");
     resp.setStatus(200);
-    mapper.writeValue(resp.getOutputStream(), data);
+    writer.writeValue(resp.getOutputStream(), data);
   }
 }

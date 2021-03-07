@@ -85,7 +85,7 @@ public class JdkApp extends AbstractApp {
   }
 
   @Override
-  protected Stream<AbstractMethodHandler> getMethodHandlers() {
+  public Stream<AbstractMethodHandler> getMethodHandlers() {
     return handlers.values().stream().flatMap(c -> c.handlers.stream());
   }
 

@@ -41,7 +41,6 @@ public class JsonMapperTest extends AbstractAppTest {
 
   @Route("/a")
   @JSON("A")
-
   public Obj getA() {
     return new ObjImpl();
   }
@@ -54,15 +53,14 @@ public class JsonMapperTest extends AbstractAppTest {
 
   @Override
   protected void preScan() {
-    JacksonPlugin jp = app.getPlugin(JacksonPlugin.class);
-
     ObjectMapper a = new ObjectMapper();
     SimpleModule m = new SimpleModule();
     m.addSerializer(Obj.class, new ObjSerializer());
     a.registerModule(m);
 
     ObjectMapper b = new ObjectMapper();
-    jp.setObjectMapperProvider(id -> {
+
+    JacksonPlugin.get(app).setObjectMapperProvider(id -> {
       switch (id) {
       case "A":
         return a;
