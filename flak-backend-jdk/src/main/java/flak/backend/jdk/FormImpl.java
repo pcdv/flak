@@ -5,14 +5,16 @@ import flak.Query;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author pcdv
  */
 public class FormImpl implements Form, Query {
 
-  private final HashMap<String, String> data = new HashMap<>();
+  private final Map<String, String> data = new LinkedHashMap<>();
 
   public FormImpl(String data) {
     try {
@@ -39,5 +41,10 @@ public class FormImpl implements Form, Query {
   public String get(String name, String def) {
     String res = get(name);
     return res == null ? def : res;
+  }
+
+  @Override
+  public Collection<Map.Entry<String, String>> parameters() {
+    return data.entrySet();
   }
 }

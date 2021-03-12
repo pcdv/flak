@@ -29,6 +29,29 @@ public class QueryTest extends AbstractAppTest {
     return "Hello " + app.getRequest().getQuery().get("name", null);
   }
 
+  @Route("/helloTyped")
+  public String helloTyped(Query q) {
+    return "Hello " + q.getBool("bool", false) + " " + q.getInt("num", 0);
+  }
+
+  @Route("/showParams")
+  public String showParams(Query q) {
+    return q.parameters().toString();
+  }
+
+  @Test
+  public void testShowParams() throws Exception {
+    assertEquals("[]", client.get("/showParams"));
+    assertEquals("[a=b]", client.get("/showParams?a=b"));
+    assertEquals("[a=b, c=d]", client.get("/showParams?a=b&c=d"));
+  }
+
+  @Test
+  public void testQueryWithTypes() throws Exception {
+    assertEquals("Hello false 0", client.get("/helloTyped"));
+    assertEquals("Hello true 1", client.get("/helloTyped?bool=true&num=1"));
+  }
+
   @Test
   public void trailingSlashNotCausingAnyTrouble() throws Exception {
     assertEquals("Hello world", client.get("/hello2/?name=world"));
