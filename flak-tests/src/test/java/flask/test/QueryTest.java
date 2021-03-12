@@ -41,6 +41,9 @@ public class QueryTest extends AbstractAppTest {
 
   @Test
   public void testShowParams() throws Exception {
+    assertEquals("[a=+]", client.get("/showParams?a=%2B"));
+    assertEquals("[a= ]", client.get("/showParams?a=%20"));
+    assertEquals("[a=+]", client.get("/showParams?a=+"));
     assertEquals("[]", client.get("/showParams"));
     assertEquals("[a=b]", client.get("/showParams?a=b"));
     assertEquals("[a=b, c=d]", client.get("/showParams?a=b&c=d"));

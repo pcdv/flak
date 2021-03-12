@@ -109,7 +109,8 @@ public class JdkRequest implements SPRequest, Response {
 
   @Override
   public Query getQuery() {
-    return new FormImpl(getQueryString());
+    // looks like the string is already url decoded, do not do it twice
+    return new FormImpl(getQueryString(), false);
   }
 
   @Override
@@ -121,7 +122,7 @@ public class JdkRequest implements SPRequest, Response {
   public Form getForm() {
     try {
       if (form == null)
-        form = new FormImpl(readData());
+        form = new FormImpl(readData(), true);
     }
     catch (Exception e) {
       throw new RuntimeException(e);

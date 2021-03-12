@@ -16,14 +16,15 @@ public class FormImpl implements Form, Query {
 
   private final Map<String, String> data = new LinkedHashMap<>();
 
-  public FormImpl(String data) {
+  public FormImpl(String data, boolean urlDecode) {
     try {
       if (data != null)
         for (String tok : data.split("&")) {
           int pos = tok.indexOf('=');
-          if (pos != -1) {
+          if (pos != - 1) {
+            String value = tok.substring(pos + 1);
             this.data.put(tok.substring(0, pos),
-                          URLDecoder.decode(tok.substring(pos + 1), "UTF-8"));
+              urlDecode ? URLDecoder.decode(value, "UTF-8") : value);
           }
         }
     }
