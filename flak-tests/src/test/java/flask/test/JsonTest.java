@@ -13,10 +13,17 @@ import flak.annotations.Route;
 import flak.backend.jdk.JdkApp;
 import flak.jackson.JSON;
 import flak.jackson.JsonInputReader;
+import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
+import flak.spi.ArgExtractor;
+import flak.spi.SPRequest;
 import flask.test.OutputFormatTest.Foo;
+import junit.framework.TestCase;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 public class JsonTest extends AbstractAppTest {
 
@@ -35,15 +42,17 @@ public class JsonTest extends AbstractAppTest {
    */
   @Test
   public void testJsonBackAndForth() throws IOException {
-    Assert.assertEquals("{\"stuff\":1235}",
-                        client.put("/api/foo", "{\"stuff\":1235}"));
+    assertEquals("{\"stuff\":1235}",
+      client.put("/api/foo", "{\"stuff\":1235}"));
   }
 
   @Test
   public void errorWhenMissingInputFormat() {
     TestUtil.assertFails(() -> app.scan(new Object() {
       @Route("/foo1")
-      public String foo(Foo foo) { return null;}
+      public String foo(Foo foo) {
+        return null;
+      }
     }), "No @InputFormat or @JSON found around method foo()");
   }
 
@@ -52,7 +61,9 @@ public class JsonTest extends AbstractAppTest {
     TestUtil.assertFails(() -> {
       app.scan(new Object() {
         @Route("/foo1")
-        public Foo foo() { return null;}
+        public Foo foo() {
+          return null;
+        }
       });
       return client.get("/foo1");
     }, "No @OutputFormat or @JSON around method foo()");
@@ -86,13 +97,13 @@ public class JsonTest extends AbstractAppTest {
     String reply = client.post("/api/jsonMap", new ObjectMapper().writeValueAsString(m));
 
     // checks that the parser uses an ObjectReader (more performant than using ObjectMapper)
-    Assert.assertTrue(getMethodHandler("postMap").getInputParser() instanceof JsonInputReader);
-    Assert.assertTrue(getMethodHandler("postMapVoid").getInputParser() instanceof JsonInputReader);
-    Assert.assertTrue(getMethodHandler("postMapVoid2").getInputParser() instanceof JsonInputReader);
+    assertTrue(getMethodHandler("postMap").getInputParser() instanceof JsonInputReader);
+    assertTrue(getMethodHandler("postMapVoid").getInputParser() instanceof JsonInputReader);
+    assertTrue(getMethodHandler("postMapVoid2").getInputParser() instanceof JsonInputReader);
 
     Map<?, ?> r = new ObjectMapper().readValue(reply, Map.class);
-    Assert.assertEquals("ok", r.get("status"));
-    Assert.assertEquals("bar", r.get("foo"));
+    assertEquals("ok", r.get("status"));
+    assertEquals("bar", r.get("foo"));
 
     client.post("/api/jsonMapVoid", new ObjectMapper().writeValueAsString(m));
     client.post("/api/jsonMapVoid2", new ObjectMapper().writeValueAsString(m));
@@ -110,6 +121,43 @@ public class JsonTest extends AbstractAppTest {
 
   @Test
   public void testGetVersions() throws IOException {
-    Assert.assertEquals("[\"foo\",\"bar\"]", client.get("/api/getVersions/xy"));
+    assertEquals("[\"foo\",\"bar\"]", client.get("/api/getVersions/xy"));
+  }
+
+  public static class CustomObj {
+    private final int value;
+
+    public CustomObj(int value) {
+      this.value = value;
+    }
+  }
+
+
+  /**
+   * Check that we can mix a custom arg extractor and JSON data. But as of now
+   * the JSON data must be the last argument in method.
+   */
+  @Test
+  public void testJsonAndCustomExtractor() throws IOException {
+
+    ((AbstractApp)app).addCustomExtractor(CustomObj.class, new ArgExtractor<CustomObj>(-1) {
+      @Override
+      public CustomObj extract(SPRequest request) throws Exception {
+        return new CustomObj(42);
+      }
+    });
+
+    app.scan(new Object() {
+      @JSON
+      @Route("/customObj")
+      @Post
+      public void jsonAndCustomExtractor(CustomObj obj, Map<String, String> map) {
+        assertEquals("world", map.get("hello"));
+        assertNotNull(obj);
+        assertEquals(42, obj.value);
+      }
+    });
+
+    client.post("/customObj", "{\"hello\":\"world\"}");
   }
 }
