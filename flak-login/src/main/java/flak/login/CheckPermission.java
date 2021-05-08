@@ -1,6 +1,8 @@
 package flak.login;
 
 import java.net.HttpURLConnection;
+import java.util.Collections;
+import java.util.HashSet;
 
 import flak.HttpException;
 import flak.spi.AbstractMethodHandler;
@@ -14,7 +16,7 @@ public class CheckPermission implements BeforeHook {
 
   private final SessionManager manager;
 
-  private final String permission;
+  private final HashSet<String> permissions = new HashSet<>();
 
   public CheckPermission(AbstractMethodHandler handler,
                          SessionManager manager) {
@@ -23,18 +25,31 @@ public class CheckPermission implements BeforeHook {
     WithPermission perm =
       handler.getJavaMethod().getAnnotation(WithPermission.class);
 
-    this.permission = perm == null ? null : perm.value();
+    if (perm != null)
+      permissions.add(perm.value());
 
+    WithAnyPermission perms =
+      handler.getJavaMethod().getAnnotation(WithAnyPermission.class);
+
+    if (perms != null)
+      Collections.addAll(permissions, perms.value());
   }
 
   @Override
   public void execute(SPRequest request) {
-    if (permission != null) {
+    if (!permissions.isEmpty()) {
       FlakSession session = manager.getCurrentSession(request);
-      if (session == null || !session.getUser().hasPermission(permission)) {
-        throw new HttpException(HttpURLConnection.HTTP_UNAUTHORIZED,
-                                "No permission");
+      if (session == null || !hasPermission(session.getUser())) {
+        throw new HttpException(HttpURLConnection.HTTP_UNAUTHORIZED, "No permission");
       }
     }
+  }
+
+  private boolean hasPermission(FlakUser user) {
+    for (String p : permissions) {
+      if (user.hasPermission(p))
+        return true;
+    }
+    return false;
   }
 }
