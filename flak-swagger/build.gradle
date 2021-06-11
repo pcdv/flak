@@ -4,6 +4,4 @@ dependencies {
   implementation project(':flak-api')
   implementation project(':flak-jackson')
   implementation "io.swagger.core.v3:swagger-core:2.1.7"
-  implementation "io.swagger.core.v3:swagger-jaxrs2:2.1.7"
-  implementation group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.1.1'
 }
