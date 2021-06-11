@@ -5,6 +5,7 @@ def PUBLISH_PROJECTS = [
   'flak-jackson',
   'flak-login',
   'flak-resource',
+  'flak-swagger',
   'flak-util'
 ]
 

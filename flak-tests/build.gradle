@@ -7,6 +7,7 @@ dependencies {
   implementation project(":flak-backend-jdk") // got one test accessing JdkApp
   runtimeOnly project(":flak-backend-netty")
   implementation project(":flak-util")
+  implementation project(":flak-swagger")
 }
 
 test {
