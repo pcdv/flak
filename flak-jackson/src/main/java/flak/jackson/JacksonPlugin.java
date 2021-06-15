@@ -25,12 +25,7 @@ public class JacksonPlugin implements SPPlugin {
   private final Map<String, JsonOutputFormatter<?>> formatters = new Hashtable<>();
   private final Map<Class<?>, InputParser<?>> parsers = new Hashtable<>();
 
-  private MapperProvider mapperProvider = id -> {
-    if (id == null || id.isEmpty())
-      return OBJECT_MAPPER;
-    else
-      throw new IllegalStateException("Unknown JSON mapper ID: " + id + ". Call JacksonPlugin.setObjectMapperProvider() earlier");
-  };
+  private MapperProvider mapperProvider = new DefaultMapperProvider(OBJECT_MAPPER);
 
   JacksonPlugin(App app) {
     this.app = (AbstractApp) app;
@@ -56,7 +51,9 @@ public class JacksonPlugin implements SPPlugin {
       // convert response to JSON automatically
       if (m.getReturnType() != void.class) {
         JsonOutputFormatter<?> fmt = formatters.computeIfAbsent(id,
-          i -> new JsonOutputFormatter<>(mapperProvider.getMapper(id).writer()));
+                                                                i -> new JsonOutputFormatter<>(
+                                                                  mapperProvider.getMapper(
+                                                                    id).writer()));
         handler.setOutputFormatter(fmt);
       }
     }
@@ -67,12 +64,15 @@ public class JacksonPlugin implements SPPlugin {
       Class<?> inputClass = resolveInputType(param, m);
 
       handler.setInputParser(parsers.computeIfAbsent(inputClass,
-        c -> {
-          if (c == Object.class)
-            return new JsonInputMapper(mapperProvider);
-          else
-            return new JsonInputReader(mapperProvider.getMapper(param.value()).readerFor(c));
-        }));
+                                                     c -> {
+                                                       if (c == Object.class)
+                                                         return new JsonInputMapper(
+                                                           mapperProvider);
+                                                       else
+                                                         return new JsonInputReader(
+                                                           mapperProvider.getMapper(param.value()).readerFor(
+                                                             c));
+                                                     }));
     }
   }
 
@@ -99,7 +99,7 @@ public class JacksonPlugin implements SPPlugin {
       if (types.length > 0) {
         Class<?> type = types[types.length - 1];
         String name = type.getName();
-        if (! name.startsWith("flak.") && ! name.startsWith("java.lang.")) {
+        if (!name.startsWith("flak.") && !name.startsWith("java.lang.")) {
           return type;
         }
       }
@@ -108,8 +108,26 @@ public class JacksonPlugin implements SPPlugin {
     return inputClass;
   }
 
+  /**
+   * @deprecated  it should no longer be necessary to call this method now that ObjectReader
+   * and ObjectWriter are used to process JSON data. Instead, you can use {@link #registerMapper(String, ObjectMapper)}
+   */
   public void setObjectMapperProvider(MapperProvider mapper) {
     this.mapperProvider = Objects.requireNonNull(mapper);
+  }
+
+  /**
+   * Registers a mapper with given id. For example, mapper "FOO" will be used
+   * with route handlers decorated with <code>@JSON("FOO")</code>.
+   *
+   * You can use the "default" ID to override the default mapper.
+   */
+  public void registerMapper(String id, ObjectMapper mapper) {
+    if (mapperProvider instanceof DefaultMapperProvider) {
+      ((DefaultMapperProvider) mapperProvider).registerMapper(id, mapper);
+    }
+    else throw new IllegalStateException(
+      "Cannot register mapper: a custom MapperProvider has been set");
   }
 
   void init() {
