@@ -3,5 +3,5 @@ description = "Utility to generate OpenAPI specifications from a flak applicatio
 dependencies {
   implementation project(':flak-api')
   implementation project(':flak-jackson')
-  implementation "io.swagger.core.v3:swagger-core:2.1.7"
+  api "io.swagger.core.v3:swagger-core:2.1.7"
 }

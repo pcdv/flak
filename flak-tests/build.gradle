@@ -8,7 +8,6 @@ dependencies {
   runtimeOnly project(":flak-backend-netty")
   implementation project(":flak-util")
   implementation project(":flak-swagger")
-  implementation "io.swagger.core.v3:swagger-core:2.1.7"
 }
 
 test {
