@@ -9,6 +9,7 @@ import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.Route;
 import flak.jackson.JSON;
+import flak.spi.util.IO;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.jackson.ModelResolver;
 import io.swagger.v3.core.util.ParameterProcessor;
@@ -18,6 +19,7 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -25,9 +27,13 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 
 /**
@@ -43,8 +49,14 @@ public class OpenApiGenerator {
 
   private final OpenAPI api = new OpenAPI();
 
+  /**
+   * Allows stripping the beginning of endpoints.
+   */
+  private String removePrefix;
+
   public OpenApiGenerator() {
     api.components(new Components());
+    api.paths(new Paths());
   }
 
   /**
@@ -57,14 +69,24 @@ public class OpenApiGenerator {
   }
 
   /**
+   * Sets a prefix that should removed from scanned endpoints when generating the API.
+   */
+  public void setRemovePrefix(String removePrefix) {
+    this.removePrefix = removePrefix;
+  }
+
+  /**
    * Introspects specified class to populate paths.
    */
   public OpenApiGenerator scan(Class<?> clazz) {
-    for (Method m : clazz.getDeclaredMethods()) {
-      Route route = m.getAnnotation(Route.class);
-      if (route != null)
-        scanMethod(m, route);
-    }
+    Arrays.stream(clazz.getDeclaredMethods())
+          .sorted(Comparator.comparing(Method::getName))
+          .forEach(
+            m -> {
+              Route route = m.getAnnotation(Route.class);
+              if (route != null)
+                scanMethod(m, route);
+            });
     return this;
   }
 
@@ -77,7 +99,7 @@ public class OpenApiGenerator {
 
     io.swagger.v3.oas.annotations.Operation ope = m.getAnnotation(io.swagger.v3.oas.annotations.Operation.class);
     if (ope != null) {
-      op.description(ope.description()).summary(ope.summary());
+      op.description(convertDesc(m.getDeclaringClass().getClassLoader(), ope.description())).summary(ope.summary());
     }
 
     if (m.isAnnotationPresent(Post.class) || m.isAnnotationPresent(Delete.class)
@@ -85,9 +107,27 @@ public class OpenApiGenerator {
       op.requestBody(requestBody(m));
     }
 
-    PathItem path = new PathItem();
+    String endpoint = convertPath(route.value());
+    PathItem path = api.getPaths().get(endpoint);
+    if (path == null) {
+      path = new PathItem();
+      api.path(endpoint, path);
+    }
     path.operation(TypeUtil.getHttpMethod(m), op);
-    api.path(convertPath(route.value()), path);
+  }
+
+  private static String convertDesc(ClassLoader loader, String description) {
+    if (description.startsWith("include:")) {
+      try {
+        InputStream in = loader.getResourceAsStream(description.substring("include:".length()));
+        if (in != null)
+          return new String(IO.readFully(in));
+      }
+      catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return description;
   }
 
   private RequestBody requestBody(Method m) {
@@ -210,7 +250,9 @@ public class OpenApiGenerator {
     }
   }
 
-  private static String convertPath(String endpoint) {
+  private String convertPath(String endpoint) {
+    if (removePrefix != null && endpoint.startsWith(removePrefix))
+      endpoint = endpoint.substring(removePrefix.length());
     return endpoint.replaceAll(":([A-Za-z0-9_]+)", "{$1}");
   }
 
