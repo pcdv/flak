@@ -1,6 +1,7 @@
 package flak.plugin.resource;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -8,6 +9,7 @@ import flak.HttpException;
 import flak.Request;
 import flak.spi.RestrictedTarget;
 import flak.spi.util.IO;
+import flak.spi.util.Log;
 
 /**
  * Abstract handler that Serves resources found either in the file system or
@@ -58,7 +60,14 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
     OutputStream out = r.getResponse().getOutputStream();
     if (in != null) {
       r.getResponse().setStatus(200);
-      IO.pipe(in, out, true);
+      try {
+        IO.pipe(in, out, true);
+      }
+      catch (IOException e) {
+        // avoid log pollution when the client abruptly closes the socket
+        if (Log.DEBUG)
+          e.printStackTrace();
+      }
     }
     else {
       r.getResponse().setStatus(404);
