@@ -12,9 +12,11 @@ import flak.jackson.JSON;
 import flak.spi.util.IO;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.jackson.ModelResolver;
+import io.swagger.v3.core.util.AnnotationsUtils;
 import io.swagger.v3.core.util.ParameterProcessor;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -34,7 +36,10 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Open Api Specification (OAS) generator.
@@ -54,6 +59,9 @@ public class OpenApiGenerator {
    */
   private String removePrefix;
 
+  private HashMap<String, io.swagger.v3.oas.models.tags.Tag> tagsByName = new HashMap<>();
+  private ObjectMapper objectMapper;
+
   public OpenApiGenerator() {
     api.components(new Components());
     api.paths(new Paths());
@@ -61,10 +69,11 @@ public class OpenApiGenerator {
 
   /**
    * Sets an object mapper that will be used when scanning classes to generate
-   * schemas (allows to ignore methods ignored by Jackson). Call it before scanning
+   * schemas (allows ignoring methods ignored by Jackson). Call it before scanning
    * handlers or adding schemas.
    */
   public void setObjectMapper(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
     ModelConverters.getInstance().addConverter(new ModelResolver(objectMapper));
   }
 
@@ -79,18 +88,40 @@ public class OpenApiGenerator {
    * Introspects specified class to populate paths.
    */
   public OpenApiGenerator scan(Class<?> clazz) {
+    Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags
+      = AnnotationsUtils.getTags(clazz.getAnnotationsByType(Tag.class), false);
+
+    addTags(tags);
+
     Arrays.stream(clazz.getDeclaredMethods())
           .sorted(Comparator.comparing(Method::getName))
           .forEach(
             m -> {
               Route route = m.getAnnotation(Route.class);
               if (route != null)
-                scanMethod(m, route);
+                scanMethod(m, route, tags);
             });
     return this;
   }
 
-  private void scanMethod(Method m, Route route) {
+  private void addTags(Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags) {
+    tags.ifPresent(t -> t.forEach(this::addTag));
+  }
+
+  private void addTag(io.swagger.v3.oas.models.tags.Tag tag) {
+    if (tagsByName.put(tag.getName(), tag) == null) {
+      api.addTagsItem(tag);
+    }
+  }
+
+  private void scanMethod(Method m, Route route, Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags) {
+    Optional<Set<io.swagger.v3.oas.models.tags.Tag>> methodTags
+      = AnnotationsUtils.getTags(m.getAnnotationsByType(Tag.class), false);
+
+    addTags(methodTags);
+    if (methodTags.isPresent())
+      tags = methodTags;
+
     scanSchema(m.getReturnType());
 
     Operation op = new Operation().operationId(m.getName());
@@ -113,6 +144,15 @@ public class OpenApiGenerator {
       path = new PathItem();
       api.path(endpoint, path);
     }
+
+    if (tags.isPresent()) {
+      tags.get()
+          .stream()
+          .map(io.swagger.v3.oas.models.tags.Tag::getName)
+          .forEach(op::addTagsItem);
+    }
+    else
+      op.addTagsItem(m.getDeclaringClass().getSimpleName());
     path.operation(TypeUtil.getHttpMethod(m), op);
   }
 
@@ -283,6 +323,12 @@ public class OpenApiGenerator {
       e.printStackTrace();
       return null;
     }
+  }
+
+  public String toJSON() throws JsonProcessingException {
+    ObjectMapper mapper = objectMapper == null ? new ObjectMapper() : objectMapper.copy();
+    mapper.setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
+    return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(api);
   }
 
   public OpenAPI getAPI() {
