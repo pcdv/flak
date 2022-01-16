@@ -13,6 +13,7 @@ Flak components    | Description
 `flak-login`       | Add-on for managing user sessions
 `flak-resource`    | Add-on for serving static resources
 `flak-jackson`     | Add-on for conversion to/from JSON using jackson
+`flak-swagger`     | OpenAPI specification generator
 
 ## Table of Contents
 
@@ -261,10 +262,4 @@ Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
  [Jetty](https://www.eclipse.org/jetty/), etc.)
  * provide SSL support
  * optional plugins for user management, JSON serialization, CSRF protection...
- 
- ## A few words of warning
- 
- Flak is perfectly suited for small web applications but is not ready for use
- in an internet-facing application. Until now, the focus has been on ease of 
- use and conciseness, not performance or security!
  
