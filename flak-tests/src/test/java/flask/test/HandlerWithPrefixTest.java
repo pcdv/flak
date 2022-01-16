@@ -39,6 +39,6 @@ public class HandlerWithPrefixTest extends AbstractAppTest {
     app.scan(new SubClass("bar"), "/bar");
 
     Assert.assertEquals("foo", client.get("/foo/value"));
-    Assert.assertEquals("bar!", client.get("/bar/value"));
+    Assert.assertEquals("bar", client.get("/bar/value"));
   }
 }
