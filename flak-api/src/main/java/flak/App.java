@@ -15,6 +15,8 @@ public interface App {
    */
   App scan(Object obj);
 
+  App scan(Object obj, String prefix);
+
   /**
    * Adds a formatter that takes the value returned by the route handler and
    * writes it into the response. The method must be decorated with {@link

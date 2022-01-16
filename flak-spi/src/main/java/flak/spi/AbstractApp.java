@@ -57,11 +57,15 @@ public abstract class AbstractApp implements App {
    * @see Route
    */
   public App scan(Object obj) {
+    return scan(obj, "");
+  }
+
+  public App scan(Object obj, String prefix) {
     for (Method method : obj.getClass().getMethods()) {
       Route route = method.getAnnotation(Route.class);
       if (route != null) {
         try {
-          addHandler0(route.value(), method, obj);
+          addHandler0(prefix + route.value(), method, obj);
         }
         catch (Exception e) {
           throw new ScanException("Error while scanning " + method, e);
