@@ -35,6 +35,8 @@ public abstract class AbstractApp implements App {
 
   private final List<SPPlugin> plugins = new ArrayList<>();
 
+  private final List<BeforeHook> beforeHooks = new Vector<>();
+
   private final ThreadLocal<Request> localRequest = new ThreadLocal<>();
 
   public AbstractApp(String rootUrl) {
@@ -218,5 +220,15 @@ public abstract class AbstractApp implements App {
 
   public Response getResponse() {
     return getRequest().getResponse();
+  }
+
+  public void addBeforeAllHook(BeforeHook hook) {
+    beforeHooks.add(hook);
+  }
+
+  protected void onBefore(SPRequest request) throws BeforeHook.StopProcessingException {
+    for (BeforeHook hook : beforeHooks) {
+      hook.execute(request);
+    }
   }
 }
