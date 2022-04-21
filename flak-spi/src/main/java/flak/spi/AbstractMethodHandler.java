@@ -9,6 +9,7 @@ import flak.Response;
 import flak.annotations.Delete;
 import flak.annotations.Head;
 import flak.annotations.InputFormat;
+import flak.annotations.Options;
 import flak.annotations.OutputFormat;
 import flak.annotations.Patch;
 import flak.annotations.Post;
@@ -256,6 +257,8 @@ public abstract class AbstractMethodHandler
       return "HEAD";
     if (m.getAnnotation(Delete.class) != null)
       return "DELETE";
+    if (m.getAnnotation(Options.class) != null)
+      return "OPTIONS";
     return "GET";
   }
 

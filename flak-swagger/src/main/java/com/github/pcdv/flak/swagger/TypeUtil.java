@@ -2,6 +2,7 @@ package com.github.pcdv.flak.swagger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import flak.annotations.Delete;
+import flak.annotations.Options;
 import flak.annotations.Patch;
 import flak.annotations.Post;
 import flak.annotations.Put;
@@ -29,6 +30,8 @@ public class TypeUtil {
   }
 
   public static PathItem.HttpMethod getHttpMethod(Method m) {
+    if (m.isAnnotationPresent(Options.class))
+      return PathItem.HttpMethod.OPTIONS;
     if (m.isAnnotationPresent(Delete.class))
       return PathItem.HttpMethod.DELETE;
     if (m.isAnnotationPresent(Put.class))
