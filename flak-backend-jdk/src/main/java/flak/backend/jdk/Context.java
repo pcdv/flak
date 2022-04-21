@@ -64,6 +64,8 @@ public class Context implements HttpHandler {
       new JdkRequest(app, app.relativePath(path), makeRelativePath(path), r);
     app.setThreadLocalRequest(req);
     try {
+      app.onBefore(req);
+
       for (MethodHandler h : handlers) {
         if (h.isApplicable(req)) {
           h.processResponse(req.getResponse(), h.execute(req));

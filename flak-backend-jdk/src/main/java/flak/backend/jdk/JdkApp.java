@@ -2,6 +2,8 @@ package flak.backend.jdk;
 
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
+import flak.spi.BeforeHook;
+import flak.spi.SPRequest;
 import flak.spi.util.Log;
 
 import java.io.IOException;
@@ -131,6 +133,11 @@ public class JdkApp extends AbstractApp {
 
       r.setStatus(404);
     }
+  }
+
+  @Override // unlock package-private access
+  protected void onBefore(SPRequest request) throws BeforeHook.StopProcessingException {
+    super.onBefore(request);
   }
 
   public Collection<Context> getHandlers() {
