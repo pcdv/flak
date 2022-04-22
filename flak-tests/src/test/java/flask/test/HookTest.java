@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import flak.HttpException;
 import flak.annotations.Route;
+import flak.spi.AbstractApp;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -81,5 +82,22 @@ public class HookTest extends AbstractAppTest {
 
     Assert.assertEquals("root", client.get("/"));
     Assert.assertEquals("GET / root[] root", queue.poll(1, TimeUnit.SECONDS));
+  }
+
+  @Test
+  public void testBeforeAllHook() throws Exception {
+    ((AbstractApp) app).addBeforeAllHook(r -> {
+      r.getResponse().addHeader("X-forwarded-by", "172.16.0.5");
+    });
+
+    Assert.assertEquals("172.16.0.5",
+                        client.head("/hello/world") // 200 OK
+                              .get("X-forwarded-by")
+                              .get(0));
+
+    Assert.assertEquals("172.16.0.5",
+                        client.head("/an/unhandled/route") // 404 Not found
+                              .get("X-forwarded-by")
+                              .get(0));
   }
 }
