@@ -10,3 +10,4 @@ classes
 *.ipr
 *.iws
 out
+README.md.*

@@ -17,23 +17,34 @@ Flak components    | Description
 
 ## Table of Contents
 
-  * [Table of Contents](#table-of-contents)
-  * [Getting started](#getting-started)
-     * [Hello World](#hello-world)
-     * [Route handlers](#route-handlers)
-     * [Return values](#return-values)
-     * [Method arguments](#method-arguments)
-        * [Path variables](#path-variables)
-        * [Request argument](#request-argument)
-        * [Query argument](#query-argument)
-        * [Form argument](#form-argument)
-        * [Custom arguments](#custom-arguments)
-     * [Managing apps](#managing-apps)
-     * [To be continued....](#to-be-continued)
-  * [Why Flak?](#why-flak)
-  * [History](#history)
-     * [Goals of the migration from JFlask](#goals-of-the-migration-from-jflask)
-  * [A few words of warning](#a-few-words-of-warning)
+<!--ts-->
+* [Flak - A lightweight and modular web framework for Java](#flak---a-lightweight-and-modular-web-framework-for-java)
+   * [Table of Contents](#table-of-contents)
+   * [Getting started](#getting-started)
+      * [Hello World](#hello-world)
+      * [Route handlers](#route-handlers)
+      * [Return values](#return-values)
+      * [Method arguments](#method-arguments)
+         * [Path variables](#path-variables)
+         * [Request argument](#request-argument)
+         * [Query argument](#query-argument)
+         * [Form argument](#form-argument)
+         * [Custom arguments](#custom-arguments)
+      * [Managing apps](#managing-apps)
+      * [To be continued....](#to-be-continued)
+   * [Why Flak?](#why-flak)
+   * [History](#history)
+      * [Goals of the migration from JFlask](#goals-of-the-migration-from-jflask)
+   * [Build](#build)
+      * [How to publish locally](#how-to-publish-locally)
+
+<!-- Created by https://github.com/ekalinin/github-markdown-toc -->
+<!-- Added by: pcdv, at: Sat Sep 10 06:05:40     2022 -->
+
+<!--te-->
+<!-- to update TOC:
+ gh-md-toc --insert README.md
+-->
 
 ## Getting started
 
@@ -262,4 +273,19 @@ Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
  [Jetty](https://www.eclipse.org/jetty/), etc.)
  * provide SSL support
  * optional plugins for user management, JSON serialization, CSRF protection...
- 
+
+## Build
+
+### How to publish locally
+
+If your project uses the local Ivy repository, run:
+```
+./gradlew publish -Pversion=2.3-SNAPSHOT
+```
+
+If your project uses the local Maven repository, run:
+```
+./gradlew publishToMavenLocal -Pversion=2.3-SNAPSHOT
+```
+
+Then use version `2.3-SNAPSHOT` in your project dependencies.
