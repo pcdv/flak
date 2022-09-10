@@ -63,17 +63,11 @@ public class JdkRequest implements SPRequest, Response {
     return split[tokenIndex];
   }
 
-  public String getSplat(int tokenIndex) {
-    // TODO directly return a substring of the path
-    StringBuilder b = new StringBuilder(64);
-    for (int i = tokenIndex; i < split.length; i++) {
-      if (b.length() > 0)
-        b.append('/');
-      b.append(split[i]);
-    }
-    if (appRelativePath.endsWith("/"))
-      b.append('/');
-    return b.toString();
+  @SuppressWarnings("StatementWithEmptyBody")
+  public String getSplat(int slashCount) {
+    int pos = 0;
+    for (int i = 0; i < slashCount ; pos = appRelativePath.indexOf('/', pos + 1), i++);
+    return appRelativePath.substring(pos + 1);
   }
 
   @Override

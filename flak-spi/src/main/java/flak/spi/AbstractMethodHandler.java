@@ -70,7 +70,7 @@ public abstract class AbstractMethodHandler
 
   /**
    * The route as defined with the Route annotation. It is an absolute route
-   * for the enclosing app so it may not match the original request path if
+   * for the enclosing app, so it may not match the original request path if
    * several apps share a given web server.
    */
   protected final String path;
@@ -155,7 +155,7 @@ public abstract class AbstractMethodHandler
   /**
    * @param type the type of argument in method
    * @param i    the extractor's index (i.e. index of argument in method)
-   * @param idx  indexes of variables in split URI, eg. { 1 } to extract "world"
+   * @param idx  indexes of variables in split URI, e.g. { 1 } to extract "world"
    *             from /hello/:name
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -180,7 +180,7 @@ public abstract class AbstractMethodHandler
       }
       int tokenIndex = idx[urlParam.getAndIncrement()];
       if (splatIndex == tokenIndex)
-        return new SplatExtractor(i, tokenIndex);
+        return new SplatExtractor(i, path);
       else
         return new StringExtractor(i, tokenIndex);
     }
