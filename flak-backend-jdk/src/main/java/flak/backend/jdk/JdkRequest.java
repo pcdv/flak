@@ -35,7 +35,7 @@ public class JdkRequest implements SPRequest, Response {
   private BufferedOutputStream outputStream;
 
   private Form form;
-  private HeaderList headers = new HeaderList();
+  private final HeaderList headers = new HeaderList();
   private int status;
   private boolean statusFlushed;
 
@@ -71,6 +71,8 @@ public class JdkRequest implements SPRequest, Response {
         b.append('/');
       b.append(split[i]);
     }
+    if (appRelativePath.endsWith("/"))
+      b.append('/');
     return b.toString();
   }
 

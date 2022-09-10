@@ -19,6 +19,7 @@ public class PostSplatTest extends AbstractAppTest {
 
   @Test
   public void testPostWithSplat() throws Exception {
+    assertEquals("42:a/b/c/", client.post("/process/42/file/a/b/c/", "foo"));
     assertEquals("42:a/b/c", client.post("/process/42/file/a/b/c", "foo"));
   }
 
