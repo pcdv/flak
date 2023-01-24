@@ -25,6 +25,8 @@ import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.PathParameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
@@ -37,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -126,7 +129,7 @@ public class OpenApiGenerator {
 
     Operation op = new Operation().operationId(m.getName());
     op.responses(scanResponses(m));
-    scanParameters(m, op);
+    scanParameters(m, op, route);
 
     io.swagger.v3.oas.annotations.Operation ope = m.getAnnotation(io.swagger.v3.oas.annotations.Operation.class);
     if (ope != null) {
@@ -275,7 +278,7 @@ public class OpenApiGenerator {
     return resp;
   }
 
-  private void scanParameters(Method m, Operation op) {
+  private void scanParameters(Method m, Operation op, Route route) {
     for (io.swagger.v3.oas.annotations.Parameter ann
       : TypeUtil.getAnnotations(m, io.swagger.v3.oas.annotations.Parameter.class,
                                 Parameters.class, Parameters::value)) {
@@ -288,6 +291,18 @@ public class OpenApiGenerator {
                                              api.getComponents(),
                                              null, null, null));
     }
+
+    // complete path parameters with the ones found in route
+    for (String s : route.value().split("/")) {
+      if (s.startsWith(":")) {
+        String param = s.substring(1);
+        List<Parameter> parameters = op.getParameters();
+        if (parameters == null || !parameters.stream().anyMatch(p -> param.equals(p.getName()))) {
+          op.addParametersItem(new PathParameter().name(param));
+        }
+      }
+    }
+
   }
 
   private String convertPath(String endpoint) {

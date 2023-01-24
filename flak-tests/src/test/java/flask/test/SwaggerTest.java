@@ -45,6 +45,11 @@ public class SwaggerTest extends AbstractAppTest {
   public void getTwoParam(String one, String two) {
   }
 
+  @Route("/getTwo2/:one/:two")
+  @JSON
+  public void getTwoParamNoDesc(String one, String two) {
+  }
+
   @Route("/api")
   public String getAPI() {
     OpenApiGenerator gen = new OpenApiGenerator();
@@ -79,6 +84,7 @@ public class SwaggerTest extends AbstractAppTest {
     PathItem getData = api.getPaths().get("/data");
     PathItem getOneParam = api.getPaths().get("/getOne/{one}");
     PathItem getTwoParam = api.getPaths().get("/getTwo/{one}/{two}");
+    PathItem getTwoParamNoDesc = api.getPaths().get("/getTwo2/{one}/{two}");
     PathItem getOther = api.getPaths().get("/other");
 
     // getData()
@@ -96,6 +102,10 @@ public class SwaggerTest extends AbstractAppTest {
     List<io.swagger.v3.oas.models.parameters.Parameter> twoParams = getTwoParam.getGet().getParameters();
     assertEquals(2, twoParams.size());
     assertEquals("Foo", twoParams.get(1).getExample());
+
+    twoParams = getTwoParamNoDesc.getGet().getParameters();
+    assertEquals(2, twoParams.size());
+    assertEquals("two", twoParams.get(1).getName());
 
     // getOther()
     assertEquals("[OtherHandler]", getOther.getGet().getTags().toString());
