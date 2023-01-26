@@ -28,7 +28,7 @@ public class DefaultSessionManager implements SessionManager {
 
   /**
    * Changes the name of the cookie in which the session token is stored. This
-   * allows to have several web apps sharing a same host address (eg. using a
+   * allows to have several web apps sharing a same host address (e.g. using a
    * different port).
    */
   public void setAuthTokenCookieName(String name) {
@@ -52,8 +52,12 @@ public class DefaultSessionManager implements SessionManager {
     if (path == null || path.isEmpty())
       path = "/";
     r.addHeader("Set-Cookie",
-                sessionCookieName + "=" + token + "; path=" + path + ";");
+                sessionCookieName + "=" + generateCookie(token, path));
     return session;
+  }
+
+  protected String generateCookie(String token, String path) {
+    return token + "; path=" + path + "; HttpOnly";
   }
 
   public FlakSession addSession(FlakUser user, String token) {
@@ -93,7 +97,7 @@ public class DefaultSessionManager implements SessionManager {
 
   /**
    * Sets the path of the login page, to which redirect all URLs that require a
-   * logged in user. This method can be called directly, or otherwise one of
+   * logged-in user. This method can be called directly, or otherwise one of
    * the URL handler methods can be annotated with @LoginPage.
    *
    * @param path the path of the login page
@@ -139,7 +143,7 @@ public class DefaultSessionManager implements SessionManager {
    * If the user is logged in or if the URL being accessed is the login page,
    * the method simply returns true. Otherwise, if the path of the login page
    * has been set using @LoginPage or setLoginPage(), the user is redirected to
-   * it. Otherwise a 403 error is returned.
+   * it. Otherwise, a 403 error is returned.
    */
   public boolean checkLoggedIn(Request r) {
     if (isLoggedIn(r)) {

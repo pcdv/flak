@@ -12,6 +12,8 @@ import flak.login.SessionManager;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.HttpCookie;
+
 /**
  * Tests basic authentication mechanisms.
  *
@@ -73,6 +75,9 @@ public class LoginTest extends AbstractAppTest {
 
     // app remains accessible thanks to session cookie
     Assert.assertEquals("Welcome foo", client.get("/app"));
+
+    HttpCookie cookie = client.getCookie("sessionToken");
+    Assert.assertTrue(cookie.isHttpOnly());
 
     // logout link redirects to login page
     Assert.assertEquals("Please login", client.get("/logout"));
