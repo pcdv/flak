@@ -32,9 +32,15 @@ public class SSLTest {
     return "OK";
   }
 
+  /**
+   * NB: the keystore file has been generated with:
+   * keytool -genkey -keyalg RSA -alias tomcat -keystore lig.keystore -validity 5000 -keysize 2048
+   *
+   * The test may fail after expiration of the certificate.
+   */
   @Before
   public void setUp() throws Exception {
-    SSLContext context = getSslContext("/test-resources/lig.keystore", "simulator");
+    SSLContext context = getSslContext("/test-resources/lig.keystore", "foobar");
 
     AppFactory factory = TestUtil.getFactory();
     factory.getServer().setSSLContext(context);
