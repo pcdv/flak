@@ -21,3 +21,5 @@ jobs:
         name: test-results
         path: flak-tests/build/reports
         retention-days: 2
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v3
