@@ -17,9 +17,11 @@ jobs:
       run: ./gradlew build
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
+      if: success() || failure()
       with:
         name: test-results
         path: flak-tests/build/reports
         retention-days: 2
     - name: Download all workflow run artifacts
+      if: success() || failure()
       uses: actions/download-artifact@v3
