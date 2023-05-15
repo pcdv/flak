@@ -4,6 +4,7 @@ import flak.Form;
 import flak.Request;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.login.DefaultSessionManager;
 import flak.login.FlakSession;
 import flak.login.FlakUser;
 import flak.login.LoginPage;
@@ -29,7 +30,7 @@ public class GetCurrentLoginTest extends AbstractAppTest {
   @Override
   protected void preScan() {
     initFlakLogin();
-    sessionManager = flakLogin.getSessionManager();
+    sessionManager = (DefaultSessionManager) flakLogin.getSessionManager();
   }
 
   @LoginPage
