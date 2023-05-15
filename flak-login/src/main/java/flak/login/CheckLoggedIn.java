@@ -16,11 +16,11 @@ public class CheckLoggedIn implements BeforeHook {
 
   private final AbstractMethodHandler handler;
 
-  private final SessionManager manager;
+  private final SessionManager0 manager;
 
   private final Method method;
 
-  CheckLoggedIn(AbstractMethodHandler handler, SessionManager manager) {
+  CheckLoggedIn(AbstractMethodHandler handler, SessionManager0 manager) {
     this.handler = handler;
     this.manager = manager;
     this.method = handler.getJavaMethod();

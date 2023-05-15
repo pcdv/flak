@@ -1,14 +1,13 @@
 package flak.login;
 
-import flak.App;
 import flak.Request;
 import flak.Response;
 
 import java.util.Objects;
 
-public class SessionManagerDelegate implements SessionManager {
+public class SessionManagerDelegate implements SessionManager0 {
 
-  private SessionManager sm;
+  private SessionManager0 sm;
 
   public SessionManagerDelegate(SessionManager sm) {
     this.sm = sm;
@@ -35,18 +34,8 @@ public class SessionManagerDelegate implements SessionManager {
   }
 
   @Override
-  public boolean isLoggedIn(Request r) {
-    return sm.isLoggedIn(r);
-  }
-
-  @Override
   public void setLoginPage(String path) {
     sm.setLoginPage(path);
-  }
-
-  @Override
-  public void setAuthTokenCookieName(String name) {
-    sm.setAuthTokenCookieName(name);
   }
 
   @Override
@@ -54,42 +43,11 @@ public class SessionManagerDelegate implements SessionManager {
     return sm.getCurrentSession(r);
   }
 
-  @Override
-  public FlakSession openSession(App app, FlakUser user, Response r) {
-    return sm.openSession(app, user, r);
-  }
-
-  @Override
-  public void closeSession(FlakSession session) {
-    sm.closeSession(session);
-  }
-
-  @Override
-  public void closeCurrentSession(Request request) {
-    sm.closeCurrentSession(request);
-  }
-
-  @Override
-  public FlakUser getUser(String id) {
-    return sm.getUser(id);
-  }
-
-  @Override
-  public FlakUser createUser(String id) {
-    return sm.createUser(id);
-  }
-
-  @Override
-  public void addUser(FlakUser user) {
-    sm.addUser(user);
-  }
-
-  @Override
-  public String getAuthTokenCookieName() {
-    return sm.getAuthTokenCookieName();
-  }
-
-  public void setDelegate(SessionManager sm) {
+  public void setDelegate(SessionManager0 sm) {
     this.sm = Objects.requireNonNull(sm);
+  }
+
+  public SessionManager0 getDelegate() {
+    return sm;
   }
 }

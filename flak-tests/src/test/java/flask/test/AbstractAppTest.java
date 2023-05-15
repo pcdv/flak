@@ -2,8 +2,8 @@ package flask.test;
 
 import flak.App;
 import flak.AppFactory;
+import flak.login.DefaultSessionManager;
 import flak.login.FlakLogin;
-import flak.login.SessionManager;
 import flask.test.util.DebugProxy;
 import flask.test.util.SimpleClient;
 import flask.test.util.ThreadState;
@@ -28,7 +28,7 @@ public class AbstractAppTest {
 
   protected FlakLogin flakLogin;
 
-  protected SessionManager sessionManager;
+  protected DefaultSessionManager sessionManager;
   protected DebugProxy proxy;
 
   private static boolean USE_PROXY = Boolean.getBoolean("useDebugProxy");
@@ -56,7 +56,7 @@ public class AbstractAppTest {
 
   protected void initFlakLogin() {
     this.flakLogin = app.getPlugin(FlakLogin.class);
-    this.sessionManager = flakLogin.getSessionManager();
+    this.sessionManager = (DefaultSessionManager) flakLogin.getSessionManager();
   }
 
   /**

@@ -25,7 +25,7 @@ public class FlakLogin implements SPPlugin {
     this.sessionManager = new SessionManagerDelegate(new DefaultSessionManager());
   }
 
-  public FlakLogin setSessionManager(SessionManager sessionManager) {
+  public FlakLogin setSessionManager(SessionManager0 sessionManager) {
     this.sessionManager.setDelegate(sessionManager);
     return this;
   }
@@ -37,7 +37,7 @@ public class FlakLogin implements SPPlugin {
     app.addCustomExtractor(SessionManager.class, new ArgExtractor<SessionManager>(-1) {
       @Override
       public SessionManager extract(SPRequest request) {
-        return sessionManager;
+        return (SessionManager) sessionManager.getDelegate();
       }
     });
 
@@ -52,7 +52,7 @@ public class FlakLogin implements SPPlugin {
   }
 
   public SessionManager getSessionManager() {
-    return sessionManager;
+    return (SessionManager) sessionManager.getDelegate();
   }
 
   @Override

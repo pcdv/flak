@@ -14,12 +14,12 @@ import flak.spi.SPRequest;
  */
 public class CheckPermission implements BeforeHook {
 
-  private final SessionManager manager;
+  private final SessionManager0 manager;
 
   private final HashSet<String> permissions = new HashSet<>();
 
   public CheckPermission(AbstractMethodHandler handler,
-                         SessionManager manager) {
+                         SessionManager0 manager) {
     this.manager = manager;
 
     WithPermission perm =
