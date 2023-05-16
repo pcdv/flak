@@ -25,6 +25,13 @@ public class FlakLogin implements SPPlugin {
     this.sessionManager = new SessionManagerDelegate(new DefaultSessionManager());
   }
 
+  /**
+   * Kept for compatibility.
+   */
+  public FlakLogin setSessionManager(SessionManager sessionManager) {
+    return setSessionManager((SessionManager0) sessionManager);
+  }
+
   public FlakLogin setSessionManager(SessionManager0 sessionManager) {
     this.sessionManager.setDelegate(sessionManager);
     return this;
