@@ -58,6 +58,11 @@ public class DefaultSessionManager implements SessionManager {
   }
 
   @Override
+  public FlakSession getSessionForToken(String token) {
+    return sessions.get(token);
+  }
+
+  @Override
   @Deprecated
   public FlakSession openSession(App app, FlakUser user, Response r) {
     String token = generateSessionToken();

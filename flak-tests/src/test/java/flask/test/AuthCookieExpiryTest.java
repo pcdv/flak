@@ -55,6 +55,7 @@ public class AuthCookieExpiryTest extends AbstractAppTest {
     HttpCookie cookie = client.getCookie(sessionManager.getAuthTokenCookieName());
     Assert.assertTrue(cookie.getMaxAge() == 9 || cookie.getMaxAge() == 10);
     Assert.assertEquals("OK", client.get("/data"));
+    Assert.assertEquals("test", sessionManager.getSessionForToken(cookie.getValue()).getUser().getId());
   }
 
   @Test

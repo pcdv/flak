@@ -31,6 +31,11 @@ public interface SessionManager extends SessionManager0 {
   void setAuthTokenCookieName(String name);
 
   /**
+   * Returns the session associated with specified token.
+   */
+  FlakSession getSessionForToken(String token);
+
+  /**
    * @deprecated For more flexibility, it is recommended to first create a session,
    * then call {@link DefaultSessionManager#setCookie(App, FlakSession, Response)}
    * and {@link DefaultSessionManager#addSession(FlakSession)}.
