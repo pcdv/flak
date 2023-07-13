@@ -5,8 +5,11 @@ import flak.Query;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,6 +18,7 @@ import java.util.Map;
 public class FormImpl implements Form, Query {
 
   private final Map<String, String> data = new LinkedHashMap<>();
+  private final List<Map.Entry<String, String>> params = new ArrayList<>();
 
   public FormImpl(String data, boolean urlDecode) {
     try {
@@ -22,9 +26,10 @@ public class FormImpl implements Form, Query {
         for (String tok : data.split("&")) {
           int pos = tok.indexOf('=');
           if (pos != - 1) {
+            String key = tok.substring(0, pos);
             String value = tok.substring(pos + 1);
-            this.data.put(tok.substring(0, pos),
-              urlDecode ? URLDecoder.decode(value, "UTF-8") : value);
+            this.data.put(key, urlDecode ? URLDecoder.decode(value, "UTF-8") : value);
+            this.params.add(new AbstractMap.SimpleEntry<>(key, value));
           }
         }
     }
@@ -46,6 +51,6 @@ public class FormImpl implements Form, Query {
 
   @Override
   public Collection<Map.Entry<String, String>> parameters() {
-    return data.entrySet();
+    return params;
   }
 }

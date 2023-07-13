@@ -47,6 +47,7 @@ public class QueryTest extends AbstractAppTest {
     assertEquals("[]", client.get("/showParams"));
     assertEquals("[a=b]", client.get("/showParams?a=b"));
     assertEquals("[a=b, c=d]", client.get("/showParams?a=b&c=d"));
+    assertEquals("[a=1, a=2, a=3]", client.get("/showParams?a=1&a=2&a=3"));
   }
 
   @Test
