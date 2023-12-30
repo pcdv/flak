@@ -14,6 +14,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 import flak.HttpException;
 import flak.spi.util.IO;
@@ -121,6 +122,11 @@ public class SimpleClient {
       String error = new String(bytes);
       throw new HttpException(con.getResponseCode(), error);
     }
+
+    if ("gzip".equals(con.getContentEncoding())) {
+      return new GZIPInputStream(con.getInputStream());
+    }
+
     return con.getInputStream();
   }
 

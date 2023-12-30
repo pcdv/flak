@@ -11,10 +11,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * Experimental: trying to make HttpServer output some "gzip" content encoding.
- * Disabled because does not work.
+ * Experimental: make HttpServer output some "gzip" content encoding.
+ * Next step is to automatically check that the client accepts gzip and compress
+ * on the fly. Maybe need a heuristic to decide when to compress, or use an explicit
+ * setting and annotation to tweak behavior per endpoint.
  */
-@Ignore
 public class GZipTest extends AbstractAppTest {
 
   @Route("/gzip")
@@ -25,12 +26,10 @@ public class GZipTest extends AbstractAppTest {
     GZIPOutputStream out = new GZIPOutputStream(r.getOutputStream());
     out.write("Hello, world".getBytes(StandardCharsets.UTF_8));
     out.close();
-//    r.getOutputStream().write("Hello, world".getBytes(StandardCharsets.UTF_8));
   }
 
-  @Test @Ignore
+  @Test
   public void testGZipContent() throws Exception {
-    //Thread.sleep(60000);
     Assert.assertEquals("Hello, world", client.get("/gzip"));
   }
 }
