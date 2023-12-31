@@ -1,9 +1,12 @@
 package flak.plugin.resource;
 
+import flak.annotations.Compress;
+import flak.spi.SPResponse;
+
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class FileHandler extends AbstractResourceHandler {
@@ -19,9 +22,12 @@ public class FileHandler extends AbstractResourceHandler {
   }
 
   @Override
-  protected InputStream openPath(String p) throws FileNotFoundException {
+  protected InputStream openPath(String p, SPResponse resp) throws IOException {
     if (p.startsWith("/"))
       p = p.substring(1);
-    return new FileInputStream(localPath.resolve(p).toFile());
+    File file = localPath.resolve(p).toFile();
+    if (file.length() > Compress.COMPRESS_THRESHOLD)
+      resp.setCompressionAllowed(true);
+    return Files.newInputStream(file.toPath());
   }
 }

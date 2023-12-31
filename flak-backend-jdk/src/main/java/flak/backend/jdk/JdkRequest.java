@@ -16,9 +16,10 @@ import flak.Query;
 import flak.Request;
 import flak.Response;
 import flak.spi.SPRequest;
+import flak.spi.SPResponse;
 import flak.spi.util.IO;
 
-public class JdkRequest implements SPRequest, Response {
+public class JdkRequest implements SPRequest, SPResponse {
 
   private static final String[] EMPTY = {};
 
@@ -32,7 +33,7 @@ public class JdkRequest implements SPRequest, Response {
 
   private final String appRelativePath;
 
-  private BufferedOutputStream outputStream;
+  private OutputStream outputStream;
 
   private Form form;
   private final HeaderList headers = new HeaderList();
@@ -40,6 +41,7 @@ public class JdkRequest implements SPRequest, Response {
   private boolean statusFlushed;
 
   private Method handler;
+  private boolean compressionAllowed;
 
   public JdkRequest(App app,
                     String appRelativePath,
@@ -175,6 +177,11 @@ public class JdkRequest implements SPRequest, Response {
     headers.add(header, value);
   }
 
+  @Override
+  public boolean hasResponseHeader(String name) {
+    return headers.has(name);
+  }
+
   public void setStatus(int status) {
     if (statusFlushed && status != this.status)
       throw new IllegalStateException("Status has already been sent: " + this.status);
@@ -190,7 +197,8 @@ public class JdkRequest implements SPRequest, Response {
     if (outputStream == null) {
       this.outputStream = new BufferedOutputStream(exchange.getResponseBody(), 8192) {
         @Override
-        public void close() {
+        public void close() throws IOException {
+          super.flush();
           // disable close, we will do it in finish()
         }
 
@@ -210,10 +218,22 @@ public class JdkRequest implements SPRequest, Response {
     setStatus(HttpURLConnection.HTTP_MOVED_TEMP);
   }
 
+  @Override
+  public void setCompressionAllowed(boolean compressionAllowed) {
+    this.compressionAllowed = compressionAllowed;
+
+  }
+
+  @Override
+  public boolean isCompressionAllowed() {
+    return compressionAllowed;
+  }
+
   void finish() throws IOException {
     flushStatus();
-    if (outputStream != null)
-      outputStream.flush();
+    if (outputStream != null) {
+      outputStream.close();
+    }
     exchange.getResponseBody().close();
   }
 
@@ -230,5 +250,10 @@ public class JdkRequest implements SPRequest, Response {
 
   boolean hasOutputStream() {
     return outputStream != null;
+  }
+
+  @Override
+  public void setOutputStream(OutputStream out) {
+    this.outputStream = out;
   }
 }

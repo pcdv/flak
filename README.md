@@ -30,6 +30,7 @@ Flak components    | Description
          * [Query argument](#query-argument)
          * [Form argument](#form-argument)
          * [Custom arguments](#custom-arguments)
+      * [Compression](#compression)
       * [Managing apps](#managing-apps)
       * [To be continued....](#to-be-continued)
    * [Why Flak?](#why-flak)
@@ -39,7 +40,7 @@ Flak components    | Description
       * [How to publish locally](#how-to-publish-locally)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: pcdv, at: Sat Sep 10 06:05:40     2022 -->
+<!-- Added by: pcdv, at: Sun Dec 31 19:04:56     2023 -->
 
 <!--te-->
 <!-- to update TOC:
@@ -208,6 +209,17 @@ You can accept other argument types if you:
   }
 ```
  
+### Compression
+
+Gzip compression can be enabled for a given endpoint or all endpoints of a 
+class by using the `@Compress` annotation.
+
+Files served with `FlakResourceImpl` will be automatically compressed 
+according to their content type and size.
+
+It is possible to tune compression behavior:
+ * file size threshold (using system property `flak.compressThreshold`)
+ * eligible content types (using a custom `ContentTypeProvider`)
 
 ### Managing apps
 

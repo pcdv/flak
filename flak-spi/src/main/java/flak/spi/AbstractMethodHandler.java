@@ -6,6 +6,7 @@ import flak.OutputFormatter;
 import flak.Query;
 import flak.Request;
 import flak.Response;
+import flak.annotations.Compress;
 import flak.annotations.Delete;
 import flak.annotations.Head;
 import flak.annotations.InputFormat;
@@ -64,6 +65,7 @@ public abstract class AbstractMethodHandler
    * The object to invoke method on (i.e. the actual handler).
    */
   protected final Object target;
+  protected final boolean allowCompress;
 
   @SuppressWarnings("rawtypes")
   protected OutputFormatter outputFormat;
@@ -97,6 +99,8 @@ public abstract class AbstractMethodHandler
     this.splitPath = splitPath;
     this.httpMethod = getHttpMethod(m);
     this.outputFormat = getOutputFormat(m);
+    this.allowCompress = m.getAnnotation(Compress.class) != null
+      || m.getDeclaringClass().getAnnotation(Compress.class) != null;
     this.javaMethod = m;
     this.target = target;
 
@@ -104,7 +108,6 @@ public abstract class AbstractMethodHandler
     // is not public
     if (!m.isAccessible())
       m.setAccessible(true);
-
   }
 
   public void init() {

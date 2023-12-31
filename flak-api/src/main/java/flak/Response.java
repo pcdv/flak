@@ -12,6 +12,11 @@ public interface Response {
   void addHeader(String header, String value);
 
   /**
+   * Checks whether specified response header is set.
+   */
+  boolean hasResponseHeader(String name);
+
+  /**
    * Warning: must be called after addHeader().
    *
    * @see java.net.HttpURLConnection
@@ -27,4 +32,16 @@ public interface Response {
    * location.
    */
   void redirect(String path);
+
+  /**
+   * Configures whether gzip compression can be applied automatically according
+   * to Accept-Encoding request header and absence of Content-Encoding response
+   * header (false by default).
+   */
+  void setCompressionAllowed(boolean compressionAllowed);
+
+  /**
+   * @see #setCompressionAllowed(boolean)
+   */
+  boolean isCompressionAllowed();
 }

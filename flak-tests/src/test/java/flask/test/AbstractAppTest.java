@@ -52,6 +52,7 @@ public class AbstractAppTest {
     else {
       client = new SimpleClient(app.getRootUrl());
     }
+    client.addHeader("Accept-Encoding", "gzip");
   }
 
   protected void initFlakLogin() {

@@ -7,7 +7,9 @@ import java.io.OutputStream;
 
 import flak.HttpException;
 import flak.Request;
+import flak.spi.CompressionHelper;
 import flak.spi.RestrictedTarget;
+import flak.spi.SPResponse;
 import flak.spi.util.IO;
 import flak.spi.util.Log;
 
@@ -47,17 +49,20 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
 
     InputStream in;
 
+    OutputStream out = r.getResponse().getOutputStream();
     try {
-      in = openPath(path);
+      in = openPath(path, (SPResponse) r.getResponse());
       String contentType = mime.getContentType(path);
-      if (contentType != null)
+      if (contentType != null) {
         r.getResponse().addHeader("Content-Type", contentType);
+        if (mime.shouldCompress(contentType))
+          out = CompressionHelper.maybeCompress(r.getResponse());
+      }
     }
     catch (FileNotFoundException e) {
       throw new HttpException(404, "Not found");
     }
 
-    OutputStream out = r.getResponse().getOutputStream();
     if (in != null) {
       r.getResponse().setStatus(200);
       try {
@@ -76,5 +81,5 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
     }
   }
 
-  protected abstract InputStream openPath(String p) throws FileNotFoundException;
+  protected abstract InputStream openPath(String p, SPResponse resp) throws IOException;
 }

@@ -1,6 +1,7 @@
 package flask.test;
 
 import flak.Response;
+import flak.annotations.Compress;
 import flak.annotations.Route;
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,6 +13,7 @@ import java.util.Arrays;
  * Reproduce inconsistencies when buffer is flushed before headers and status
  * are set.
  */
+@Compress
 public class BigOutputTest extends AbstractAppTest {
 
   @Route("/api/data")
@@ -29,6 +31,8 @@ public class BigOutputTest extends AbstractAppTest {
   @Test
   public void test() throws Exception {
     Assert.assertEquals(getBigString(), client.get("/api/data"));
+    Assert.assertEquals("gzip", client.getLastConnection().getContentEncoding());
     Assert.assertEquals(getBigString(), client.get("/api/data2"));
+    Assert.assertNull(client.getLastConnection().getContentEncoding());
   }
 }

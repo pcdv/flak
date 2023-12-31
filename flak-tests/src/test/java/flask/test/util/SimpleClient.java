@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,8 @@ public class SimpleClient {
 
   private final Map<String, String> headers = new HashMap<>();
 
-  private CookieManager cookies;
+  private final CookieManager cookies;
+  private HttpURLConnection lastConnection;
 
   public SimpleClient(String host, int port) {
     this("http://" + host + ":" + port);
@@ -101,13 +103,14 @@ public class SimpleClient {
     URL url = new URL(rootUrl + path);
     HttpURLConnection con = (HttpURLConnection) url.openConnection();
     con.setRequestMethod(method);
+    this.lastConnection = con;
 
     addAdditionalHeaders(con);
     if (data != null) {
       con.setDoOutput(true);
 
       String body = data.toString();
-      con.getOutputStream().write(body.getBytes("UTF-8"));
+      con.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
       con.getOutputStream().close();
     }
 
@@ -143,5 +146,12 @@ public class SimpleClient {
               "Basic " + java.util.Base64.getEncoder()
                                          .encodeToString((user + ":" + password)
                                                            .getBytes()));
+  }
+
+  /**
+   * Allows to access the last generated HTTP connection for test purposes.
+   */
+  public HttpURLConnection getLastConnection() {
+    return lastConnection;
   }
 }

@@ -13,4 +13,11 @@ public interface ContentTypeProvider {
    */
   String getContentType(String path);
 
+  /**
+   * Used when serving resources, to help determine if a document should be
+   * compressed.
+   */
+  default boolean shouldCompress(String contentType) {
+    return contentType.contains("text") || contentType.contains("/json");
+  }
 }

@@ -3,6 +3,7 @@ package flak.plugin.resource;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
+import flak.spi.SPResponse;
 import flak.spi.util.Log;
 
 /**
@@ -29,7 +30,7 @@ public class ResourceHandler extends AbstractResourceHandler {
   }
 
   @Override
-  protected InputStream openPath(String p) throws FileNotFoundException {
+  protected InputStream openPath(String p, SPResponse resp) throws FileNotFoundException {
     p = localPath + p;
 
     if (!p.startsWith("/"))
@@ -52,6 +53,9 @@ public class ResourceHandler extends AbstractResourceHandler {
 
     if (in == null)
       throw new FileNotFoundException(p);
+
+    // no way of knowing the size of resource, so we always allow compression
+    resp.setCompressionAllowed(true);
 
     return in;
   }

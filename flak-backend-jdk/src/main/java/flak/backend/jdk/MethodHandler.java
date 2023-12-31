@@ -1,12 +1,15 @@
 package flak.backend.jdk;
 
 import flak.Response;
+import flak.annotations.Compress;
 import flak.spi.AbstractMethodHandler;
+import flak.spi.CompressionHelper;
 import flak.spi.SPRequest;
 import flak.spi.util.IO;
 import flak.spi.util.Log;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
@@ -57,33 +60,41 @@ public class MethodHandler extends AbstractMethodHandler {
 
   @SuppressWarnings({"StatementWithEmptyBody", "unchecked"})
   protected void processResponse(Response r, Object res) throws Exception {
+    if (allowCompress)
+      r.setCompressionAllowed(true);
     if (outputFormat != null) {
       outputFormat.convert(res, r);
     }
     else if (res instanceof Response) {
       // do nothing: status and headers should already be set
     }
-    else if (res instanceof String) {
-      r.setStatus(HttpURLConnection.HTTP_OK);
-      r.getOutputStream().write(((String) res).getBytes(StandardCharsets.UTF_8));
-    }
-    else if (res instanceof byte[]) {
-      r.setStatus(HttpURLConnection.HTTP_OK);
-      r.getOutputStream().write((byte[]) res);
-    }
-    else if (res instanceof InputStream) {
-      r.setStatus(HttpURLConnection.HTTP_OK);
-      IO.pipe((InputStream) res, r.getOutputStream(), false);
-    }
-    else if (res == null) {
-      if (!r.isStatusSet())
-        r.setStatus(200);
-    }
-    else
-      throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod
-        .toGenericString());
+    else {
+      OutputStream out = r.getOutputStream();
+      if (res instanceof String) {
+        r.setStatus(HttpURLConnection.HTTP_OK);
+        if (((String) res).length() > Compress.COMPRESS_THRESHOLD)
+          out = CompressionHelper.maybeCompress(r);
+        out.write(((String) res).getBytes(StandardCharsets.UTF_8));
+      }
+      else if (res instanceof byte[]) {
+        r.setStatus(HttpURLConnection.HTTP_OK);
+        if (((byte[]) res).length > Compress.COMPRESS_THRESHOLD)
+          out = CompressionHelper.maybeCompress(r);
+        out.write((byte[]) res);
+      }
+      else if (res instanceof InputStream) {
+        r.setStatus(HttpURLConnection.HTTP_OK);
+        out = CompressionHelper.maybeCompress(r);
+        IO.pipe((InputStream) res, out, false);
+      }
+      else if (res == null) {
+        if (!r.isStatusSet())
+          r.setStatus(200);
+      }
+      else
+        throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod
+          .toGenericString());
 
+    }
   }
-
-
 }
