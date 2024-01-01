@@ -11,5 +11,4 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Compress {
-  int COMPRESS_THRESHOLD = Integer.getInteger("flak.compressThreshold", 1024);
 }

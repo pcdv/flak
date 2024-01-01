@@ -11,6 +11,8 @@ import java.util.zip.GZIPOutputStream;
  */
 public class CompressionHelper {
 
+  public static final int COMPRESS_THRESHOLD = Integer.getInteger("flak.compressThreshold", 1024);
+
   /**
    * Attempts to compress the response output stream if compression is allowed,
    * the client supports gzip encoding, and content encoding is not already set.

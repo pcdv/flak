@@ -1,7 +1,6 @@
 package flak.backend.jdk;
 
 import flak.Response;
-import flak.annotations.Compress;
 import flak.spi.AbstractMethodHandler;
 import flak.spi.CompressionHelper;
 import flak.spi.SPRequest;
@@ -72,13 +71,13 @@ public class MethodHandler extends AbstractMethodHandler {
       OutputStream out = r.getOutputStream();
       if (res instanceof String) {
         r.setStatus(HttpURLConnection.HTTP_OK);
-        if (((String) res).length() > Compress.COMPRESS_THRESHOLD)
+        if (((String) res).length() > CompressionHelper.COMPRESS_THRESHOLD)
           out = CompressionHelper.maybeCompress(r);
         out.write(((String) res).getBytes(StandardCharsets.UTF_8));
       }
       else if (res instanceof byte[]) {
         r.setStatus(HttpURLConnection.HTTP_OK);
-        if (((byte[]) res).length > Compress.COMPRESS_THRESHOLD)
+        if (((byte[]) res).length > CompressionHelper.COMPRESS_THRESHOLD)
           out = CompressionHelper.maybeCompress(r);
         out.write((byte[]) res);
       }

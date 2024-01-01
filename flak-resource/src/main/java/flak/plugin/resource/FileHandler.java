@@ -1,6 +1,6 @@
 package flak.plugin.resource;
 
-import flak.annotations.Compress;
+import flak.spi.CompressionHelper;
 import flak.spi.SPResponse;
 
 import java.io.File;
@@ -26,7 +26,7 @@ public class FileHandler extends AbstractResourceHandler {
     if (p.startsWith("/"))
       p = p.substring(1);
     File file = localPath.resolve(p).toFile();
-    if (file.length() > Compress.COMPRESS_THRESHOLD)
+    if (file.length() > CompressionHelper.COMPRESS_THRESHOLD)
       resp.setCompressionAllowed(true);
     return Files.newInputStream(file.toPath());
   }

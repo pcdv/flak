@@ -212,7 +212,8 @@ You can accept other argument types if you:
 ### Compression
 
 Gzip compression can be enabled for a given endpoint or all endpoints of a 
-class by using the `@Compress` annotation.
+class by using the `@Compress` annotation. Alternatively, it can be enabled
+using method `Response.setCompressionAllowed(true)`.
 
 Files served with `FlakResourceImpl` will be automatically compressed 
 according to their content type and size.
