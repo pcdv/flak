@@ -49,13 +49,11 @@ public class JacksonPlugin implements SPPlugin {
       String id = json.value();
 
       // convert response to JSON automatically
-      if (m.getReturnType() != void.class) {
-        JsonOutputFormatter<?> fmt = formatters.computeIfAbsent(id,
-                                                                i -> new JsonOutputFormatter<>(
-                                                                  mapperProvider.getMapper(
-                                                                    id).writer()));
-        handler.setOutputFormatter(fmt);
-      }
+      JsonOutputFormatter<?> fmt = formatters.computeIfAbsent(id,
+                                                              i -> new JsonOutputFormatter<>(
+                                                                mapperProvider.getMapper(
+                                                                  id).writer()));
+      handler.setOutputFormatter(fmt);
     }
 
     JSON param = paramAnnotation(m);

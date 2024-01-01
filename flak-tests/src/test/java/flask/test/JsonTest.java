@@ -90,6 +90,13 @@ public class JsonTest extends AbstractAppTest {
     map.put("status", "ok");
   }
 
+  @Route("/api/void")
+  @Post
+  @JSON
+  public void postVoid() {
+    // do nothing, we just want to check that valid JSON is returned
+  }
+
   @Test
   public void testJsonMap() throws Exception {
     Map<String, Object> m = new HashMap<>();
@@ -117,6 +124,11 @@ public class JsonTest extends AbstractAppTest {
   @Route("/api/getVersions/:group")
   public Collection<String> getVersions(String groupKey) {
     return Arrays.asList("foo", "bar");
+  }
+
+  @Test
+  public void testVoidMethod() throws Exception {
+    assertEquals("null", client.post("/api/void", null));
   }
 
   @Test
