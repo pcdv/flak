@@ -3,6 +3,7 @@ package flak.jackson;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import flak.OutputFormatter;
 import flak.Response;
+import flak.spi.CompressionHelper;
 
 /**
  * An output formatter using an ObjectWriter, which is the recommended way of
@@ -25,7 +26,6 @@ public class JsonOutputFormatter<T> implements OutputFormatter<T> {
   @Override
   public void convert(T data, Response resp) throws Exception {
     resp.addHeader("Content-Type", "application/json");
-    resp.setStatus(200);
-    writer.writeValue(resp.getOutputStream(), data);
+    writer.writeValue(CompressionHelper.maybeCompress(resp), data);
   }
 }

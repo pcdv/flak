@@ -16,4 +16,8 @@ class HeaderList {
       exchange.getResponseHeaders().add(arr[0], arr[1]);
     }
   }
+
+  public boolean has(String name) {
+    return list.stream().anyMatch(arr -> name.equals(arr[0]));
+  }
 }
