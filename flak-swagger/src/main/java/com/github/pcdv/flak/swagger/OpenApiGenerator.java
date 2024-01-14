@@ -7,6 +7,7 @@ import flak.annotations.Delete;
 import flak.annotations.Patch;
 import flak.annotations.Post;
 import flak.annotations.Put;
+import flak.annotations.QueryParam;
 import flak.annotations.Route;
 import flak.jackson.JSON;
 import flak.spi.util.IO;
@@ -62,7 +63,7 @@ public class OpenApiGenerator {
    */
   private String removePrefix;
 
-  private HashMap<String, io.swagger.v3.oas.models.tags.Tag> tagsByName = new HashMap<>();
+  private final HashMap<String, io.swagger.v3.oas.models.tags.Tag> tagsByName = new HashMap<>();
   private ObjectMapper objectMapper;
 
   public OpenApiGenerator() {
@@ -81,7 +82,7 @@ public class OpenApiGenerator {
   }
 
   /**
-   * Sets a prefix that should removed from scanned endpoints when generating the API.
+   * Sets a prefix that should be removed from scanned endpoints when generating the API.
    */
   public void setRemovePrefix(String removePrefix) {
     this.removePrefix = removePrefix;
@@ -133,7 +134,8 @@ public class OpenApiGenerator {
 
     io.swagger.v3.oas.annotations.Operation ope = m.getAnnotation(io.swagger.v3.oas.annotations.Operation.class);
     if (ope != null) {
-      op.description(convertDesc(m.getDeclaringClass().getClassLoader(), ope.description())).summary(ope.summary());
+      op.description(convertDesc(m.getDeclaringClass().getClassLoader(),
+                                 ope.description())).summary(ope.summary());
     }
 
     if (m.isAnnotationPresent(Post.class) || m.isAnnotationPresent(Delete.class)
@@ -201,8 +203,9 @@ public class OpenApiGenerator {
         scanSchema(lastParam);
         String ref = "#/components/schemas/" + lastParam.getSimpleName();
         return new RequestBody().content
-          (new Content().addMediaType("application/json",
-                                      new MediaType().schema(new Schema<>().$ref(ref))));
+                                  (new Content().addMediaType("application/json",
+                                                              new MediaType().schema(new Schema<>().$ref(
+                                                                ref))));
       }
     }
     return null;
@@ -212,8 +215,8 @@ public class OpenApiGenerator {
                            Content content,
                            Method m) {
     content.addMediaType
-      (m.isAnnotationPresent(JSON.class) ? "application/json" : annContent.mediaType(),
-       new MediaType().schema(new Schema<>().$ref(annContent.schema().ref())));
+             (m.isAnnotationPresent(JSON.class) ? "application/json" : annContent.mediaType(),
+              new MediaType().schema(new Schema<>().$ref(annContent.schema().ref())));
   }
 
   private ApiResponses scanResponses(Method m) {
@@ -279,17 +282,24 @@ public class OpenApiGenerator {
   }
 
   private void scanParameters(Method m, Operation op, Route route) {
+
+    for (java.lang.reflect.Parameter param : m.getParameters()) {
+      QueryParam qp = param.getAnnotation(QueryParam.class);
+      if (qp != null) {
+        op.addParametersItem(new Parameter().in("query").name(qp.value()).description(qp.description()).schema(getSchemaForType(param.getType())));
+      }
+    }
+
     for (io.swagger.v3.oas.annotations.Parameter ann
       : TypeUtil.getAnnotations(m, io.swagger.v3.oas.annotations.Parameter.class,
                                 Parameters.class, Parameters::value)) {
       Type type = ParameterProcessor.getParameterType(ann, false);
 
-      op.addParametersItem
-        (ParameterProcessor.applyAnnotations(null,
-                                             type,
-                                             Collections.singletonList(ann),
-                                             api.getComponents(),
-                                             null, null, null));
+      Parameter param = ParameterProcessor.applyAnnotations(
+        null, type, Collections.singletonList(ann), api.getComponents(),
+        null, null, null
+      );
+      op.addParametersItem(param);
     }
 
     // complete path parameters with the ones found in route
@@ -297,12 +307,28 @@ public class OpenApiGenerator {
       if (s.startsWith(":")) {
         String param = s.substring(1);
         List<Parameter> parameters = op.getParameters();
-        if (parameters == null || !parameters.stream().anyMatch(p -> param.equals(p.getName()))) {
+        if (parameters == null || parameters.stream().noneMatch(p -> param.equals(p.getName()))) {
           op.addParametersItem(new PathParameter().name(param));
         }
       }
     }
 
+  }
+
+  private Schema<?> getSchemaForType(Class<?> type) {
+    if (type == String.class) {
+      Schema<Object> s = new Schema<>();
+      s.type("string");
+      return s;
+    }
+
+    if (type == Integer.class || type == int.class) {
+      Schema<Object> s = new Schema<>();
+      s.type("int");
+      return s;
+    }
+
+    throw new RuntimeException("TODO " + type);
   }
 
   private String convertPath(String endpoint) {

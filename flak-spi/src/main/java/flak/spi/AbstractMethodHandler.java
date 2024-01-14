@@ -15,6 +15,7 @@ import flak.annotations.OutputFormat;
 import flak.annotations.Patch;
 import flak.annotations.Post;
 import flak.annotations.Put;
+import flak.annotations.QueryParam;
 import flak.spi.extractor.IntExtractor;
 import flak.spi.extractor.ParsedInputExtractor;
 import flak.spi.extractor.RequestExtractor;
@@ -27,6 +28,7 @@ import flak.spi.util.Log;
 
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -124,11 +126,11 @@ public abstract class AbstractMethodHandler
 
   protected ArgExtractor<?>[] createExtractors(Method m) {
     int[] idx = calcIndexes(splitPath);
-    Class<?>[] types = m.getParameterTypes();
-    ArgExtractor<?>[] extractors = new ArgExtractor[types.length];
+    Parameter[] parameters = m.getParameters();
+    ArgExtractor<?>[] extractors = new ArgExtractor[parameters.length];
     AtomicInteger index = new AtomicInteger();
-    for (int i = 0; i < types.length; i++) {
-      extractors[i] = createExtractor(m, types[i], i, index, idx);
+    for (int i = 0; i < parameters.length; i++) {
+      extractors[i] = createExtractor(m, parameters[i], i, index, idx);
     }
     if (index.get() < idx.length) {
       throw new IllegalArgumentException("Not enough method parameters");
@@ -156,20 +158,25 @@ public abstract class AbstractMethodHandler
   }
 
   /**
-   * @param type the type of argument in method
+   * @param param the method parameter
    * @param i    the extractor's index (i.e. index of argument in method)
    * @param idx  indexes of variables in split URI, e.g. { 1 } to extract "world"
    *             from /hello/:name
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected ArgExtractor<?> createExtractor(Method m,
-                                            Class<?> type,
+                                            Parameter param,
                                             int i,
                                             AtomicInteger urlParam,
                                             int[] idx) {
+    Class<?> type = param.getType();
     ArgExtractor<?> ex = app.getCustomExtractor(m, type);
     if (ex != null)
       return ex;
+
+    QueryParam annotation = param.getAnnotation(QueryParam.class);
+    if (annotation != null)
+      return QueryExtractor.from(annotation, param, i);
 
     if (type == Request.class) {
       return new RequestExtractor(i);
@@ -214,8 +221,7 @@ public abstract class AbstractMethodHandler
     if (output != null) {
       OutputFormatter<?> format = app.getOutputFormatter(output.value());
       if (format == null)
-        throw new IllegalArgumentException("In method " + m.getName() + ": unknown output format: " + output
-                                                                                                        .value());
+        throw new IllegalArgumentException("In method " + m.getName() + ": unknown output format: " + output.value());
       return format;
     }
 

@@ -2,6 +2,7 @@ package flask.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pcdv.flak.swagger.OpenApiGenerator;
+import flak.annotations.QueryParam;
 import flak.annotations.Route;
 import flak.jackson.JSON;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,11 +39,10 @@ public class SwaggerTest extends AbstractAppTest {
   public void getOneParam(String one) {
   }
 
-  @Route("/getTwo/:one/:two")
+  @Route("/getTwo")
   @JSON
-  @Parameter(name = "one", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
-  @Parameter(name = "two", in = ParameterIn.QUERY, example = "Foo")
-  public void getTwoParam(String one, String two) {
+  public void getTwoParam(@QueryParam(value = "one", description = "The first") String one,
+                          @QueryParam(value = "two", description = "The second") int two) {
   }
 
   @Route("/getTwo2/:one/:two")
@@ -83,7 +83,7 @@ public class SwaggerTest extends AbstractAppTest {
 
     PathItem getData = api.getPaths().get("/data");
     PathItem getOneParam = api.getPaths().get("/getOne/{one}");
-    PathItem getTwoParam = api.getPaths().get("/getTwo/{one}/{two}");
+    PathItem getTwoParam = api.getPaths().get("/getTwo");
     PathItem getTwoParamNoDesc = api.getPaths().get("/getTwo2/{one}/{two}");
     PathItem getOther = api.getPaths().get("/other");
 
@@ -101,7 +101,7 @@ public class SwaggerTest extends AbstractAppTest {
     // getTwoParam()
     List<io.swagger.v3.oas.models.parameters.Parameter> twoParams = getTwoParam.getGet().getParameters();
     assertEquals(2, twoParams.size());
-    assertEquals("Foo", twoParams.get(1).getExample());
+//    assertEquals("Foo", twoParams.get(1).getExample());
 
     twoParams = getTwoParamNoDesc.getGet().getParameters();
     assertEquals(2, twoParams.size());

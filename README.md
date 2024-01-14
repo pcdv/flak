@@ -2,18 +2,23 @@
 
 [![Release](https://jitpack.io/v/pcdv/flak.svg)](https://jitpack.io/#pcdv/flak)
 
-Flak allows to easily write lightweight web applications. It is composed
-of a generic API, a default implementation and some add-ons. In a minimal 
-setup, the total size of dependencies is around 40KiB.
+Flak is a minimal but powerful framework that leverages the HttpServer 
+embedded in the JDK. Its main philosophy is keeping boilerplate to a minimum.
+
+It is composed of a generic API, a default implementation and some add-ons. 
+In a minimal setup, the total size of dependencies is around 40KiB. If you 
+need to implement a REST server and handle JSON data, you will have to add
+`jackson-databind` to your dependencies.
 
 Flak components    | Description
 ------------------ | -----------
-`flak-api`         | Main API
+`flak-api`         | Public API
+`flak-spi`         | Internal API for service providers
 `flak-backend-jdk` | Binding for the web server included in JDK
-`flak-login`       | Add-on for managing user sessions
+`flak-login`       | Add-on for managing authentication
 `flak-resource`    | Add-on for serving static resources
 `flak-jackson`     | Add-on for conversion to/from JSON using jackson
-`flak-swagger`     | OpenAPI specification generator
+`flak-swagger`     | Add-on to dynamically generate OpenAPI specifications
 
 ## Table of Contents
 
@@ -179,6 +184,18 @@ simplified to:
 
 The query corresponds to arguments that are present in request URL, after '?',
 e.g. `/api/stuff?param1=42`
+
+Note that from version 2.6.0, you can also do:
+
+```java
+  @Route("/api/stuff")
+  public String getStuff(@QueryParam("param1") String p1) {
+    return "You submitted param1=" + p1;
+  }
+```
+
+One advantage of this style is that the OpenAPI generator can automatically
+take into account the parameter without additional boilerplate.
 
 #### Form argument
 

@@ -53,4 +53,9 @@ public class FormImpl implements Form, Query {
   public Collection<Map.Entry<String, String>> parameters() {
     return params;
   }
+
+  @Override
+  public String[] getArray(String name) {
+    return params.stream().filter(p -> p.getKey().equals(name)).map(Map.Entry::getValue).toArray(String[]::new);
+  }
 }
