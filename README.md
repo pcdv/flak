@@ -185,7 +185,7 @@ simplified to:
 The query corresponds to arguments that are present in request URL, after '?',
 e.g. `/api/stuff?param1=42`
 
-Note that from version 2.6.0, you can also do:
+Note that from version 2.7.0, you can also do:
 
 ```java
   @Route("/api/stuff")
