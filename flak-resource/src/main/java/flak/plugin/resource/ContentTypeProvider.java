@@ -18,6 +18,6 @@ public interface ContentTypeProvider {
    * compressed.
    */
   default boolean shouldCompress(String contentType) {
-    return contentType.contains("text") || contentType.contains("/json");
+    return contentType.contains("text") || contentType.endsWith("/json") || contentType.endsWith("javascript");
   }
 }
