@@ -49,8 +49,8 @@ public class HookTest extends AbstractAppTest {
     catch (HttpException ignored) {
     }
 
-    Assert.assertEquals("404 GET /unknown null",
-                        queue.poll(1, TimeUnit.SECONDS));
+    Assert.assertEquals(null,
+                        queue.poll(10, TimeUnit.MILLISECONDS));
 
     try {
       client.get("/barf");

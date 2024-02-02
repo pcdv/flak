@@ -91,8 +91,8 @@ public class Context implements HttpHandler {
         return;
       }
 
-      app.fireError(500, req, t);
-      Log.error(t, t);
+      if (!app.fireError(500, req, t))
+        Log.error(t, t);
 
       if (!req.isStatusSet())
         req.setStatus(500);

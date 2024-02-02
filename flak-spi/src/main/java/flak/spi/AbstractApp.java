@@ -144,7 +144,10 @@ public abstract class AbstractApp implements App {
     successHandlers.add(hook);
   }
 
-  public void fireError(int status, Request req, Throwable t) {
+  public boolean fireError(int status, Request req, Throwable t) {
+    if (errorHandlers.isEmpty())
+      return false;
+
     for (ErrorHandler errorHandler : errorHandlers) {
       try {
         errorHandler.onError(status, req, t);
@@ -153,6 +156,8 @@ public abstract class AbstractApp implements App {
         Log.error(e, e);
       }
     }
+
+    return true;
   }
 
   public void fireSuccess(SPRequest req,

@@ -129,9 +129,10 @@ public class JdkApp extends AbstractApp {
 
       Log.warn("No handler found for: " + r.getMethod() + " " + r.getPath());
 
-      fireError(404, r, null);
+      // NB: 404 is no longer reported to ErrorHandler
 
-      r.setStatus(404);
+      if (!r.isStatusSet())
+        r.setStatus(404);
     }
   }
 
