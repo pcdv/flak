@@ -12,6 +12,8 @@ import org.junit.Before;
 import org.junit.Rule;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class AbstractAppTest {
 
@@ -36,7 +38,7 @@ public class AbstractAppTest {
   @Before
   public void setUp() throws Exception {
     AppFactory factory = TestUtil.getFactory();
-    factory.setPort(9191);
+    factory.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
     app = factory.createApp();
 
     preScan();
@@ -46,8 +48,9 @@ public class AbstractAppTest {
     app.start();
 
     if (USE_PROXY) {
-      proxy = new DebugProxy(9092, "localhost", 9191);
-      client = new SimpleClient(app.getRootUrl().replace("9191", "9092"));
+      final int port = app.getServer().getPort();
+      proxy = new DebugProxy(9092, "localhost", port);
+      client = new SimpleClient(app.getRootUrl().replace(String.valueOf(port),"9092"));
     }
     else {
       client = new SimpleClient(app.getRootUrl());

@@ -17,6 +17,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 import static org.junit.Assert.assertEquals;
 
@@ -35,7 +37,7 @@ public class TwoAppsLoginTest {
   @Before
   public void setUp() throws Exception {
     AppFactory fac = TestUtil.getFactory();
-    fac.setPort(9191);
+    fac.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
     ws = fac.getServer();
     App app1 = fac.createApp("/app1");
     App app2 = fac.createApp("/app2");

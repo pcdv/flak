@@ -1,5 +1,7 @@
 package flask.test;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -44,7 +46,7 @@ public class SSLTest {
 
     AppFactory factory = TestUtil.getFactory();
     factory.getServer().setSSLContext(context);
-    factory.setPort(9191);
+    factory.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
 
     app = factory.createApp();
     app.scan(this);
