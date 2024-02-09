@@ -1,5 +1,6 @@
 package flak;
 
+import java.net.InetSocketAddress;
 import java.util.function.Predicate;
 
 /**
@@ -36,8 +37,16 @@ public interface AppFactory {
   void setPort(int port);
 
   /**
+   * Sets the socket address the web server will listen to.
+   * This method can be called only before any App is started.
+   */
+  void setLocalAddress(InetSocketAddress address);
+
+  /**
    * Returns the port of the web server. This is equivalent to calling
    * <code>getServer().getPort()</code>.
    */
-  int getPort();
+  default int getPort() {
+    return getServer().getPort();
+  }
 }

@@ -10,6 +10,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +19,7 @@ public class NettyWebServer implements WebServer {
 
   private final Vector<NettyApp> apps = new Vector<>();
   private String hostName = "localhost";
-  private int port;
+  private InetSocketAddress address = new InetSocketAddress(0);
   private Channel channel;
   private NioEventLoopGroup bossGroup;
   private NioEventLoopGroup workerGroup;
@@ -60,8 +61,8 @@ public class NettyWebServer implements WebServer {
     ;
 
     try {
-      channel = b.bind(port).sync().channel();
-      System.out.println("Server started: http://127.0.0.1:" + port + '/');
+      channel = b.bind(address).sync().channel();
+      System.out.println("Server started: http://127.0.0.1:" + address.getPort() + '/');
     }
     catch (InterruptedException e) {
       e.printStackTrace();
@@ -82,7 +83,14 @@ public class NettyWebServer implements WebServer {
 
   @Override
   public int getPort() {
-    return port;
+    return getLocalAddress().getPort();
+  }
+
+  @Override
+  public InetSocketAddress getLocalAddress() {
+    if (channel != null)
+      return (InetSocketAddress) channel.localAddress();
+    return address;
   }
 
   @Override
@@ -101,7 +109,11 @@ public class NettyWebServer implements WebServer {
   }
 
   public void setPort(int port) {
-    this.port = port;
+    this.address = new InetSocketAddress(address.getAddress(), port);
+  }
+
+  public void setAddress(InetSocketAddress address) {
+    this.address = address;
   }
 
   @Override

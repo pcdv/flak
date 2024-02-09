@@ -1,6 +1,7 @@
 package flak;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 
 import javax.net.ssl.SSLContext;
@@ -18,7 +19,11 @@ public interface WebServer {
 
   void stop();
 
-  int getPort();
+  default int getPort() {
+    return getLocalAddress().getPort();
+  }
+
+  InetSocketAddress getLocalAddress();
 
   /**
    * @return "http" or "https" depending on whether a SSLContext is in use
