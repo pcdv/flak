@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,8 +75,18 @@ public class JdkWebServer implements WebServer {
   }
 
   public void setPort(int port) {
+    setLocalAddress(
+      Optional
+        .ofNullable(address)
+        .map(InetSocketAddress::getAddress)
+        .map(ip -> new InetSocketAddress(ip, port))
+        .orElseGet(() -> new InetSocketAddress(port))
+    );
+  }
+
+  public void setLocalAddress(InetSocketAddress address) {
     checkNotStarted();
-    this.address = new InetSocketAddress(port);
+    this.address = address;
   }
 
   private void checkNotStarted() {
@@ -96,8 +107,16 @@ public class JdkWebServer implements WebServer {
       executor.shutdownNow();
   }
 
+  @Override
   public int getPort() {
-    return address.getPort();
+    return getLocalAddress().getPort();
+  }
+
+  @Override
+  public InetSocketAddress getLocalAddress() {
+    if (srv != null)
+      return srv.getAddress();
+    return address;
   }
 
   @Override

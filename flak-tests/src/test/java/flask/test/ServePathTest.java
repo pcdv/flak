@@ -12,6 +12,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
 public class ServePathTest {
 
   private App app;
@@ -35,7 +38,7 @@ public class ServePathTest {
   @Test
   public void testStartServerBeforeServePath() throws Exception {
     AppFactory fac = TestUtil.getFactory();
-    fac.setPort(9191);
+    fac.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
     WebServer ws = fac.getServer();
     ws.start();
     app = fac.createApp("/app");
@@ -49,7 +52,7 @@ public class ServePathTest {
   @Test
   public void testRedirectLoginToResource() throws Exception {
     AppFactory factory = TestUtil.getFactory();
-    factory.setPort(9191);
+    factory.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
     WebServer ws = factory.getServer();
     ws.start();
     app = factory.createApp("/app");
@@ -105,7 +108,7 @@ public class ServePathTest {
 
   private App createApp() {
     AppFactory factory = TestUtil.getFactory();
-    factory.setPort(9191);
+    factory.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
     App app = factory.createApp();
     sessionManager = app.getPlugin(FlakLogin.class).getSessionManager();
     return app;

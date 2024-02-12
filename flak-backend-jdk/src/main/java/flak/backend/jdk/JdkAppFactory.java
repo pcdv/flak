@@ -4,6 +4,8 @@ import flak.App;
 import flak.spi.AbstractAppFactory;
 import flak.spi.PluginUtil;
 
+import java.net.InetSocketAddress;
+
 /**
  * @author pcdv
  */
@@ -37,6 +39,11 @@ public class JdkAppFactory extends AbstractAppFactory {
   @Override
   public void setPort(int port) {
     getServer().setPort(port);
+  }
+
+  @Override
+  public void setLocalAddress(InetSocketAddress address) {
+    getServer().setLocalAddress(address);
   }
 
   @Override

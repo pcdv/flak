@@ -1,7 +1,6 @@
 package flask.test;
 
 import flak.AppFactory;
-import flak.Flak;
 import flak.annotations.Route;
 import flak.login.DefaultSessionManager;
 import flak.login.FlakLogin;
@@ -10,6 +9,8 @@ import flask.test.util.SimpleClient;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 /**
  * Reproduce bug that cause URLs to not be protected by a login check
@@ -24,12 +25,14 @@ public class LoginCheckBreachTest extends AbstractAppTest {
   public void setUp() throws Exception {
     // disable default setup to produce an init race between handlers and FlakLogin
     AppFactory factory = TestUtil.getFactory();
-    factory.setPort(9191);
+    factory.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
     // prevent automatic addition of FlakLogin plugin
     factory.setPluginValidator(cls -> false);
+    factory.getServer().start();
+    final int port = factory.getPort();
     app = factory.createApp();
-    proxy = new DebugProxy(9092, "localhost", 9191);
-    client = new SimpleClient(app.getRootUrl().replace("9191", "9092"));
+    proxy = new DebugProxy(9092, "localhost", port);
+    client = new SimpleClient(app.getRootUrl().replace(String.valueOf(port), "9092"));
   }
 
   @Test

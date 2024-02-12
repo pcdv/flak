@@ -5,6 +5,8 @@ import flak.WebServer;
 import flak.spi.AbstractAppFactory;
 import flak.spi.PluginUtil;
 
+import java.net.InetSocketAddress;
+
 public class NettyAppFactory extends AbstractAppFactory {
   private final NettyWebServer server;
 
@@ -35,7 +37,12 @@ public class NettyAppFactory extends AbstractAppFactory {
   }
 
   @Override
+  public void setLocalAddress(InetSocketAddress address) {
+    server.setAddress(address);
+  }
+
+  @Override
   public int getPort() {
-    throw new RuntimeException("TODO");
+    return getServer().getPort();
   }
 }

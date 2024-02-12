@@ -14,6 +14,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 
 import static org.junit.Assert.assertEquals;
@@ -40,7 +42,7 @@ public class TwoAppsTest {
   @Before
   public void setUp() throws Exception {
     AppFactory fac = TestUtil.getFactory();
-    fac.setPort(9191);
+    fac.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
     ws = fac.getServer();
 
     app1 = fac.createApp("/app1").scan(new Object() {
