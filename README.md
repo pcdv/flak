@@ -67,8 +67,8 @@ repositories {
 }
 
 dependencies {
-  compile "com.github.pcdv.flak:flak-api:2.1.0"
-  runtime "com.github.pcdv.flak:flak-backend-jdk:2.1.0"
+  compile "com.github.pcdv.flak:flak-api:2.7.0"
+  runtime "com.github.pcdv.flak:flak-backend-jdk:2.7.0"
 }
 ```
 
@@ -310,12 +310,12 @@ Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
 
 If your project uses the local Ivy repository, run:
 ```
-./gradlew publish -Pversion=2.3-SNAPSHOT
+./gradlew publish -Pversion=3.0-SNAPSHOT
 ```
 
 If your project uses the local Maven repository, run:
 ```
-./gradlew publishToMavenLocal -Pversion=2.3-SNAPSHOT
+./gradlew publishToMavenLocal -Pversion=3.0-SNAPSHOT
 ```
 
-Then use version `2.3-SNAPSHOT` in your project dependencies.
+Then use version `3.0-SNAPSHOT` in your project dependencies.
