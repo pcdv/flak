@@ -88,6 +88,7 @@ public class Context implements HttpHandler {
       if (t instanceof HttpException) {
         req.setStatus(((HttpException) t).getResponseCode());
         req.getOutputStream().write(t.getMessage().getBytes(StandardCharsets.UTF_8));
+        req.addHeader("Content-Type", "text/plain");
         return;
       }
 
