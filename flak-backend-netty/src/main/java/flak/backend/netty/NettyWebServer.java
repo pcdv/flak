@@ -24,6 +24,7 @@ public class NettyWebServer implements WebServer {
   private String hostName = "localhost";
   private InetSocketAddress address = new InetSocketAddress(0);
   private Channel channel;
+  private SSLContext sslContext;
   private ExecutorService executor;
   private EventLoopGroup bossGroup;
   private EventLoopGroup workerGroup;
@@ -33,8 +34,14 @@ public class NettyWebServer implements WebServer {
   }
 
   @Override
-  public void setSSLContext(SSLContext context) {
-    throw new RuntimeException("TODO");
+  public void setSSLContext(SSLContext sslContext) {
+    if (started)
+      throw new IllegalStateException("Server already started");
+    this.sslContext = sslContext;
+  }
+
+  public SSLContext getSSLContext() {
+    return sslContext;
   }
 
   public void addApp(NettyApp app) {
@@ -129,7 +136,7 @@ public class NettyWebServer implements WebServer {
 
   @Override
   public String getProtocol() {
-    return "http"; // FIXME
+    return sslContext == null ? "http" : "https";
   }
 
   @Override
