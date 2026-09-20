@@ -1,4 +1,4 @@
-package flak.backend.jdk;
+package flak.spi;
 
 import flak.Form;
 import flak.Query;

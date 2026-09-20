@@ -6,7 +6,7 @@ import flak.WebServer;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
 import java.io.IOException;
@@ -65,7 +65,7 @@ public class NettyApp extends AbstractApp {
     return nr.addHandler(route, method, target);
   }
 
-  public HttpResponse route(ChannelHandlerContext ctx, HttpRequest r, String[] tokens, int i) throws Exception {
+  public HttpResponse route(ChannelHandlerContext ctx, FullHttpRequest r, String[] tokens, int i) throws Exception {
     NettyRoute route = routeByMethod.get(r.method().name());
     return route == null ? null : route.getResponse(ctx, r, tokens, i);
   }

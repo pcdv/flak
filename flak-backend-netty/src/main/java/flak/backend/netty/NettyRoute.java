@@ -2,7 +2,7 @@ package flak.backend.netty;
 
 import flak.spi.util.Log;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 
 import java.lang.reflect.Method;
@@ -63,7 +63,7 @@ public class NettyRoute {
     return httpMethod + " " + path;
   }
 
-  public HttpResponse getResponse(ChannelHandlerContext ctx, HttpRequest req, String[] tokens, int i) throws Exception {
+  public HttpResponse getResponse(ChannelHandlerContext ctx, FullHttpRequest req, String[] tokens, int i) throws Exception {
     if (i < tokens.length) {
       NettyRoute route = routes.get(tokens[i]);
       if (route != null)

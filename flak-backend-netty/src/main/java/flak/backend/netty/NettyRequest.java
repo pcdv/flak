@@ -2,32 +2,49 @@ package flak.backend.netty;
 
 import flak.Form;
 import flak.Query;
+import flak.spi.FormImpl;
 import flak.spi.SPRequest;
+import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
 public class NettyRequest implements SPRequest {
   final NettyMethodHandler handler;
-  final HttpRequest req;
+  final FullHttpRequest req;
   private final ChannelHandlerContext ctx;
   private final String[] split;
   private final NettyResponse response;
 
-  public NettyRequest(NettyMethodHandler handler, ChannelHandlerContext ctx, HttpRequest req) {
+  /**
+   * Path and query string, percent-decoded but with '+' left alone, exactly
+   * like HttpExchange.getRequestURI() gives them to the JDK backend.
+   */
+  private final String path, queryString;
+
+  private Form form;
+
+  public NettyRequest(NettyMethodHandler handler, ChannelHandlerContext ctx, FullHttpRequest req) {
     this.handler = handler;
     this.ctx = ctx;
     this.req = req;
-    String[] split = req.uri().split("/");
+
+    URI uri = URI.create(req.uri());
+    this.path = uri.getPath();
+    this.queryString = uri.getQuery();
+
+    String[] split = path.split("/");
     this.split = Arrays.copyOfRange(split, handler.route.level + 1, split.length);
     this.response = new NettyResponse(this);
   }
@@ -39,12 +56,12 @@ public class NettyRequest implements SPRequest {
 
   @Override
   public String getPath() {
-    return req.uri();
+    return path;
   }
 
   @Override
   public String getQueryString() {
-    return "?TODO";
+    return queryString;
   }
 
   @Override
@@ -54,7 +71,8 @@ public class NettyRequest implements SPRequest {
 
   @Override
   public Query getQuery() {
-    throw new RuntimeException("TODO");
+    // the query string is already decoded, do not do it twice
+    return new FormImpl(queryString, false);
   }
 
   @Override
@@ -64,12 +82,15 @@ public class NettyRequest implements SPRequest {
 
   @Override
   public InputStream getInputStream() {
-    throw new RuntimeException("TODO");
+    // duplicate so that reading the body does not consume it for getForm()
+    return new ByteBufInputStream(req.content().duplicate());
   }
 
   @Override
   public Form getForm() {
-    throw new RuntimeException("TODO");
+    if (form == null)
+      form = new FormImpl(req.content().toString(StandardCharsets.UTF_8), true);
+    return form;
   }
 
   @Override

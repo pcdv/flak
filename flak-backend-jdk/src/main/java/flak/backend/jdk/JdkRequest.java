@@ -13,6 +13,7 @@ import com.sun.net.httpserver.HttpExchange;
 import flak.App;
 import flak.Form;
 import flak.Query;
+import flak.spi.FormImpl;
 import flak.Request;
 import flak.Response;
 import flak.spi.SPRequest;

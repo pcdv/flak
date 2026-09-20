@@ -7,7 +7,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
@@ -39,7 +39,7 @@ public class NettyMethodHandler extends AbstractMethodHandler {
     Log.info("Create handler " + this);
   }
 
-  public HttpResponse getResponse(ChannelHandlerContext ctx, HttpRequest r) throws Exception {
+  public HttpResponse getResponse(ChannelHandlerContext ctx, FullHttpRequest r) throws Exception {
     NettyRequest req = new NettyRequest(this, ctx, r);
     app.setThreadLocalRequest(req);
 

@@ -24,7 +24,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
@@ -32,7 +32,7 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
 
 @ChannelHandler.Sharable
-public class NettyFlakHandler extends SimpleChannelInboundHandler<HttpRequest> {
+public class NettyFlakHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
   private final NettyApp app;
 
@@ -41,7 +41,7 @@ public class NettyFlakHandler extends SimpleChannelInboundHandler<HttpRequest> {
   }
 
   @Override
-  public void channelRead0(ChannelHandlerContext ctx, HttpRequest req) {
+  public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
     if (HttpUtil.is100ContinueExpected(req)) {
       ctx.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                                                     HttpResponseStatus.CONTINUE));
@@ -51,7 +51,7 @@ public class NettyFlakHandler extends SimpleChannelInboundHandler<HttpRequest> {
     }
   }
 
-  private HttpResponse createResponse(ChannelHandlerContext ctx, HttpRequest req) {
+  private HttpResponse createResponse(ChannelHandlerContext ctx, FullHttpRequest req) {
     String uri = req.uri();
     int qs = uri.indexOf('?');
     if (qs != -1)
@@ -94,7 +94,7 @@ public class NettyFlakHandler extends SimpleChannelInboundHandler<HttpRequest> {
     return d;
   }
 
-  private static void flushResponse(ChannelHandlerContext ctx, HttpRequest req, HttpResponse res) {
+  private static void flushResponse(ChannelHandlerContext ctx, FullHttpRequest req, HttpResponse res) {
     if (HttpUtil.isKeepAlive(req)) {
       res.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
       ctx.writeAndFlush(res);
