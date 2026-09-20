@@ -1,4 +1,4 @@
-package flak.backend.jdk;
+package flak.spi.util;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;

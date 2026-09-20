@@ -22,10 +22,8 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
@@ -43,66 +41,69 @@ public class NettyFlakHandler extends SimpleChannelInboundHandler<FullHttpReques
   }
 
   @Override
-  public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
+  public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
     if (HttpUtil.is100ContinueExpected(req)) {
       ctx.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                                                     HttpResponseStatus.CONTINUE));
       return;
     }
 
-    flushResponse(ctx, req, createResponse(ctx, req));
+    // route handlers may block, and a streamed response is written by the very
+    // thread that runs them, so they cannot run on an event loop
+    req.retain();
+    server.getExecutor().execute(() -> {
+      try {
+        serve(ctx, req);
+      }
+      finally {
+        req.release();
+      }
+    });
   }
 
-  private HttpResponse createResponse(ChannelHandlerContext ctx, FullHttpRequest req)
-    throws Exception
-  {
-    URI uri = URI.create(req.uri());
-    String path = uri.getPath();
+  private void serve(ChannelHandlerContext ctx, FullHttpRequest req) {
+    URI uri;
+    try {
+      uri = URI.create(req.uri());
+    }
+    catch (IllegalArgumentException e) {
+      send(ctx, HttpResponseStatus.BAD_REQUEST, "Bad request");
+      return;
+    }
 
+    String path = uri.getPath();
     Log.info("Handle request at " + path);
 
     // several apps can be plugged at different paths on a same server
     NettyApp app = server.getApp(path);
-    if (app == null)
-      return get404();
+    if (app == null) {
+      send(ctx, HttpResponseStatus.NOT_FOUND, "Not found");
+      return;
+    }
 
     String appRelativePath = path.substring(app.getPath().length());
-    NettyRequest r =
-      new NettyRequest(app, ctx, req, appRelativePath, uri.getQuery());
-
+    NettyRequest r = new NettyRequest(app, ctx, req, appRelativePath, uri.getQuery());
     String[] tokens = appRelativePath.split("/");
-    app.handle(r, request -> app.route(r, tokens, 1));
 
-    return r.toHttpResponse();
+    try {
+      app.handle(r, request -> app.route(r, tokens, 1));
+    }
+    catch (Throwable t) {
+      Log.error("Could not serve " + path, t);
+    }
+
+    r.finish();
   }
 
-  private DefaultFullHttpResponse get404() {
-    DefaultFullHttpResponse d = new DefaultFullHttpResponse(
-      HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND,
-      Unpooled.copiedBuffer("Not found", CharsetUtil.UTF_8)
-    );
+  private static void send(ChannelHandlerContext ctx,
+                           HttpResponseStatus status,
+                           String message) {
+    DefaultFullHttpResponse d =
+      new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+                                  status,
+                                  Unpooled.copiedBuffer(message, CharsetUtil.UTF_8));
     d.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
     d.headers().set(HttpHeaderNames.CONTENT_LENGTH, d.content().readableBytes());
-    return d;
-  }
-
-  private DefaultFullHttpResponse getError(Exception e) {
-    DefaultFullHttpResponse d = new DefaultFullHttpResponse(
-      HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR,
-      Unpooled.copiedBuffer(e.toString(), CharsetUtil.UTF_8)
-    );
-    d.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
-    d.headers().set(HttpHeaderNames.CONTENT_LENGTH, d.content().readableBytes());
-    return d;
-  }
-
-  private static void flushResponse(ChannelHandlerContext ctx, FullHttpRequest req, HttpResponse res) {
-    if (HttpUtil.isKeepAlive(req)) {
-      res.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-      ctx.writeAndFlush(res);
-    }
-    else {
-      ctx.writeAndFlush(res).addListener(ChannelFutureListener.CLOSE);
-    }
+    ctx.writeAndFlush(d).addListener(ChannelFutureListener.CLOSE);
   }
 }

@@ -360,7 +360,7 @@ public abstract class AbstractMethodHandler
   }
 
   @SuppressWarnings({"StatementWithEmptyBody", "unchecked"})
-  public void processResponse(Response r, Object res) throws Exception {
+  public void processResponse(SPResponse r, Object res) throws Exception {
     if (allowCompress)
       r.setCompressionAllowed(true);
     if (outputFormat != null) {
@@ -391,7 +391,8 @@ public abstract class AbstractMethodHandler
           IO.pipe(input, out, false);
         }
         catch (Exception e) {
-          Thread.currentThread().interrupt();
+          Log.error("Broken stream while serving " + javaMethod, e);
+          r.abort();
           close(input);
         }
       }

@@ -18,6 +18,7 @@ import flak.Request;
 import flak.Response;
 import flak.spi.SPRequest;
 import flak.spi.SPResponse;
+import flak.spi.util.BufferedOutputStream;
 import flak.spi.util.IO;
 
 public class JdkRequest implements SPRequest, SPResponse {
@@ -247,6 +248,15 @@ public class JdkRequest implements SPRequest, SPResponse {
       long responseLength = "HEAD".equals(exchange.getRequestMethod()) ? -1 : 0;
       exchange.sendResponseHeaders(status, responseLength);
     }
+  }
+
+  /**
+   * com.sun.net.httpserver aborts the exchange, closing the connection without
+   * terminating the chunked body, when the serving thread is interrupted.
+   */
+  @Override
+  public void abort() {
+    Thread.currentThread().interrupt();
   }
 
   @Override

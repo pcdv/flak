@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class NettyWebServer implements WebServer {
@@ -23,6 +24,7 @@ public class NettyWebServer implements WebServer {
   private String hostName = "localhost";
   private InetSocketAddress address = new InetSocketAddress(0);
   private Channel channel;
+  private ExecutorService executor;
   private EventLoopGroup bossGroup;
   private EventLoopGroup workerGroup;
   private boolean started;
@@ -67,6 +69,13 @@ public class NettyWebServer implements WebServer {
       throw new IllegalStateException();
     started = true;
 
+    if (executor == null)
+      executor = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "flak-netty-handler");
+        t.setDaemon(true);
+        return t;
+      });
+
     bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
     workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
@@ -92,6 +101,10 @@ public class NettyWebServer implements WebServer {
     if (!started)
       return;
     started = false;
+    if (executor != null) {
+      executor.shutdownNow();
+      executor = null;
+    }
     bossGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS);
     workerGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS);
     try {
@@ -139,7 +152,16 @@ public class NettyWebServer implements WebServer {
 
   @Override
   public void setExecutor(ExecutorService executor) {
-    Log.warn("NettyWebServer.setExecutor not implemented");
+    if (started)
+      throw new IllegalStateException("Server already started");
+    this.executor = executor;
+  }
+
+  /**
+   * Route handlers are free to block, so they never run on an event loop.
+   */
+  public ExecutorService getExecutor() {
+    return executor;
   }
 
   public boolean isStarted() {

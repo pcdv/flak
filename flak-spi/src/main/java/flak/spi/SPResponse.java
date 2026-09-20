@@ -18,4 +18,11 @@ public interface SPResponse extends Response {
    */
   boolean hasOutputStream();
 
+  /**
+   * Terminates the response abnormally, when a failure occurs after some of it
+   * was already sent and the status can no longer be changed. The client must
+   * see a broken response rather than a truncated but valid one.
+   */
+  void abort();
+
 }
