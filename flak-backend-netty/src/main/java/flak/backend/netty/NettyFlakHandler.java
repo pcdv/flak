@@ -31,6 +31,8 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
 
+import java.net.URI;
+
 @ChannelHandler.Sharable
 public class NettyFlakHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
@@ -41,43 +43,37 @@ public class NettyFlakHandler extends SimpleChannelInboundHandler<FullHttpReques
   }
 
   @Override
-  public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
+  public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) throws Exception {
     if (HttpUtil.is100ContinueExpected(req)) {
       ctx.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                                                     HttpResponseStatus.CONTINUE));
+      return;
     }
-    else {
-      flushResponse(ctx, req, createResponse(ctx, req));
-    }
+
+    flushResponse(ctx, req, createResponse(ctx, req));
   }
 
-  private HttpResponse createResponse(ChannelHandlerContext ctx, FullHttpRequest req) {
-    String uri = req.uri();
-    int qs = uri.indexOf('?');
-    if (qs != -1)
-      uri = uri.substring(0, qs);
+  private HttpResponse createResponse(ChannelHandlerContext ctx, FullHttpRequest req)
+    throws Exception
+  {
+    URI uri = URI.create(req.uri());
+    String path = uri.getPath();
 
-    Log.info("Handle request at " + uri);
+    Log.info("Handle request at " + path);
 
     // several apps can be plugged at different paths on a same server
-    NettyApp app = server.getApp(uri);
+    NettyApp app = server.getApp(path);
     if (app == null)
       return get404();
 
-    String[] tokens = uri.substring(app.getPath().length()).split("/");
+    String appRelativePath = path.substring(app.getPath().length());
+    NettyRequest r =
+      new NettyRequest(app, ctx, req, appRelativePath, uri.getQuery());
 
-    try {
-      HttpResponse res = app.route(ctx, req, tokens, 1);
-      if (res != null) {
-        return res;
-      }
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-      return getError(e);
-    }
+    String[] tokens = appRelativePath.split("/");
+    app.handle(r, request -> app.route(r, tokens, 1));
 
-    return get404();
+    return r.toHttpResponse();
   }
 
   private DefaultFullHttpResponse get404() {

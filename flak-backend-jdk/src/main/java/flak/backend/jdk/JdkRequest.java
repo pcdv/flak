@@ -249,7 +249,8 @@ public class JdkRequest implements SPRequest, SPResponse {
     }
   }
 
-  boolean hasOutputStream() {
+  @Override
+  public boolean hasOutputStream() {
     return outputStream != null;
   }
 

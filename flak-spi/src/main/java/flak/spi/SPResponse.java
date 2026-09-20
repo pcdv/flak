@@ -12,4 +12,10 @@ public interface SPResponse extends Response {
    */
   void setOutputStream(OutputStream out);
 
+  /**
+   * Tells whether the output stream was already obtained, i.e. whether the
+   * handler may have written something into the response.
+   */
+  boolean hasOutputStream();
+
 }

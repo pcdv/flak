@@ -1,6 +1,10 @@
 package flak.spi;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -223,6 +227,71 @@ public abstract class AbstractApp implements App {
                       .filter(p -> p.getClass() == clazz)
                       .findFirst()
                       .get();
+  }
+
+  /**
+   * Serves a request: runs the before hooks, lets the backend find and run a
+   * handler, then deals with a 404 or with whatever the handler threw.
+   *
+   * @param req        the request, which is also the response
+   * @param dispatcher finds and runs the handler, backend specific
+   */
+  public void handle(SPRequest req, Dispatcher dispatcher) throws IOException {
+    setThreadLocalRequest(req);
+    SPResponse resp = (SPResponse) req.getResponse();
+
+    try {
+      onBefore(req);
+
+      if (!dispatcher.dispatch(req))
+        on404(req);
+    }
+    catch (Throwable t) {
+
+      if (t instanceof BeforeHook.StopProcessingException) {
+        return;
+      }
+
+      if (t instanceof InvocationTargetException) {
+        t = ((InvocationTargetException) t).getTargetException();
+      }
+
+      if (t instanceof HttpException) {
+        resp.setStatus(((HttpException) t).getResponseCode());
+        resp.getOutputStream().write(t.getMessage().getBytes(StandardCharsets.UTF_8));
+        resp.addHeader("Content-Type", "text/plain");
+        return;
+      }
+
+      if (!fireError(500, req, t))
+        Log.error(t, t);
+
+      if (!resp.isStatusSet())
+        resp.setStatus(500);
+
+      if (isDebugEnabled() && !resp.hasOutputStream()) {
+        t.printStackTrace(new PrintStream(resp.getOutputStream()));
+      }
+    }
+  }
+
+  /**
+   * Called when no handler matched the request.
+   */
+  protected void on404(SPRequest r) throws IOException {
+    SPResponse resp = (SPResponse) r.getResponse();
+
+    if (unknownPageHandler != null)
+      unknownPageHandler.handle(r);
+
+    else {
+      Log.warn("No handler found for: " + r.getMethod() + " " + r.getPath());
+
+      // NB: 404 is no longer reported to ErrorHandler
+
+      if (!resp.isStatusSet())
+        resp.setStatus(404);
+    }
   }
 
   public void setThreadLocalRequest(Request req) {

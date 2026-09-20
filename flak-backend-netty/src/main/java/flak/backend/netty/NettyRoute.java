@@ -1,9 +1,6 @@
 package flak.backend.netty;
 
 import flak.spi.util.Log;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -63,20 +60,22 @@ public class NettyRoute {
     return httpMethod + " " + path;
   }
 
-  public HttpResponse getResponse(ChannelHandlerContext ctx, FullHttpRequest req, String[] tokens, int i) throws Exception {
+  public boolean dispatch(NettyRequest req, String[] tokens, int i) throws Exception {
     if (i < tokens.length) {
       NettyRoute route = routes.get(tokens[i]);
-      if (route != null)
-        return route.getResponse(ctx, req, tokens, i + 1);
+      if (route != null && route.dispatch(req, tokens, i + 1))
+        return true;
     }
+
+    // handlers of this route only see the tokens that follow it
+    req.setRouteLevel(level);
 
     for (NettyMethodHandler h : self) {
-      HttpResponse r = h.getResponse(ctx, req);
-      if (r != null)
-        return r;
+      if (h.handle(req))
+        return true;
     }
 
-    return null;
+    return false;
   }
 
   public Stream<NettyMethodHandler> getMethodHandlers() {
