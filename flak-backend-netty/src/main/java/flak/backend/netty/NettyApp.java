@@ -1,7 +1,5 @@
 package flak.backend.netty;
 
-import flak.Request;
-import flak.Response;
 import flak.WebServer;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
@@ -40,16 +38,6 @@ public class NettyApp extends AbstractApp {
   @Override
   public void stop() {
     srv.removeApp(this);
-  }
-
-  @Override
-  public Request getRequest() {
-    throw new RuntimeException("TODO");
-  }
-
-  @Override
-  public Response getResponse() {
-    throw new RuntimeException("TODO");
   }
 
   @Override
