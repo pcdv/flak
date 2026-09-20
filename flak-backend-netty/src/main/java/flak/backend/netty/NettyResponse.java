@@ -5,18 +5,35 @@ import flak.spi.SPResponse;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
-import java.nio.charset.StandardCharsets;
 
 public class NettyResponse implements SPResponse {
   private final NettyRequest req;
   private final DefaultHttpHeaders headers;
   private int status = 200;
+  private boolean statusSet;
+  private boolean compressionAllowed;
+
+  /**
+   * The body is buffered until the handler is done, then sent in one
+   * FullHttpResponse. Chunked streaming remains to be done.
+   */
+  private final ByteArrayOutputStream body = new ByteArrayOutputStream(256);
+
+  /**
+   * Same stream, unless something wrapped it, e.g. to compress it.
+   */
+  private OutputStream out = body;
 
   public NettyResponse(NettyRequest req) {
     this.req = req;
@@ -41,16 +58,22 @@ public class NettyResponse implements SPResponse {
   @Override
   public void setStatus(int status) {
     this.status = status;
+    this.statusSet = true;
   }
 
   @Override
   public boolean isStatusSet() {
-    return false;
+    return statusSet;
   }
 
   @Override
   public OutputStream getOutputStream() {
-    throw new RuntimeException("TODO");
+    return out;
+  }
+
+  @Override
+  public void setOutputStream(OutputStream out) {
+    this.out = out;
   }
 
   @Override
@@ -61,12 +84,12 @@ public class NettyResponse implements SPResponse {
 
   @Override
   public void setCompressionAllowed(boolean compressionAllowed) {
-
+    this.compressionAllowed = compressionAllowed;
   }
 
   @Override
   public boolean isCompressionAllowed() {
-    return false;
+    return compressionAllowed;
   }
 
   public int getStatus() {
@@ -74,17 +97,20 @@ public class NettyResponse implements SPResponse {
   }
 
   public HttpResponse toHttpResponse() {
-    new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
-                                HttpResponseStatus.valueOf(status),
-                                Unpooled.copiedBuffer("", StandardCharsets.UTF_8));
-    throw new RuntimeException("TODO");
-    //r.headers().set(HttpHeaderNames.CONTENT_LENGTH, 0);
-    //HttpUtil.setKeepAlive(r, false);
-    //return r;
-  }
+    try {
+      // a wrapping stream (e.g. gzip) only writes its trailer when closed
+      out.close();
+    }
+    catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
 
-  @Override
-  public void setOutputStream(OutputStream out) {
-    throw new RuntimeException("TODO");
+    FullHttpResponse r =
+      new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+                                  HttpResponseStatus.valueOf(status),
+                                  Unpooled.wrappedBuffer(body.toByteArray()));
+    r.headers().add(headers);
+    r.headers().set(HttpHeaderNames.CONTENT_LENGTH, r.content().readableBytes());
+    return r;
   }
 }

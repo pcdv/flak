@@ -43,41 +43,17 @@ public class NettyMethodHandler extends AbstractMethodHandler {
     NettyRequest req = new NettyRequest(this, ctx, r);
     app.setThreadLocalRequest(req);
 
-    if (req.getSplitUri().length <= splatIndex)
+    if (!isApplicable(req))
       return null;
 
-    Object obj;
     try {
-      obj = execute(req);
+      processResponse(req.getResponse(), execute(req));
     }
     catch (BeforeHook.StopProcessingException e) {
       Log.debug("Stop processing");
-      return req.getResponse().toHttpResponse();
     }
 
-    NettyResponse res = req.getResponse();
-    if (obj == null) {
-      if (res.isStatusSet()) {
-        DefaultFullHttpResponse d = new DefaultFullHttpResponse(
-          HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(res.getStatus())
-        );
-        d.headers().set(HttpHeaderNames.CONTENT_LENGTH, 0);
-        return d;
-      }
-    }
-
-    if (obj instanceof String) {
-      DefaultFullHttpResponse d = new DefaultFullHttpResponse(
-        HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(res.getStatus()),
-        Unpooled.copiedBuffer((CharSequence) obj, CharsetUtil.UTF_8)
-      );
-      d.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain");
-      d.headers().set(HttpHeaderNames.CONTENT_LENGTH, d.content().readableBytes());
-      return d;
-    }
-    else {
-      throw new RuntimeException("TODO " + obj.getClass());
-    }
+    return req.getResponse().toHttpResponse();
   }
 
   @Override
