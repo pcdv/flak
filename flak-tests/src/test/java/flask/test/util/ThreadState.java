@@ -133,7 +133,6 @@ public class ThreadState {
       Thread thread = actual.get(name);
       if (!previous.containsKey(name) && isIncluded(name) && thread.isAlive()) {
         added.add(name);
-        System.err.println(stack(thread));
       }
     }
 
@@ -164,17 +163,31 @@ public class ThreadState {
            Arrays.equals(threads, ((ThreadState) obj).threads);
   }
 
+  /**
+   * Waits, up to a couple of seconds, for the threads started by a test to be
+   * gone, then fails if any remains.
+   * <p>
+   * NB: the wait is on the diff, not on equality of the thread arrays: the
+   * latter is sensitive to the order threads are enumerated in and, more to
+   * the point, blind to the ignored threads, so a single thread we do not care
+   * about used to cost every test the whole timeout.
+   */
   public void assertNoChange() throws InterruptedException {
     long stop = System.currentTimeMillis() + 2000;
-    while (System.currentTimeMillis() < stop) {
-      if (! new ThreadState().equals(this)) {
-        Thread.sleep(100);
-      }
-      else return;
-    }
 
     String diff = diff(new ThreadState());
-    if (diff.length() > 0) {
+    while (!diff.isEmpty() && System.currentTimeMillis() < stop) {
+      Thread.sleep(100);
+      diff = diff(new ThreadState());
+    }
+
+    if (!diff.isEmpty()) {
+      ThreadState now = new ThreadState();
+      for (Map.Entry<String, Thread> e : now.toMap().entrySet()) {
+        if (!toMap().containsKey(e.getKey()) && isIncluded(e.getKey()))
+          System.err.println(stack(e.getValue()));
+      }
+
       refreshThreads();
       System.err.println("Active threads: " + Arrays.toString(threads));
       throw new IllegalStateException("Thread state has changed: " + diff +

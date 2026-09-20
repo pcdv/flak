@@ -31,8 +31,10 @@ public class LoginCheckBreachTest extends AbstractAppTest {
     factory.getServer().start();
     final int port = factory.getPort();
     app = factory.createApp();
-    proxy = new DebugProxy(9092, "localhost", port);
-    client = new SimpleClient(app.getRootUrl().replace(String.valueOf(port), "9092"));
+    proxy = new DebugProxy(0, "localhost", port);
+    client = new SimpleClient(app.getRootUrl()
+                                .replace(String.valueOf(port),
+                                         String.valueOf(proxy.getPort())));
   }
 
   @Test

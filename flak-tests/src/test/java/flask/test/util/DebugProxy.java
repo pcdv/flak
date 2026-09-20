@@ -15,12 +15,20 @@ public class DebugProxy {
   private final int port;
   private final Thread listen;
 
+  /**
+   * @param listenPort port to listen on, 0 to let the system pick a free one,
+   *                   in which case getPort() tells which
+   */
   public DebugProxy(int listenPort, String host, int port) throws IOException {
     this.srv = new ServerSocket(listenPort);
     this.host = host;
     this.port = port;
     this.listen = new Thread(this::listen);
     this.listen.start();
+  }
+
+  public int getPort() {
+    return srv.getLocalPort();
   }
 
   public void close() throws IOException {
