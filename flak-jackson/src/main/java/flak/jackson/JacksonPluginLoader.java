@@ -10,7 +10,7 @@ import flak.spi.FlakPluginLoader;
 public class JacksonPluginLoader implements FlakPluginLoader {
   @Override
   public void installPlugin(App app) {
-    new JacksonPlugin(app).init();
+    app.addPlugin(new JacksonPlugin());
   }
 
   @Override

@@ -37,9 +37,8 @@ public class FlakLogin implements SPPlugin {
     return this;
   }
 
-  void install() {
-
-    app.addPlugin(this);
+  @Override
+  public void install() {
 
     app.addCustomExtractor(SessionManager.class, new ArgExtractor<SessionManager>(-1) {
       @Override

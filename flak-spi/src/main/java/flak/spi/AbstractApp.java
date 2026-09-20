@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.stream.Stream;
 
@@ -213,9 +214,14 @@ public abstract class AbstractApp implements App {
   }
 
   public void addPlugin(FlakPlugin plugin) {
-    plugins.add((SPPlugin) plugin);
+    SPPlugin p = (SPPlugin) plugin;
+    plugins.add(p);
 
-    getMethodHandlers().forEach(((SPPlugin) plugin)::preInit);
+    // NB: install() before preInit(), so that a handler is never passed to a
+    // plugin that is not fully set up yet
+    p.install();
+
+    getMethodHandlers().forEach(p::preInit);
   }
 
   /**
@@ -231,7 +237,8 @@ public abstract class AbstractApp implements App {
     return (T) plugins.stream()
                       .filter(p -> p.getClass() == clazz)
                       .findFirst()
-                      .get();
+                      .orElseThrow(() -> new NoSuchElementException(
+                        "Plugin " + clazz.getName() + " is not installed in this app"));
   }
 
   /**

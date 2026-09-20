@@ -3,7 +3,6 @@ package flak.jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.App;
 import flak.InputParser;
-import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
 import flak.spi.SPPlugin;
 
@@ -20,15 +19,12 @@ public class JacksonPlugin implements SPPlugin {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  private final AbstractApp app;
-
   private final Map<String, JsonOutputFormatter<?>> formatters = new Hashtable<>();
   private final Map<Class<?>, InputParser<?>> parsers = new Hashtable<>();
 
   private MapperProvider mapperProvider = new DefaultMapperProvider(OBJECT_MAPPER);
 
-  JacksonPlugin(App app) {
-    this.app = (AbstractApp) app;
+  JacksonPlugin() {
   }
 
   /**
@@ -127,9 +123,5 @@ public class JacksonPlugin implements SPPlugin {
     }
     else throw new IllegalStateException(
       "Cannot register mapper: a custom MapperProvider has been set");
-  }
-
-  void init() {
-    app.addPlugin(this);
   }
 }

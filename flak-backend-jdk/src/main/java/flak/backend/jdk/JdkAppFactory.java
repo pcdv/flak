@@ -2,7 +2,6 @@ package flak.backend.jdk;
 
 import flak.App;
 import flak.spi.AbstractAppFactory;
-import flak.spi.PluginUtil;
 
 import java.net.InetSocketAddress;
 
@@ -25,14 +24,14 @@ public class JdkAppFactory extends AbstractAppFactory {
   @Override
   public App createApp() {
     JdkApp app = new JdkApp(getServer());
-    PluginUtil.loadPlugins(app, pluginValidator);
+    installPlugins(app);
     return app;
   }
 
   @Override
   public App createApp(String appRootPath) {
     JdkApp app = new JdkApp(appRootPath, getServer());
-    PluginUtil.loadPlugins(app, pluginValidator);
+    installPlugins(app);
     return app;
   }
 

@@ -45,6 +45,7 @@ Flak components      | Description
          * [Custom arguments](#custom-arguments)
       * [Compression](#compression)
       * [Managing apps](#managing-apps)
+      * [Plugins](#plugins)
       * [Backends](#backends)
       * [To be continued....](#to-be-continued)
    * [Why Flak?](#why-flak)
@@ -261,6 +262,28 @@ one located at path `/app1` and another one at `/app2`.
 The idea is to create an [AppFactory](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/AppFactory.java)
 then call `createApp(String)` with two separate paths. Then you can add your
 route handlers and start them.
+
+### Plugins
+
+Add-ons such as `flak-jackson` and `flak-login` are plugins. They are looked up
+in the classpath with `ServiceLoader` and installed in every app created by the
+factory, which is usually what you want.
+
+When it is not, name the ones you need:
+
+```java
+AppFactory fac = Flak.getFactory();
+fac.setPlugins(JacksonPlugin.class, FlakLogin.class);
+App app = fac.createApp();
+```
+
+Automatic discovery is then disabled: exactly those plugins are installed, in
+that order. Naming a plugin whose module is missing from the classpath fails
+immediately, rather than leaving the app quietly short of a feature, and
+`setPlugins()` with no argument installs no plugin at all.
+
+A plugin of your own, which has no `FlakPluginLoader` to be discovered by, is
+installed with `app.addPlugin(new MyPlugin(app))`.
 
 ### Backends
 
