@@ -197,6 +197,17 @@ public abstract class AbstractApp implements App {
     extractors.put(type, extractor);
   }
 
+  @Override
+  public <T> void addCustomExtractor(Class<T> type, CustomExtractor<T> extractor) {
+    // the public API only exposes the request, the index is meaningless here
+    addCustomExtractor(type, new ArgExtractor<T>(-1) {
+      @Override
+      public T extract(SPRequest request) throws Exception {
+        return extractor.extract(request);
+      }
+    });
+  }
+
   public void addPlugin(FlakPlugin plugin) {
     plugins.add((SPPlugin) plugin);
 

@@ -217,7 +217,8 @@ See the following [example](https://github.com/pcdv/flak/blob/master/flak-tests/
 
 You can accept other argument types if you:
  - associate the type with an extractor using method
- AbstractApp.addCustomExtractor() (this is not in official API yet)
+ `App.addCustomExtractor()`, e.g.
+ `app.addCustomExtractor(Token.class, req -> new Token(req.getHeader("X-Token")))`
  - specify an input format with the @InputFormat annotation (which requires
  prior declaration of an InputParser with App.addInputParser())
  - a common case is to decode an object serialized as JSON in the body
@@ -266,7 +267,7 @@ available, you can find examples in the
  * HTTP redirection
  * pluggable user authentication
  * direct serving of static resources from a directory or jar
- * HTTPS support (experimental)
+ * HTTPS support
  * ...
 
 ## Why Flak?
