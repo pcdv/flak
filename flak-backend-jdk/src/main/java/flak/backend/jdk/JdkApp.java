@@ -120,27 +120,6 @@ public class JdkApp extends AbstractApp {
     return srv;
   }
 
-  void on404(JdkRequest r) throws IOException {
-
-    if (unknownPageHandler != null)
-      unknownPageHandler.handle(r);
-
-    else {
-
-      Log.warn("No handler found for: " + r.getMethod() + " " + r.getPath());
-
-      // NB: 404 is no longer reported to ErrorHandler
-
-      if (!r.isStatusSet())
-        r.setStatus(404);
-    }
-  }
-
-  @Override // unlock package-private access
-  protected void onBefore(SPRequest request) throws BeforeHook.StopProcessingException {
-    super.onBefore(request);
-  }
-
   public Collection<Context> getHandlers() {
     return handlers.values();
   }

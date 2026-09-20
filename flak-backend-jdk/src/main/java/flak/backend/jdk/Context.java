@@ -62,45 +62,16 @@ public class Context implements HttpHandler {
     String path = r.getRequestURI().getPath();
     JdkRequest req =
       new JdkRequest(app, app.relativePath(path), makeRelativePath(path), r);
-    app.setThreadLocalRequest(req);
     try {
-      app.onBefore(req);
-
-      for (MethodHandler h : handlers) {
-        if (h.isApplicable(req)) {
-          h.processResponse(req.getResponse(), h.execute(req));
-          return;
+      app.handle(req, request -> {
+        for (MethodHandler h : handlers) {
+          if (h.isApplicable(request)) {
+            h.processResponse(req, h.execute(request));
+            return true;
+          }
         }
-      }
-
-      app.on404(req);
-    }
-    catch (Throwable t) {
-
-      if (t instanceof BeforeHook.StopProcessingException) {
-        return;
-      }
-
-      if (t instanceof InvocationTargetException) {
-        t = ((InvocationTargetException) t).getTargetException();
-      }
-
-      if (t instanceof HttpException) {
-        req.setStatus(((HttpException) t).getResponseCode());
-        req.getOutputStream().write(t.getMessage().getBytes(StandardCharsets.UTF_8));
-        req.addHeader("Content-Type", "text/plain");
-        return;
-      }
-
-      if (!app.fireError(500, req, t))
-        Log.error(t, t);
-
-      if (!req.isStatusSet())
-        req.setStatus(500);
-
-      if (app.isDebugEnabled() && !req.hasOutputStream()) {
-        t.printStackTrace(new PrintStream(req.getOutputStream()));
-      }
+        return false;
+      });
     }
     finally {
       req.finish();

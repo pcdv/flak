@@ -13,10 +13,12 @@ import com.sun.net.httpserver.HttpExchange;
 import flak.App;
 import flak.Form;
 import flak.Query;
+import flak.spi.FormImpl;
 import flak.Request;
 import flak.Response;
 import flak.spi.SPRequest;
 import flak.spi.SPResponse;
+import flak.spi.util.BufferedOutputStream;
 import flak.spi.util.IO;
 
 public class JdkRequest implements SPRequest, SPResponse {
@@ -248,7 +250,17 @@ public class JdkRequest implements SPRequest, SPResponse {
     }
   }
 
-  boolean hasOutputStream() {
+  /**
+   * com.sun.net.httpserver aborts the exchange, closing the connection without
+   * terminating the chunked body, when the serving thread is interrupted.
+   */
+  @Override
+  public void abort() {
+    Thread.currentThread().interrupt();
+  }
+
+  @Override
+  public boolean hasOutputStream() {
     return outputStream != null;
   }
 

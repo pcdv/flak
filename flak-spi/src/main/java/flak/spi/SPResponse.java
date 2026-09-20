@@ -12,4 +12,17 @@ public interface SPResponse extends Response {
    */
   void setOutputStream(OutputStream out);
 
+  /**
+   * Tells whether the output stream was already obtained, i.e. whether the
+   * handler may have written something into the response.
+   */
+  boolean hasOutputStream();
+
+  /**
+   * Terminates the response abnormally, when a failure occurs after some of it
+   * was already sent and the status can no longer be changed. The client must
+   * see a broken response rather than a truncated but valid one.
+   */
+  void abort();
+
 }
