@@ -120,31 +120,24 @@ public class NettySharedPortTest {
     return ((InetSocketAddress) channel.localAddress()).getPort();
   }
 
-  @Test
-  public void flakServesItsRoutes() throws Exception {
-    SimpleClient client = new SimpleClient("http://localhost:" + port());
-    assertEquals("Hello world", client.get("/hello/world"));
-  }
-
-  @Test
-  public void websocketIsServedOnTheSamePort() throws Exception {
-    assertEquals("echo:ping", websocketEcho("/ws", "ping"));
-  }
-
   /**
    * The point of the whole exercise: one port, both protocols, in any order.
    */
   @Test
-  public void bothOnOnePort() throws Exception {
+  public void flakAndWebsocketsShareOnePort() throws Exception {
     SimpleClient client = new SimpleClient("http://localhost:" + port());
-    assertEquals("Hello netty", client.get("/hello/netty"));
-    assertEquals("echo:still here", websocketEcho("/ws", "still here"));
-    assertEquals("Hello again", client.get("/hello/again"));
-  }
 
-  @Test
-  public void rootUrlReportsTheAddressOfTheApplicationServer() {
-    assertEquals("http://localhost:" + port(), app.getRootUrl());
+    // flak advertises the address of the server it does not own
+    assertEquals("root URL", "http://localhost:" + port(), app.getRootUrl());
+
+    assertEquals("flak route", "Hello world", client.get("/hello/world"));
+    assertEquals("websocket", "echo:ping", websocketEcho("/ws", "ping"));
+
+    // neither protocol disturbs the other
+    assertEquals("flak route after websocket",
+                 "Hello netty", client.get("/hello/netty"));
+    assertEquals("websocket after flak route",
+                 "echo:still here", websocketEcho("/ws", "still here"));
   }
 
   private static class EchoFrames extends SimpleChannelInboundHandler<TextWebSocketFrame> {
