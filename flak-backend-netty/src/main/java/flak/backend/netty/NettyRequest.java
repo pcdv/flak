@@ -206,16 +206,16 @@ public class NettyRequest implements SPRequest, SPResponse {
     return split[tokenIndex];
   }
 
+  /**
+   * @param slashCount number of slashes of the path that precede the splat,
+   *                   counted from the root of the app
+   */
   @Override
-  public String getSplat(int tokenIndex) {
-    // TODO directly return a substring of the path
-    StringBuilder b = new StringBuilder(64);
-    for (int i = tokenIndex; i < split.length; i++) {
-      if (b.length() > 0)
-        b.append('/');
-      b.append(split[i]);
-    }
-    return b.toString();
+  @SuppressWarnings("StatementWithEmptyBody")
+  public String getSplat(int slashCount) {
+    int pos = 0;
+    for (int i = 0; i < slashCount; pos = path.indexOf('/', pos + 1), i++) ;
+    return pos < 0 ? "" : path.substring(pos + 1);
   }
 
   @Override
