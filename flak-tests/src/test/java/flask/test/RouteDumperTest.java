@@ -4,7 +4,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import flak.annotations.Route;
-import flak.backend.jdk.RouteDumper;
+import flak.util.RouteDumper;
 import org.junit.Assert;
 import org.junit.Test;
 

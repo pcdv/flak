@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.Route;
-import flak.backend.jdk.JdkApp;
 import flak.jackson.JSON;
 import flak.jackson.JsonInputReader;
 import flak.spi.AbstractApp;
@@ -117,7 +116,7 @@ public class JsonTest extends AbstractAppTest {
   }
 
   AbstractMethodHandler getMethodHandler(String name) {
-    return ((JdkApp) app).getMethodHandlers().filter(h -> h.getJavaMethod().getName().equals(name)).findAny().get();
+    return ((AbstractApp) app).getMethodHandlers().filter(h -> h.getJavaMethod().getName().equals(name)).findAny().get();
   }
 
   @JSON

@@ -56,7 +56,7 @@ public class NettyApp extends AbstractApp {
   }
 
   @Override
-  protected Stream<AbstractMethodHandler> getMethodHandlers() {
+  public Stream<AbstractMethodHandler> getMethodHandlers() {
     return routeByMethod.values().stream().flatMap(r -> r.getMethodHandlers());
   }
 }
