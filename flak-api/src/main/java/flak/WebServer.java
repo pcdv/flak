@@ -11,7 +11,7 @@ import javax.net.ssl.SSLContext;
  */
 public interface WebServer {
   /**
-   * Experimental. Enables HTTPS.
+   * Enables HTTPS. Supported by every backend.
    */
   void setSSLContext(SSLContext context);
 

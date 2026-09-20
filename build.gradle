@@ -2,6 +2,7 @@ def PUBLISH_PROJECTS = [
   'flak-api',
   'flak-spi',
   'flak-backend-jdk',
+  'flak-backend-netty',
   'flak-jackson',
   'flak-login',
   'flak-resource',
