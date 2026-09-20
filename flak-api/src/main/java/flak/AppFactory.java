@@ -5,7 +5,7 @@ import java.util.function.Predicate;
 
 /**
  * This is Flak's entry point for creating a web application. The
- * implementation depends on the backend being used (there is only one for now).
+ * implementation depends on the backend being used.
  * The factory is obtained with {@link Flak#getFactory()}.
  *
  * @author pcdv

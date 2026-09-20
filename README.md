@@ -3,23 +3,25 @@
 [![Release](https://jitpack.io/v/pcdv/flak.svg)](https://jitpack.io/#pcdv/flak)
 [![build](https://github.com/pcdv/flak/actions/workflows/gradle.yml/badge.svg)](https://github.com/pcdv/flak/actions/workflows/gradle.yml)
 
-Flak is a minimal but powerful framework that leverages the HttpServer 
-embedded in the JDK. Its main philosophy is keeping boilerplate to a minimum.
+Flak is a minimal but powerful framework for web applications and REST
+services. Its main philosophy is keeping boilerplate to a minimum. It runs
+either on the HttpServer embedded in the JDK, which costs no dependency at
+all, or on [Netty](https://netty.io/).
 
 Flak 3.0 and later require **Java 17** or later. If you are stuck on an older
 JDK, the 2.x releases target Java 8.
 
-It is composed of a generic API, a default implementation and some add-ons. 
-In a minimal setup, the total size of dependencies is around 60KiB. If you 
-need to implement a REST server and handle JSON data, you will have to add
-`jackson-databind` to your dependencies.
+It is composed of a generic API, two backends and some add-ons. In a minimal
+setup, on top of the JDK backend, the total size of dependencies is around
+60KiB. If you need to implement a REST server and handle JSON data, you will
+have to add `jackson-databind` to your dependencies.
 
 Flak components      | Description
 -------------------- | -----------
 `flak-api`           | Public API
 `flak-spi`           | Internal API for service providers
 `flak-backend-jdk`   | Binding for the web server included in JDK
-`flak-backend-netty` | Unfinished alternative binding based on netty (not published)
+`flak-backend-netty` | Binding for [Netty](https://netty.io/), see [Backends](#backends)
 `flak-login`         | Add-on for managing authentication
 `flak-resource`      | Add-on for serving static resources
 `flak-jackson`       | Add-on for conversion to/from JSON using jackson
@@ -43,6 +45,7 @@ Flak components      | Description
          * [Custom arguments](#custom-arguments)
       * [Compression](#compression)
       * [Managing apps](#managing-apps)
+      * [Backends](#backends)
       * [To be continued....](#to-be-continued)
    * [Why Flak?](#why-flak)
    * [History](#history)
@@ -75,6 +78,8 @@ repositories {
 
 dependencies {
   implementation "com.github.pcdv.flak:flak-api:3.0"
+
+  // the backend, see Backends below for the netty alternative
   runtimeOnly "com.github.pcdv.flak:flak-backend-jdk:3.0"
 }
 ```
@@ -257,6 +262,33 @@ The idea is to create an [AppFactory](https://github.com/pcdv/flak/blob/master/f
 then call `createApp(String)` with two separate paths. Then you can add your
 route handlers and start them.
 
+### Backends
+
+Route handling is independent from the HTTP server underneath. Two backends
+are available, and the same test suite runs against both:
+
+Backend              | Extra dependencies | Description
+-------------------- | ------------------ | -----------
+`flak-backend-jdk`   | none               | The [HttpServer](https://docs.oracle.com/en/java/javase/17/docs/api/jdk.httpserver/com/sun/net/httpserver/package-summary.html) included in the JDK. The default choice, and the lightest by far.
+`flak-backend-netty` | ~3.4MiB            | [Netty](https://netty.io/), useful if it is already part of your stack.
+
+A backend is discovered on the classpath with `ServiceLoader`, so switching
+from one to the other is a matter of changing the `runtimeOnly` dependency:
+application code is unchanged.
+
+If both are on the classpath, `Flak.getFactory()` returns whichever comes
+first. Pass a predicate to pick one explicitly:
+
+```java
+AppFactory factory = Flak.getFactory(cls -> cls.getName().contains("netty"));
+```
+
+Either backend can serve HTTPS: build a `javax.net.ssl.SSLContext` and pass it
+to `factory.getServer().setSSLContext()` before starting the server.
+
+Neither backend supports async responses: the response is sent as soon as the
+route handler returns, so replying from another thread does not work.
+
 ### To be continued....
 
 Other features that still need to be documented (until more documentation is
@@ -284,8 +316,8 @@ The JDK includes a [HTTP server](
 https://docs.oracle.com/en/java/javase/17/docs/api/jdk.httpserver/com/sun/net/httpserver/package-summary.html
 )
 that is perfectly suited for serving small applications but its API is rather 
-painful. Flak allows to leverage it with a friendly API and in the future will
-support other back-ends.
+painful. Flak allows to leverage it with a friendly API, and the same
+application can run on Netty instead.
 
 
 The API initially shared a lot of similarities with [Flask](https://flask.palletsprojects.com/):
@@ -305,12 +337,12 @@ Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
 
 ### Goals of the migration from JFlask
  * have a clean API, well separated from implementation
- * provide several back-ends. So far
- [flak-backend-jdk](https://github.com/pcdv/flak/tree/master/flak-backend-jdk) is the
- only complete one;
+ * provide several back-ends:
+ [flak-backend-jdk](https://github.com/pcdv/flak/tree/master/flak-backend-jdk)
+ and, since 3.0,
  [flak-backend-netty](https://github.com/pcdv/flak/tree/master/flak-backend-netty)
- is an unfinished prototype based on [Netty](https://netty.io/). Other back-ends,
- e.g. [Jetty](https://jetty.org/), could be added the same way.
+ based on [Netty](https://netty.io/). Other back-ends, e.g.
+ [Jetty](https://jetty.org/), could be added the same way.
  * provide SSL support
  * optional plugins for user management, JSON serialization, CSRF protection...
 
