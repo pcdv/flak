@@ -1,9 +1,13 @@
 # Flak - A lightweight and modular web framework for Java
 
 [![Release](https://jitpack.io/v/pcdv/flak.svg)](https://jitpack.io/#pcdv/flak)
+[![build](https://github.com/pcdv/flak/actions/workflows/gradle.yml/badge.svg)](https://github.com/pcdv/flak/actions/workflows/gradle.yml)
 
 Flak is a minimal but powerful framework that leverages the HttpServer 
 embedded in the JDK. Its main philosophy is keeping boilerplate to a minimum.
+
+Flak 3.0 and later require **Java 17** or later. If you are stuck on an older
+JDK, the 2.x releases target Java 8.
 
 It is composed of a generic API, a default implementation and some add-ons. 
 In a minimal setup, the total size of dependencies is around 40KiB. If you 
@@ -305,6 +309,13 @@ Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
  * optional plugins for user management, JSON serialization, CSRF protection...
 
 ## Build
+
+Building Flak requires a JDK 17 or later. Everything else, including the
+Gradle distribution itself, is downloaded by the wrapper:
+
+```
+./gradlew build
+```
 
 ### How to publish locally
 
