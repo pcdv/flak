@@ -10,7 +10,7 @@ import flak.spi.FlakPluginLoader;
 public class FlakLoginLoader implements FlakPluginLoader {
   @Override
   public void installPlugin(App app) {
-    new FlakLogin(app).install();
+    app.addPlugin(new FlakLogin(app));
   }
 
   @Override

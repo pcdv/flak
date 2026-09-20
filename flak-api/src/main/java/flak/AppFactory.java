@@ -20,6 +20,27 @@ public interface AppFactory {
   void setPluginValidator(Predicate<Class<? extends FlakPlugin>> pluginValidator);
 
   /**
+   * Specifies exactly which plugins must be installed in the apps created by
+   * this factory, e.g.
+   * <pre>
+   * factory.setPlugins(JacksonPlugin.class, FlakLogin.class);
+   * </pre>
+   * Automatic discovery of the plugins present in the classpath is disabled:
+   * only the specified ones are installed, in the specified order. Calling
+   * this method with no argument installs no plugin at all.
+   * <p>
+   * Unlike {@link #setPluginValidator(Predicate)}, which can only filter out
+   * what happens to be in the classpath, this fails fast if a plugin is
+   * missing. If both are set, the validator is ignored.
+   * <p>
+   * The arguments are the plugin classes themselves (e.g.
+   * <code>FlakLogin.class</code>), not their loaders. A class that is not a
+   * plugin, or whose module is absent from the classpath, is rejected with an
+   * explicit error.
+   */
+  void setPlugins(Class<?>... plugins);
+
+  /**
    * Creates a new web app, with an implicit root path.
    */
   App createApp();
