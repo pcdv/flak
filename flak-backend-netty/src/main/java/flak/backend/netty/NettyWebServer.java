@@ -24,6 +24,8 @@ public class NettyWebServer implements WebServer {
   private String hostName = "localhost";
   private InetSocketAddress address = new InetSocketAddress(0);
   private Channel channel;
+  private static final long SHUTDOWN_TIMEOUT_MS = 5000;
+
   private SSLContext sslContext;
   private ExecutorService executor;
   private EventLoopGroup bossGroup;
@@ -108,18 +110,34 @@ public class NettyWebServer implements WebServer {
     if (!started)
       return;
     started = false;
-    if (executor != null) {
-      executor.shutdownNow();
-      executor = null;
-    }
+
+    ExecutorService executor = this.executor;
+    this.executor = null;
+
     bossGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS);
     workerGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS);
+
     try {
-      channel.closeFuture().sync();
+      if (channel != null)
+        channel.closeFuture().await(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+      // do not return while event loops are still running: a caller that stops
+      // a server expects it to have released its threads, and a caller that
+      // starts another one right away should not see them pile up
+      bossGroup.terminationFuture().await(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+      workerGroup.terminationFuture().await(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+      if (executor != null) {
+        executor.shutdownNow();
+        executor.awaitTermination(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+      }
     }
     catch (InterruptedException e) {
-      e.printStackTrace();
+      Thread.currentThread().interrupt();
     }
+
+    bossGroup = workerGroup = null;
+    channel = null;
   }
 
   @Override
