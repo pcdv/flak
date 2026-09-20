@@ -20,7 +20,9 @@ public class NettyMethodHandler extends AbstractMethodHandler {
    */
   public NettyMethodHandler(NettyApp app, NettyRoute route, List<String> tokens, Method method, Object obj) {
     super(app,
-          route.path + "/" + String.join("/", tokens),
+          // no trailing slash when the route has no dynamic token, so that
+          // getRoute() reads the same as with the other backends
+          tokens.isEmpty() ? route.path : route.path + "/" + String.join("/", tokens),
           tokens.toArray(new String[0]),
           method,
           obj);

@@ -218,7 +218,12 @@ public abstract class AbstractApp implements App {
     getMethodHandlers().forEach(((SPPlugin) plugin)::preInit);
   }
 
-  protected abstract Stream<AbstractMethodHandler> getMethodHandlers();
+  /**
+   * All the route handlers registered in this app, in no particular order.
+   * Useful to document or introspect an API, e.g. to dump the routes or to
+   * generate an OpenAPI specification.
+   */
+  public abstract Stream<AbstractMethodHandler> getMethodHandlers();
 
   @SuppressWarnings("unchecked")
   @Override

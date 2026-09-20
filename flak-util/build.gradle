@@ -3,5 +3,4 @@ description = "Misc utilities for Flak (e.g. route dumper)"
 dependencies {
   implementation project(":flak-api")
   implementation project(":flak-spi")
-  implementation project(":flak-backend-jdk")
 }
