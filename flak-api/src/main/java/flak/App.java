@@ -34,6 +34,15 @@ public interface App {
   <T> InputParser<T> getInputParser(String name);
 
   /**
+   * Allows route handlers to accept an argument of specified type: the
+   * extractor is called for each request to build the value of the argument.
+   *
+   * @param type the type of the route handler argument
+   * @param extractor builds the value of the argument from the request
+   */
+  <T> void addCustomExtractor(Class<T> type, CustomExtractor<T> extractor);
+
+  /**
    * Starts the application.
    */
   void start() throws IOException;
