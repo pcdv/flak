@@ -1,3 +1,5 @@
+import javax.inject.Inject
+
 dependencies {
   implementation project(':flak-api')
   implementation project(':flak-resource')
@@ -15,6 +17,16 @@ sourceSets {
   }
 }
 
+// zipTree() is only reachable through the script object, which a task cannot
+// hold on to when the configuration cache is enabled: get the service injected
+// instead, so the closure below captures it rather than the script
+interface ArchiveOps {
+  @Inject
+  ArchiveOperations getArchiveOperations()
+}
+
+def archiveOps = objects.newInstance(ArchiveOps).archiveOperations
+
 // make an executable jar
 jar {
   duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -22,7 +34,9 @@ jar {
   // dependencies are properly declared as producers of this task's inputs
   from(configurations.runtimeClasspath.elements.map { entries ->
     // TODO: is there a way to include only required classes?
-    entries.collect { it.asFile.isDirectory() ? it.asFile : zipTree(it.asFile) }
+    entries.collect {
+      it.asFile.isDirectory() ? it.asFile : archiveOps.zipTree(it.asFile)
+    }
   })
   manifest { attributes 'Main-Class': 'samples.WebApp' }
 }
