@@ -272,6 +272,13 @@ public abstract class AbstractApp implements App {
       if (isDebugEnabled() && !resp.hasOutputStream()) {
         t.printStackTrace(new PrintStream(resp.getOutputStream()));
       }
+      else if (!resp.hasOutputStream()) {
+        // a body, however terse, so that clients can tell an error response
+        // from an empty one. The cause is logged, not sent to the client
+        resp.addHeader("Content-Type", "text/plain");
+        resp.getOutputStream()
+            .write("Internal Server Error".getBytes(StandardCharsets.UTF_8));
+      }
     }
   }
 
@@ -291,6 +298,11 @@ public abstract class AbstractApp implements App {
 
       if (!resp.isStatusSet())
         resp.setStatus(404);
+
+      if (!resp.hasOutputStream()) {
+        resp.addHeader("Content-Type", "text/plain");
+        resp.getOutputStream().write("Not found".getBytes(StandardCharsets.UTF_8));
+      }
     }
   }
 
