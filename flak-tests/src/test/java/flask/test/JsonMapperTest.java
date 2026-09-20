@@ -52,6 +52,7 @@ public class JsonMapperTest extends AbstractAppTest {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   protected void preScan() {
     ObjectMapper a = new ObjectMapper();
     SimpleModule m = new SimpleModule();

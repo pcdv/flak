@@ -11,17 +11,23 @@ def PUBLISH_PROJECTS = [
 
 allprojects {
   apply plugin: 'java'
-  apply plugin: 'ivy-publish'
-
-  sourceCompatibility = 1.8
-  targetCompatibility = 1.8
 
   repositories {
     mavenCentral()
   }
 
+  java {
+    toolchain {
+      languageVersion = JavaLanguageVersion.of(17)
+    }
+  }
+
+  tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+  }
+
   dependencies {
-    testImplementation "junit:junit:4.11"
+    testImplementation "junit:junit:4.13.2"
   }
 
   if (PUBLISH_PROJECTS.contains(project.name)) {
@@ -29,17 +35,21 @@ allprojects {
     apply plugin: "ivy-publish"
     apply plugin: "maven-publish"
 
+    java {
+      withSourcesJar()
+    }
+
     publishing {
       repositories {
         ivy {
-          name "local"
-          url "${System.properties['user.home']}/.ivy2/local"
+          name = "local"
+          url = "${System.properties['user.home']}/.ivy2/local"
         }
       }
       publications {
         // allows to do a local publish
         ivy(IvyPublication) {
-          organisation "com.github.pcdv.flak"
+          organisation = "com.github.pcdv.flak"
           from components.java
         }
 
@@ -47,17 +57,9 @@ allprojects {
         maven(MavenPublication) {
           groupId = 'com.github.pcdv.flak'
           from components.java
-
-          artifact sourceJar {
-            classifier "sources"
-          }
         }
       }
     }
-  }
-
-  task sourceJar(type: Jar) {
-    from sourceSets.main.allJava
   }
 
   jar {

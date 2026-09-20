@@ -34,6 +34,7 @@ public class AuthCookiePathTest extends AbstractAppTest {
   @LoginNotRequired
   @Route("/api/login")
   @Post
+  @SuppressWarnings("deprecation")
   public void login(Response r) {
     FlakUser user = sessionManager.createUser("test");
     sessionManager.openSession(app, user, r);

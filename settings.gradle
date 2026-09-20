@@ -1,3 +1,10 @@
+// tells Gradle where a Java toolchain can be downloaded from when none of the
+// JDKs installed locally matches. Without it, a build that relies on an
+// auto-provisioned toolchain is deprecated, and fails in Gradle 10
+plugins {
+  id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 include 'flak-api'
 include "flak-backend-jdk"
 include "flak-backend-netty"

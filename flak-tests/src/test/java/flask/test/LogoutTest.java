@@ -35,6 +35,7 @@ public class LogoutTest extends AbstractAppTest {
   @LoginNotRequired
   @Route("/login")
   @Post
+  @SuppressWarnings("deprecation")
   public void login(Response r) {
     FlakUser user = sessionManager.createUser("test");
     sessionManager.openSession(app, user, r);
