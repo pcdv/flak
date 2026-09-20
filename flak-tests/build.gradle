@@ -5,7 +5,7 @@ dependencies {
   implementation project(":flak-login")
   implementation project(":flak-resource")
   implementation project(":flak-backend-jdk")
-  runtimeOnly project(":flak-backend-netty")
+  implementation project(":flak-backend-netty")
   implementation project(":flak-util")
   implementation project(":flak-swagger")
 }

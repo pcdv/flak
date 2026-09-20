@@ -17,11 +17,9 @@ public class ServerInitializer extends ChannelInitializer<SocketChannel> {
   private static final int MAX_CONTENT_LENGTH = 16 * 1024 * 1024;
 
   private final NettyWebServer server;
-  private final NettyFlakHandler handler;
 
   public ServerInitializer(NettyWebServer server) {
     this.server = server;
-    this.handler = new NettyFlakHandler(server);
   }
 
   @Override
@@ -33,12 +31,12 @@ public class ServerInitializer extends ChannelInitializer<SocketChannel> {
       ch.pipeline().addLast(new SslHandler(engine));
     }
 
+    // the handlers are named, so that an application can position its own
+    // relative to ours, e.g. pipeline.addBefore("flak", ...)
     ch.pipeline()
-      .addLast(new HttpServerCodec())
+      .addLast("http-codec", new HttpServerCodec())
       // gathers the body so that the handler receives a FullHttpRequest
-      .addLast(new HttpObjectAggregator(MAX_CONTENT_LENGTH))
-      .addLast(handler)
-//      .addLast(badClientSilencer)
-    ;
+      .addLast("http-aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH))
+      .addLast("flak", server.getHttpHandler());
   }
 }
