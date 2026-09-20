@@ -21,6 +21,7 @@ public class LoginTest4 extends AbstractAppTest {
   @LoginNotRequired
   @Post
   @Route(value = "/auth/login")
+  @SuppressWarnings("deprecation")
   public void login(SessionManager dsm) {
     dsm.openSession(app, dsm.createUser("foo"), app.getResponse());
     app.getResponse().redirect("/hello");

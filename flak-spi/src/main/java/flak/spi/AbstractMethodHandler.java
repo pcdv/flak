@@ -108,8 +108,7 @@ public abstract class AbstractMethodHandler
 
     // hack for being able to call method even if not public or if the class
     // is not public
-    if (!m.isAccessible())
-      m.setAccessible(true);
+    m.setAccessible(true);
   }
 
   public void init() {

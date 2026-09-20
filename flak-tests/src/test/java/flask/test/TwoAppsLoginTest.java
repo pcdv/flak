@@ -64,6 +64,7 @@ public class TwoAppsLoginTest {
       @LoginNotRequired
       @Route("/api/login")
       @Post
+      @SuppressWarnings("deprecation")
       public void login(Form form, Response r) {
         dsm.openSession(app, dsm.createUser("foo"), r);
       }

@@ -110,6 +110,7 @@ public class JacksonPlugin implements SPPlugin {
    * @deprecated  it should no longer be necessary to call this method now that ObjectReader
    * and ObjectWriter are used to process JSON data. Instead, you can use {@link #registerMapper(String, ObjectMapper)}
    */
+  @Deprecated
   public void setObjectMapperProvider(MapperProvider mapper) {
     this.mapperProvider = Objects.requireNonNull(mapper);
   }

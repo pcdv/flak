@@ -34,6 +34,7 @@ public class BasicAuthenticationTest extends AbstractAppTest {
   @Post
   @Route("/login")
   @LoginNotRequired
+  @SuppressWarnings("deprecation")
   public void login(Request re, Response resp, SessionManager sessionManager) {
     String auth = re.getHeader("Authorization");
     if (auth != null && auth.startsWith("Basic ")) {

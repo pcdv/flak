@@ -17,12 +17,12 @@ sourceSets {
 
 // make an executable jar
 jar {
-  from "$buildDir/classes/main"
-  from {
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  // use the configuration's elements provider so that the tasks producing the
+  // dependencies are properly declared as producers of this task's inputs
+  from(configurations.runtimeClasspath.elements.map { entries ->
     // TODO: is there a way to include only required classes?
-    configurations.runtimeClasspath.collect {
-      it.isDirectory() ? it : project.zipTree(it)
-    }
-  }
+    entries.collect { it.asFile.isDirectory() ? it.asFile : zipTree(it.asFile) }
+  })
   manifest { attributes 'Main-Class': 'samples.WebApp' }
 }

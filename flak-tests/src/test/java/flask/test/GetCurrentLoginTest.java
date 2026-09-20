@@ -61,6 +61,7 @@ public class GetCurrentLoginTest extends AbstractAppTest {
 
   @Post
   @Route(value = "/login")
+  @SuppressWarnings("deprecation")
   public void login(Form form) {
     String login = form.get("login");
     String pass = form.get("password");

@@ -34,6 +34,7 @@ public class PermissionTest extends AbstractAppTest {
 
   @Route("/api/login")
   @Post
+  @SuppressWarnings("deprecation")
   public void login(Form form) {
     FlakUser user = sessionManager.getUser(form.get("login"));
     if (user != null)

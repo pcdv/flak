@@ -45,6 +45,7 @@ public class LoginTest2 extends AbstractAppTest {
   @Route(value = "/login")
   @Post
   @LoginNotRequired
+  @SuppressWarnings("deprecation")
   public void login(Response r, Form form, SessionManager sessionManager) {
     String login = form.get("login");
     String pass = form.get("password");

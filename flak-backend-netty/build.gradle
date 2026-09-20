@@ -3,5 +3,5 @@ description = "Flak backend based on netty"
 dependencies {
   implementation project(":flak-api")
   implementation project(":flak-spi")
-  implementation group: 'io.netty', name: 'netty-all', version: '4.1.59.Final'
+  implementation "io.netty:netty-all:4.1.59.Final"
 }
