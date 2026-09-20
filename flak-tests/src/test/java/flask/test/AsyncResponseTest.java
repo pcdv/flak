@@ -47,7 +47,17 @@ public class AsyncResponseTest extends AbstractAppTest {
   }
 
   /**
-   * HttpServer does not support replying asynchronously to requests.
+   * Replying from a thread other than the one running the handler is not
+   * supported, by any backend: as soon as the handler returns, the response is
+   * considered complete and is sent. The HttpServer of the JDK could not do it
+   * anyway, its exchange belongs to the handler thread, and the netty backend,
+   * which writes the response from whichever thread holds it, has no way of
+   * being told to wait.
+   * <p>
+   * Supporting it would take an explicit annotation on the handler, so that a
+   * backend knows not to finish the response when the handler returns, and a
+   * way for the application to signal that it is done, closing the output
+   * stream having no effect today.
    */
   @Ignore
   @Test
