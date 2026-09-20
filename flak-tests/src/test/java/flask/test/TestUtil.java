@@ -1,6 +1,8 @@
 package flask.test;
 
 import java.io.UnsupportedEncodingException;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Objects;
@@ -57,6 +59,16 @@ public class TestUtil {
     }
     catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Returns a port that is free at the time of the call, so that two test runs,
+   * e.g. one per backend, do not fight over a hardcoded one.
+   */
+  public static int findFreePort() throws IOException {
+    try (ServerSocket s = new ServerSocket(0)) {
+      return s.getLocalPort();
     }
   }
 

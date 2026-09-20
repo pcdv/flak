@@ -23,10 +23,14 @@ public class AbstractAppTest {
 
   /**
    * Checks that the test did not leave behind any running thread.
+   * <p>
+   * netty starts a housekeeping thread of its own on the first request and
+   * lets it die after about a second of inactivity. Waiting for it would add
+   * that second to every single test, and it is not ours to clean up.
    */
   @Rule
   public ThreadState.ThreadStateRule noZombies =
-      new ThreadState.ThreadStateRule();
+      new ThreadState.ThreadStateRule("globalEventExecutor-.*");
 
   protected FlakLogin flakLogin;
 
@@ -49,8 +53,10 @@ public class AbstractAppTest {
 
     if (USE_PROXY) {
       final int port = app.getServer().getPort();
-      proxy = new DebugProxy(9092, "localhost", port);
-      client = new SimpleClient(app.getRootUrl().replace(String.valueOf(port),"9092"));
+      proxy = new DebugProxy(0, "localhost", port);
+      client = new SimpleClient(app.getRootUrl()
+                                .replace(String.valueOf(port),
+                                         String.valueOf(proxy.getPort())));
     }
     else {
       client = new SimpleClient(app.getRootUrl());

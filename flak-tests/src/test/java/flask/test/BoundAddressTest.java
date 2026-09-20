@@ -2,6 +2,7 @@ package flask.test;
 
 import flak.AppFactory;
 import flak.WebServer;
+import org.junit.After;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -13,6 +14,14 @@ import static org.junit.Assert.assertTrue;
 
 public class BoundAddressTest {
 
+  private WebServer ws;
+
+  @After
+  public void tearDown() {
+    if (ws != null)
+      ws.stop();
+  }
+
   /**
    * Asserts the user can choose a random port
    * (address should default to 0.0.0.0)
@@ -21,7 +30,7 @@ public class BoundAddressTest {
   public void testRandomPortOnly() throws Exception {
     AppFactory fac = TestUtil.getFactory();
     fac.setPort(0);
-    WebServer ws = fac.getServer();
+    ws = fac.getServer();
     ws.start();
 
     assertTrue(ws.getLocalAddress().getAddress().isAnyLocalAddress());
@@ -34,13 +43,15 @@ public class BoundAddressTest {
    */
   @Test
   public void testPortOnly() throws Exception {
+    int port = TestUtil.findFreePort();
+
     AppFactory fac = TestUtil.getFactory();
-    fac.setPort(9191);
-    WebServer ws = fac.getServer();
+    fac.setPort(port);
+    ws = fac.getServer();
     ws.start();
 
     assertTrue(ws.getLocalAddress().getAddress().isAnyLocalAddress());
-    assertEquals(9191, ws.getLocalAddress().getPort());
+    assertEquals(port, ws.getLocalAddress().getPort());
   }
 
   /**
@@ -50,7 +61,7 @@ public class BoundAddressTest {
   public void testRandomPortAndLocalIPAddress() throws Exception {
     AppFactory fac = TestUtil.getFactory();
     fac.setLocalAddress(new InetSocketAddress(getLoopbackAddress(), 0));
-    WebServer ws = fac.getServer();
+    ws = fac.getServer();
     ws.start();
 
     assertEquals(getLoopbackAddress(), ws.getLocalAddress().getAddress());
@@ -62,12 +73,13 @@ public class BoundAddressTest {
    */
   @Test
   public void testPortAndLocalIPAddress() throws Exception {
+    int port = TestUtil.findFreePort();
+
     AppFactory fac = TestUtil.getFactory();
-    fac.setLocalAddress(new InetSocketAddress(getLoopbackAddress(), 9192));
-    WebServer ws = fac.getServer();
+    fac.setLocalAddress(new InetSocketAddress(getLoopbackAddress(), port));
+    ws = fac.getServer();
     ws.start();
 
-    assertEquals(new InetSocketAddress(getLoopbackAddress(), 9192), ws.getLocalAddress());
+    assertEquals(new InetSocketAddress(getLoopbackAddress(), port), ws.getLocalAddress());
   }
-
 }

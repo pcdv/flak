@@ -4,12 +4,26 @@ dependencies {
   implementation project(":flak-jackson")
   implementation project(":flak-login")
   implementation project(":flak-resource")
-  implementation project(":flak-backend-jdk") // got one test accessing JdkApp
+  implementation project(":flak-backend-jdk")
   runtimeOnly project(":flak-backend-netty")
   implementation project(":flak-util")
   implementation project(":flak-swagger")
 }
 
+// the suite must pass against every backend: one Test task each, reports and
+// results landing in build/{reports/tests,test-results}/<task name>
 test {
-  systemProperty "backend", project.property("backend")
+  systemProperty "backend", "jdk"
+}
+
+def testNetty = tasks.register("testNetty", Test) {
+  description = "Runs the test suite against the netty backend."
+  group = "verification"
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = sourceSets.test.runtimeClasspath
+  systemProperty "backend", "netty"
+}
+
+tasks.named("check") {
+  dependsOn testNetty
 }
