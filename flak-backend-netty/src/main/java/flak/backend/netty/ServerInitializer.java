@@ -14,8 +14,8 @@ public class ServerInitializer extends ChannelInitializer<SocketChannel> {
 
   private final NettyFlakHandler handler;
 
-  public ServerInitializer(NettyApp app) {
-    handler = new NettyFlakHandler(app);
+  public ServerInitializer(NettyWebServer server) {
+    handler = new NettyFlakHandler(server);
   }
 
   @Override

@@ -39,6 +39,22 @@ public class NettyWebServer implements WebServer {
     apps.add(app);
   }
 
+  /**
+   * Returns the app that serves specified path, i.e. the one with the longest
+   * root path the request path starts with, or null when there is none.
+   */
+  public NettyApp getApp(String path) {
+    NettyApp res = null;
+    for (NettyApp app : apps) {
+      String root = app.getPath();
+      if (path.equals(root) || path.startsWith(root.isEmpty() ? "/" : root + "/")) {
+        if (res == null || root.length() > res.getPath().length())
+          res = app;
+      }
+    }
+    return res;
+  }
+
   public void removeApp(NettyApp app) {
     apps.remove(app);
     if (apps.isEmpty())
@@ -59,7 +75,7 @@ public class NettyWebServer implements WebServer {
      .childOption(ChannelOption.TCP_NODELAY, java.lang.Boolean.TRUE)
      .childOption(ChannelOption.SO_KEEPALIVE, java.lang.Boolean.TRUE)
      .channel(NioServerSocketChannel.class)
-     .childHandler(new ServerInitializer(apps.get(0))) // FIXME
+     .childHandler(new ServerInitializer(this))
     ;
 
     try {
@@ -73,6 +89,9 @@ public class NettyWebServer implements WebServer {
 
   @Override
   public void stop() {
+    if (!started)
+      return;
+    started = false;
     bossGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS);
     workerGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS);
     try {

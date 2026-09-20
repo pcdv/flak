@@ -28,7 +28,9 @@ public class NettyAppFactory extends AbstractAppFactory {
 
   @Override
   public App createApp(String appRootPath) {
-    throw new RuntimeException("TODO");
+    NettyApp app = new NettyApp(appRootPath, server);
+    PluginUtil.loadPlugins(app, pluginValidator);
+    return app;
   }
 
   @Override

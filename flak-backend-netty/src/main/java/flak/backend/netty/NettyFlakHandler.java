@@ -34,10 +34,10 @@ import io.netty.util.CharsetUtil;
 @ChannelHandler.Sharable
 public class NettyFlakHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
-  private final NettyApp app;
+  private final NettyWebServer server;
 
-  NettyFlakHandler(NettyApp app) {
-    this.app = app;
+  NettyFlakHandler(NettyWebServer server) {
+    this.server = server;
   }
 
   @Override
@@ -58,7 +58,13 @@ public class NettyFlakHandler extends SimpleChannelInboundHandler<FullHttpReques
       uri = uri.substring(0, qs);
 
     Log.info("Handle request at " + uri);
-    String[] tokens = uri.split("/");
+
+    // several apps can be plugged at different paths on a same server
+    NettyApp app = server.getApp(uri);
+    if (app == null)
+      return get404();
+
+    String[] tokens = uri.substring(app.getPath().length()).split("/");
 
     try {
       HttpResponse res = app.route(ctx, req, tokens, 1);
