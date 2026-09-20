@@ -4,6 +4,7 @@ import flak.WebServer;
 import flak.spi.util.Log;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
@@ -32,11 +33,58 @@ public class NettyWebServer implements WebServer {
   private EventLoopGroup workerGroup;
   private boolean started;
 
+  /**
+   * True when the application runs its own netty server and flak only
+   * contributes a handler to its pipeline: there is then no socket, no
+   * bootstrap and no event loop of ours to manage.
+   */
+  private final boolean attached;
+
+  private final boolean secure;
+
+  private ChannelHandler httpHandler;
+
   public NettyWebServer() {
+    this(false, null, false);
+  }
+
+  NettyWebServer(boolean attached, InetSocketAddress address, boolean secure) {
+    this.attached = attached;
+    this.secure = secure;
+    if (address != null)
+      this.address = address;
+  }
+
+  public boolean isAttached() {
+    return attached;
+  }
+
+  /**
+   * Flak's HTTP dispatch, as a plain netty handler, so that an application
+   * owning its own server can add it to the pipeline it builds, e.g.
+   * <pre>
+   * ch.pipeline()
+   *   .addLast(new HttpServerCodec())
+   *   .addLast(new HttpObjectAggregator(65536))
+   *   .addLast("flak", server.getHttpHandler());
+   * </pre>
+   * The handler is sharable: the same instance serves every channel.
+   * <p>
+   * It expects to receive aggregated requests, so a HttpObjectAggregator must
+   * come before it in the pipeline.
+   */
+  public synchronized ChannelHandler getHttpHandler() {
+    if (httpHandler == null)
+      httpHandler = new NettyFlakHandler(this);
+    return httpHandler;
   }
 
   @Override
   public void setSSLContext(SSLContext sslContext) {
+    if (attached)
+      throw new IllegalStateException(
+        "This server is attached to a netty server owned by the application: " +
+        "TLS belongs to the pipeline it builds, not to flak");
     if (started)
       throw new IllegalStateException("Server already started");
     this.sslContext = sslContext;
@@ -78,12 +126,12 @@ public class NettyWebServer implements WebServer {
       throw new IllegalStateException();
     started = true;
 
-    if (executor == null)
-      executor = Executors.newCachedThreadPool(r -> {
-        Thread t = new Thread(r, "flak-netty-handler");
-        t.setDaemon(true);
-        return t;
-      });
+    ensureExecutor();
+
+    // nothing to bind: the application's own server already listens, and calls
+    // us through the handler it added to its pipeline
+    if (attached)
+      return;
 
     bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
     workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
@@ -113,6 +161,21 @@ public class NettyWebServer implements WebServer {
 
     ExecutorService executor = this.executor;
     this.executor = null;
+
+    if (attached) {
+      // the socket and the event loops belong to the application: only the
+      // threads we created are ours to release
+      if (executor != null) {
+        executor.shutdownNow();
+        try {
+          executor.awaitTermination(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+      return;
+    }
 
     bossGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS);
     workerGroup.shutdownGracefully(0, 10, TimeUnit.MILLISECONDS);
@@ -154,6 +217,8 @@ public class NettyWebServer implements WebServer {
 
   @Override
   public String getProtocol() {
+    if (attached)
+      return secure ? "https" : "http";
     return sslContext == null ? "http" : "https";
   }
 
@@ -184,8 +249,22 @@ public class NettyWebServer implements WebServer {
 
   /**
    * Route handlers are free to block, so they never run on an event loop.
+   * <p>
+   * Created on demand: when attached, the application may well have plugged
+   * our handler into a pipeline that is already serving before any app was
+   * started.
    */
-  public ExecutorService getExecutor() {
+  public synchronized ExecutorService getExecutor() {
+    return ensureExecutor();
+  }
+
+  private synchronized ExecutorService ensureExecutor() {
+    if (executor == null)
+      executor = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "flak-netty-handler");
+        t.setDaemon(true);
+        return t;
+      });
     return executor;
   }
 

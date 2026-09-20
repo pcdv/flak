@@ -1,7 +1,6 @@
 package flak.backend.netty;
 
 import flak.App;
-import flak.WebServer;
 import flak.spi.AbstractAppFactory;
 
 import java.net.InetSocketAddress;
@@ -13,8 +12,32 @@ public class NettyAppFactory extends AbstractAppFactory {
     server = new NettyWebServer();
   }
 
+  private NettyAppFactory(InetSocketAddress address, boolean secure) {
+    server = new NettyWebServer(true, address, secure);
+  }
+
+  /**
+   * Creates a factory for an application that runs its own netty server: flak
+   * binds nothing, and serves the requests handed to it by
+   * <code>getServer().getHttpHandler()</code>, which the application adds to
+   * the pipeline it builds. This leaves the application free to serve other
+   * protocols, e.g. websockets, on the same port.
+   * <p>
+   * The address is only what flak advertises in {@link App#getRootUrl()}. It
+   * can be set again with {@link #setLocalAddress(InetSocketAddress)} once the
+   * application has bound its server, which is the only way to know the port
+   * when binding on 0.
+   *
+   * @param address the address the application's server listens to, or null
+   * @param secure whether that server is behind TLS, so that the URLs built by
+   * flak use https
+   */
+  public static NettyAppFactory attached(InetSocketAddress address, boolean secure) {
+    return new NettyAppFactory(address, secure);
+  }
+
   @Override
-  public WebServer getServer() {
+  public NettyWebServer getServer() {
     return server;
   }
 
