@@ -10,19 +10,21 @@ Flak 3.0 and later require **Java 17** or later. If you are stuck on an older
 JDK, the 2.x releases target Java 8.
 
 It is composed of a generic API, a default implementation and some add-ons. 
-In a minimal setup, the total size of dependencies is around 40KiB. If you 
+In a minimal setup, the total size of dependencies is around 60KiB. If you 
 need to implement a REST server and handle JSON data, you will have to add
 `jackson-databind` to your dependencies.
 
-Flak components    | Description
------------------- | -----------
-`flak-api`         | Public API
-`flak-spi`         | Internal API for service providers
-`flak-backend-jdk` | Binding for the web server included in JDK
-`flak-login`       | Add-on for managing authentication
-`flak-resource`    | Add-on for serving static resources
-`flak-jackson`     | Add-on for conversion to/from JSON using jackson
-`flak-swagger`     | Add-on to dynamically generate OpenAPI specifications
+Flak components      | Description
+-------------------- | -----------
+`flak-api`           | Public API
+`flak-spi`           | Internal API for service providers
+`flak-backend-jdk`   | Binding for the web server included in JDK
+`flak-backend-netty` | Unfinished alternative binding based on netty (not published)
+`flak-login`         | Add-on for managing authentication
+`flak-resource`      | Add-on for serving static resources
+`flak-jackson`       | Add-on for conversion to/from JSON using jackson
+`flak-swagger`       | Add-on to dynamically generate OpenAPI specifications
+`flak-util`          | Misc utilities (e.g. route dumper)
 
 ## Table of Contents
 
@@ -63,16 +65,17 @@ Flak components    | Description
 Here is the obligatory
  [HelloWorld](https://github.com/pcdv/flak/blob/master/flak-examples/src/main/java/flak/examples/HelloWorld.java) application.
 
-Here is the minimal set of dependencies needs to be included in `build.gradle`.
+Here is the minimal set of dependencies that needs to be included in
+`build.gradle` (the badge above shows the latest released version):
 
 ```groovy
 repositories {
-  maven { url "https://jitpack.io" }
+  maven { url = "https://jitpack.io" }
 }
 
 dependencies {
-  compile "com.github.pcdv.flak:flak-api:2.7.0"
-  runtime "com.github.pcdv.flak:flak-backend-jdk:2.7.0"
+  implementation "com.github.pcdv.flak:flak-api:3.0"
+  runtimeOnly "com.github.pcdv.flak:flak-backend-jdk:3.0"
 }
 ```
 
@@ -145,7 +148,7 @@ annotation.
 
 ### Method arguments
 
-Route handlers can accept arguments. Like with [Flask](http://flask.pocoo.org/docs/1.0/quickstart/#routing),
+Route handlers can accept arguments. Like with [Flask](https://flask.palletsprojects.com/en/stable/quickstart/#routing),
 arguments can be extracted from the request's path. But there is more.
 
 #### Path variables
@@ -216,7 +219,7 @@ You can accept other argument types if you:
  - associate the type with an extractor using method
  AbstractApp.addCustomExtractor() (this is not in official API yet)
  - specify an input format with the @InputFormat annotation (which requires
- prior declaration of an InputParser with App.addInputParser().
+ prior declaration of an InputParser with App.addInputParser())
  - a common case is to decode an object serialized as JSON in the body
  of the request. You could do the following:
  
@@ -249,7 +252,7 @@ The example above allocates a web server for a single application. However,
 it is possible to host several Flak apps on a single server, for example
 one located at path `/app1` and another one at `/app2`.
 
-The idea is to create a [FlakFactory](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/AppFactory.java)
+The idea is to create an [AppFactory](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/AppFactory.java)
 then call `createApp(String)` with two separate paths. Then you can add your
 route handlers and start them.
 
@@ -272,19 +275,19 @@ I'm a big fan of lightweight and simple. I've always liked the simplicity
 of Flask applications and missed an equivalent solution for Java. Most existing
 frameworks were very heavy in terms of dependencies 
 (e.g. [Play](https://www.playframework.com/), 
-[Spring Boot](https://projects.spring.io/spring-boot/), etc). 
-[Spark](http://sparkjava.com/) was a better fit but it brings ~2.5MiB of
+[Spring Boot](https://spring.io/projects/spring-boot/), etc). 
+[Spark](https://sparkjava.com/) was a better fit but it brings ~2.5MiB of
 dependencies.
 
 The JDK includes a [HTTP server](
-http://docs.oracle.com/javase/7/docs/jre/api/net/httpserver/spec/com/sun/net/httpserver/package-summary.html
+https://docs.oracle.com/en/java/javase/17/docs/api/jdk.httpserver/com/sun/net/httpserver/package-summary.html
 )
 that is perfectly suited for serving small applications but its API is rather 
 painful. Flak allows to leverage it with a friendly API and in the future will
 support other back-ends.
 
 
-The API initially shared a lot of similarities with [Flask](http://flask.pocoo.org/):
+The API initially shared a lot of similarities with [Flask](https://flask.palletsprojects.com/):
  * route handlers are methods with annotations like `@Route`, `@Post`, 
  `@LoginRequired` etc.
  * the [request](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/Request.java)
@@ -301,10 +304,12 @@ Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
 
 ### Goals of the migration from JFlask
  * have a clean API, well separated from implementation
- * provide several back-ends (only one is available at this time: 
- [flak-backend-jdk](https://github.com/pcdv/flak/tree/master/flak-backend-jdk) but it will
- now be possible to provide backends for [Netty](https://netty.io/),
- [Jetty](https://www.eclipse.org/jetty/), etc.)
+ * provide several back-ends. So far
+ [flak-backend-jdk](https://github.com/pcdv/flak/tree/master/flak-backend-jdk) is the
+ only complete one;
+ [flak-backend-netty](https://github.com/pcdv/flak/tree/master/flak-backend-netty)
+ is an unfinished prototype based on [Netty](https://netty.io/). Other back-ends,
+ e.g. [Jetty](https://jetty.org/), could be added the same way.
  * provide SSL support
  * optional plugins for user management, JSON serialization, CSRF protection...
 
