@@ -312,9 +312,11 @@ public class NettyRequest implements SPRequest, SPResponse {
    * with an empty last chunk.
    */
   public void finish() {
-    if (out != null && out != responseStream) {
+    // a wrapping stream, e.g. gzip, only writes its trailer when closed. An
+    // aborted response must not get one: a complete gzip body would be read
+    // back happily by the client, hiding that the response was cut short
+    if (!aborted && out != null && out != responseStream) {
       try {
-        // a wrapping stream, e.g. gzip, only writes its trailer when closed
         out.close();
       }
       catch (IOException e) {
