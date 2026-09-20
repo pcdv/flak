@@ -7,6 +7,7 @@ import flak.spi.SPRequest;
 import flak.spi.util.IO;
 import flak.spi.util.Log;
 
+import java.io.Closeable;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
@@ -84,7 +85,14 @@ public class MethodHandler extends AbstractMethodHandler {
       else if (res instanceof InputStream) {
         r.setStatus(HttpURLConnection.HTTP_OK);
         out = CompressionHelper.maybeCompress(r);
-        IO.pipe((InputStream) res, out, false);
+        InputStream input = (InputStream) res;
+        try {
+          IO.pipe(input, out, false);
+        }
+        catch (Exception e) {
+          Thread.currentThread().interrupt();
+          close(input);
+        }
       }
       else if (res == null) {
         if (!r.isStatusSet())
@@ -94,6 +102,14 @@ public class MethodHandler extends AbstractMethodHandler {
         throw new RuntimeException("Unexpected return value: " + res + " from " + javaMethod
           .toGenericString());
 
+    }
+  }
+
+  private static void close(Closeable c) {
+    try {
+      c.close();
+    }
+    catch (Exception ignored) {
     }
   }
 }
