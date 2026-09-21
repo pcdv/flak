@@ -120,7 +120,11 @@ public class JdkApp extends AbstractApp {
     return srv;
   }
 
-  public Collection<Context> getHandlers() {
+  /**
+   * The contexts of this app, i.e. its routes grouped by their static prefix.
+   * Not the route handlers, which App.getHandlers() returns.
+   */
+  public Collection<Context> getContexts() {
     return handlers.values();
   }
 

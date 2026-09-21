@@ -1,6 +1,7 @@
 package flak;
 
 import java.io.IOException;
+import java.util.stream.Stream;
 
 /**
  * @author pcdv
@@ -88,6 +89,28 @@ public interface App {
   void setMaxBodySize(long maxBodySize);
 
   long getMaxBodySize();
+
+  /**
+   * All the route handlers scanned by this app, in no particular order.
+   * Useful to introspect an API, or to configure the handlers in bulk.
+   */
+  Stream<RouteHandler> getHandlers();
+
+  /**
+   * Returns the handler bound to specified route, so that it can be
+   * configured at runtime, e.g.
+   * <pre>
+   * app.getHandler("POST", "/api/import").setMaxBodySize(maxUpload);
+   * </pre>
+   *
+   * @param httpMethod e.g. "POST"
+   * @param route the route, relative to the root of the app, exactly as it
+   * was declared, variables included, e.g. "/db/hello/:name"
+   * @throws java.util.NoSuchElementException if no handler is bound to it: a
+   * route that is configured but does not exist is a mistake worth reporting
+   * rather than ignoring
+   */
+  RouteHandler getHandler(String httpMethod, String route);
 
   <T extends FlakPlugin> T getPlugin(Class<T> clazz);
 
