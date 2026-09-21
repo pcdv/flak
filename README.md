@@ -77,6 +77,10 @@ Flak components      | Description
    than only discovered in the classpath. See [Plugins](#plugins).
  * `App.addCustomExtractor()` is part of the public API. See
    [Custom arguments](#custom-arguments).
+ * **Route handlers can be looked up and configured** at runtime with
+   `App.getHandler()` and `App.getHandlers()`, so that what an annotation
+   hardcodes can be made configurable. See
+   [Request bodies](#request-bodies).
  * Flak can serve its routes from a netty server the application owns, leaving
    it free to serve websockets on the same port. See the
    [netty backend](https://github.com/pcdv/flak/tree/master/flak-backend-netty).
@@ -115,6 +119,16 @@ empty, so that a client can tell an error from an empty document.
 
 `flak-util` no longer depends on `flak-backend-jdk`, so `RouteDumper` now works
 with any backend.
+
+**Listing the route handlers of an app no longer needs the backend.**
+`App.getHandlers()` returns them all and `App.getHandler()` looks one up, which
+replaces reaching into `JdkApp` and its contexts. `JdkApp.getHandlers()`
+returned contexts rather than handlers and is now named `getContexts()`.
+
+**`getRoute()` is relative to the app.** The JDK backend used to include the
+path of the app in it, unlike the netty one; both now report the route as it
+was declared in `@Route`. Prepend `App.getPath()` for an absolute path, as
+`RouteDumper` does.
 
 **For backend and plugin authors only:** `AppFactory` gained `setPlugins()` and
 `SPRequest` gained `setMaxBodySize()`, so an implementation of either outside
