@@ -2,7 +2,6 @@ package flak.backend.netty;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslHandler;
 
@@ -10,11 +9,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 public class ServerInitializer extends ChannelInitializer<SocketChannel> {
-
-  /**
-   * Max size of a request body. Beyond that, the aggregator answers 413.
-   */
-  private static final int MAX_CONTENT_LENGTH = 16 * 1024 * 1024;
 
   private final NettyWebServer server;
 
@@ -35,8 +29,8 @@ public class ServerInitializer extends ChannelInitializer<SocketChannel> {
     // relative to ours, e.g. pipeline.addBefore("flak", ...)
     ch.pipeline()
       .addLast("http-codec", new HttpServerCodec())
-      // gathers the body so that the handler receives a FullHttpRequest
-      .addLast("http-aggregator", new HttpObjectAggregator(MAX_CONTENT_LENGTH))
+      // NB: no HttpObjectAggregator: the body is streamed to the handler, and
+      // its size is capped per app or per handler with @MaxBodySize
       .addLast("flak", server.getHttpHandler());
   }
 }

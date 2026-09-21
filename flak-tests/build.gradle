@@ -12,6 +12,13 @@ dependencies {
 
 // the suite must pass against every backend: one Test task each, reports and
 // results landing in build/{reports/tests,test-results}/<task name>
+tasks.withType(Test).configureEach {
+  // deliberately tight, and smaller than the bodies BigInputTest uploads: a
+  // backend that buffers a request instead of streaming it fails here
+  maxHeapSize = "256m"
+  jvmArgs "-XX:MaxDirectMemorySize=64m"
+}
+
 test {
   systemProperty "backend", "jdk"
 }

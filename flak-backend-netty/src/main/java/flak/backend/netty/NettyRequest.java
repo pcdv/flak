@@ -1,19 +1,19 @@
 package flak.backend.netty;
 
 import flak.Form;
+import flak.HttpException;
 import flak.Query;
 import flak.Request;
 import flak.Response;
+import flak.annotations.MaxBodySize;
 import flak.spi.FormImpl;
 import flak.spi.SPRequest;
 import flak.spi.SPResponse;
 import flak.spi.util.BufferedOutputStream;
-import flak.annotations.MaxBodySize;
-import flak.HttpException;
+import flak.spi.util.IO;
 import flak.spi.util.LimitedInputStream;
 import flak.spi.util.Log;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -21,10 +21,10 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
@@ -58,7 +58,10 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   private final NettyApp app;
   private final ChannelHandlerContext ctx;
-  private final FullHttpRequest req;
+  private final HttpRequest req;
+
+  /** The body, as it arrives from the network. */
+  private final RequestBodyStream body;
 
   /**
    * Path of the request relative to the root of the app, without the query
@@ -116,12 +119,14 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   public NettyRequest(NettyApp app,
                       ChannelHandlerContext ctx,
-                      FullHttpRequest req,
+                      HttpRequest req,
+                      RequestBodyStream body,
                       String appRelativePath,
                       String queryString) {
     this.app = app;
     this.ctx = ctx;
     this.req = req;
+    this.body = body;
     this.path = appRelativePath;
     this.queryString = queryString;
     this.tokens = appRelativePath.isEmpty() || appRelativePath.equals("/")
@@ -177,9 +182,9 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   @Override
   public InputStream getInputStream() {
-    // duplicate so that reading the body does not consume it for getForm()
-    return LimitedInputStream.limit(new ByteBufInputStream(req.content().duplicate()),
-                                    maxBodySize);
+    // NB: single pass, like the JDK backend: the body is not held in memory,
+    // so whoever reads it first consumes it
+    return LimitedInputStream.limit(body, maxBodySize);
   }
 
   /**
@@ -209,8 +214,14 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   @Override
   public Form getForm() {
-    if (form == null)
-      form = new FormImpl(req.content().toString(StandardCharsets.UTF_8), true);
+    try {
+      if (form == null)
+        form = new FormImpl(new String(IO.readFully(getInputStream()),
+                                       StandardCharsets.UTF_8), true);
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
     return form;
   }
 
