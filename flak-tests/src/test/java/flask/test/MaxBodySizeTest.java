@@ -1,8 +1,10 @@
 package flask.test;
 
 import java.io.InputStream;
+import java.util.stream.Collectors;
 
 import flak.Request;
+import flak.RouteHandler;
 import flak.annotations.MaxBodySize;
 import flak.annotations.Post;
 import flak.annotations.Route;
@@ -84,5 +86,47 @@ public class MaxBodySizeTest extends AbstractAppTest {
   @Test
   public void handlerCanWaiveTheLimit() throws Exception {
     assertEquals("1048576", client.post("/unlimited", body(1024 * 1024)));
+  }
+
+  /**
+   * An annotation can only hardcode a limit. An application whose users
+   * configure it needs to set the limit of one handler at runtime.
+   */
+  @Test
+  public void limitOfOneHandlerCanBeSetAtRuntime() throws Exception {
+    app.getHandler("POST", "/capped").setMaxBodySize(8192);
+
+    assertEquals("4096", client.post("/capped", body(4096)));
+    TestUtil.assertFails(() -> client.post("/capped", body(8193)), "413");
+
+    // the other handlers are unaffected
+    TestUtil.assertFails(() -> client.post("/generous", body(64 * 1024 + 1)), "413");
+  }
+
+  /**
+   * It overrides the annotation too, otherwise a handler that declared a
+   * limit could not be reconfigured.
+   */
+  @Test
+  public void runtimeLimitOverridesTheAnnotation() {
+    app.getHandler("POST", "/generous").setMaxBodySize(100);
+
+    TestUtil.assertFails(() -> client.post("/generous", body(101)), "413");
+  }
+
+  @Test
+  public void unknownRouteIsReported() {
+    TestUtil.assertFails(() -> app.getHandler("POST", "/nope"),
+                         "No handler for POST /nope", false);
+  }
+
+  @Test
+  public void handlersCanBeListed() {
+    assertEquals("/capped, /generous, /unlimited",
+                 app.getHandlers()
+                    .filter(h -> h.getHttpMethod().equals("POST"))
+                    .map(RouteHandler::getRoute)
+                    .sorted()
+                    .collect(Collectors.joining(", ")));
   }
 }

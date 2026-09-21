@@ -348,6 +348,18 @@ read at all when it announces its length.
   }
 ```
 
+An annotation can only hardcode a value. To let the users of an application
+configure the limit of an endpoint, set it on the handler instead:
+
+```java
+  app.getHandler("POST", "/api/import").setMaxBodySize(settings.getMaxUpload());
+```
+
+`App.getHandler()` looks a handler up by HTTP method and route, and fails if
+there is none, so a typo in a configured route is reported rather than
+ignored. `App.getHandlers()` returns them all, to configure or introspect in
+bulk.
+
 The body can only be read once, whichever way it is read: `getInputStream()`,
 a `Form` argument and a JSON argument all consume it.
 

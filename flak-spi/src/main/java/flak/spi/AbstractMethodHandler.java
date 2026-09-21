@@ -4,6 +4,7 @@ import flak.Form;
 import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Query;
+import flak.RouteHandler;
 import flak.Request;
 import flak.Response;
 import flak.annotations.Compress;
@@ -49,7 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @SuppressWarnings("unchecked")
 public abstract class AbstractMethodHandler
-  implements Comparable<AbstractMethodHandler> {
+  implements RouteHandler, Comparable<AbstractMethodHandler> {
 
   public final AbstractApp app;
 
@@ -98,12 +99,13 @@ public abstract class AbstractMethodHandler
   protected int splatIndex = -1;
 
   /**
-   * The limit declared by @MaxBodySize on the method or its class, or null
-   * when the handler does not care and the app decides. Resolved at scan time
-   * but applied per request, so that setMaxBodySize() on the app still counts
-   * when it is called after the handlers are scanned.
+   * The limit declared by @MaxBodySize on the method or its class, or set
+   * with setMaxBodySize(), and null when the handler does not care and the
+   * app decides. Applied per request rather than resolved once, so that
+   * setMaxBodySize() on the app still counts when it is called after the
+   * handlers have been scanned.
    */
-  private final Long declaredMaxBodySize;
+  private Long maxBodySize;
 
   public AbstractMethodHandler(AbstractApp app,
                                String path,
@@ -119,7 +121,7 @@ public abstract class AbstractMethodHandler
       || m.getDeclaringClass().getAnnotation(Compress.class) != null;
     this.javaMethod = m;
     this.target = target;
-    this.declaredMaxBodySize = findMaxBodySize(m);
+    this.maxBodySize = findMaxBodySize(m);
 
     // hack for being able to call method even if not public or if the class
     // is not public
@@ -292,12 +294,14 @@ public abstract class AbstractMethodHandler
     return a == null ? null : a.value();
   }
 
-  /**
-   * The maximum body size this handler accepts: its own if it declared one,
-   * that of the app otherwise.
-   */
+  @Override
+  public void setMaxBodySize(long maxBodySize) {
+    this.maxBodySize = maxBodySize;
+  }
+
+  @Override
   public long getMaxBodySize() {
-    return declaredMaxBodySize == null ? app.getMaxBodySize() : declaredMaxBodySize;
+    return maxBodySize == null ? app.getMaxBodySize() : maxBodySize;
   }
 
   public Object execute(SPRequest req) throws Exception {

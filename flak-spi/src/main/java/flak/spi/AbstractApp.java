@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Vector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import flak.*;
@@ -242,6 +243,32 @@ public abstract class AbstractApp implements App {
    * generate an OpenAPI specification.
    */
   public abstract Stream<AbstractMethodHandler> getMethodHandlers();
+
+  @Override
+  public Stream<RouteHandler> getHandlers() {
+    return getMethodHandlers().map(h -> h);
+  }
+
+  @Override
+  public RouteHandler getHandler(String httpMethod, String route) {
+    String method = httpMethod.toUpperCase();
+
+    return getMethodHandlers().filter(h -> h.getHttpMethod().equals(method)
+                                           && h.getRoute().equals(route))
+                              .findFirst()
+                              .orElseThrow(() -> new NoSuchElementException(
+                                "No handler for " + method + " " + route +
+                                ". Routes of this app answering " + method + ": " +
+                                routesFor(method)));
+  }
+
+  private String routesFor(String httpMethod) {
+    String routes = getMethodHandlers().filter(h -> h.getHttpMethod().equals(httpMethod))
+                                       .map(AbstractMethodHandler::getRoute)
+                                       .sorted()
+                                       .collect(Collectors.joining(", "));
+    return routes.isEmpty() ? "none" : routes;
+  }
 
   @SuppressWarnings("unchecked")
   @Override
