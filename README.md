@@ -45,6 +45,7 @@ Flak components      | Description
          * [Custom arguments](#custom-arguments)
       * [Compression](#compression)
       * [Managing apps](#managing-apps)
+      * [Request bodies](#request-bodies)
       * [Plugins](#plugins)
       * [Backends](#backends)
       * [To be continued....](#to-be-continued)
@@ -262,6 +263,33 @@ one located at path `/app1` and another one at `/app2`.
 The idea is to create an [AppFactory](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/AppFactory.java)
 then call `createApp(String)` with two separate paths. Then you can add your
 route handlers and start them.
+
+### Request bodies
+
+The body of a request is streamed to the route handler: it is never held in
+memory as a whole, so a handler can pipe an upload of any size straight to
+its destination.
+
+Because a handler that does keep the body in memory should not be at the
+mercy of its client, the size is capped: 16MiB by default, changed for a
+whole app with `App.setMaxBodySize()`, and overridden per handler with the
+[@MaxBodySize](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/annotations/MaxBodySize.java)
+annotation. A request over the limit is rejected with 413, before its body is
+read at all when it announces its length.
+
+```java
+  @Route("/api/import")
+  @Post
+  @MaxBodySize(MaxBodySize.UNLIMITED)
+  public void upload(Request r) throws IOException {
+    try (OutputStream out = new FileOutputStream(file)) {
+      IO.pipe(r.getInputStream(), out, false);
+    }
+  }
+```
+
+The body can only be read once, whichever way it is read: `getInputStream()`,
+a `Form` argument and a JSON argument all consume it.
 
 ### Plugins
 

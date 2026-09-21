@@ -44,7 +44,7 @@ bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
   protected void initChannel(SocketChannel ch) {
     ch.pipeline()
       .addLast(new HttpServerCodec())
-      .addLast(new HttpObjectAggregator(65536))
+      .addLast(new HttpObjectAggregator(65536))            // for the ws handshake
       .addLast(new WebSocketServerProtocolHandler("/ws"))  // your websockets
       .addLast(new MyFrameHandler())
       .addLast("flak", factory.getServer().getHttpHandler());
@@ -61,6 +61,12 @@ app.start();
 `WebSocketServerProtocolHandler` answers the upgrade on its own path and passes
 every other request down the pipeline, where flak routes it as usual. Both
 protocols share one port.
+
+The `HttpObjectAggregator` above is what the websocket handshake needs, and it
+buffers every request body up to its limit. Flak does not need it: without it,
+request bodies are streamed to the route handlers and their size is capped by
+`@MaxBodySize` instead. Move it after the websocket handler, or leave it out,
+if the application also takes large uploads.
 
 In this mode the application owns the socket, so `setSSLContext()` is rejected:
 TLS belongs to the pipeline you build. Stopping the app releases the executor

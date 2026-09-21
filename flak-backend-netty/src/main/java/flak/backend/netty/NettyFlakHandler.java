@@ -15,24 +15,43 @@
  */
 package flak.backend.netty;
 
+import java.net.URI;
+
 import flak.spi.util.Log;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 
-import java.net.URI;
-
+/**
+ * Feeds the requests decoded by netty to flak.
+ * <p>
+ * The body is not waited for: the handler is dispatched as soon as the request
+ * line and the headers are in, and reads the body as it arrives. An
+ * HttpObjectAggregator in front of us is supported all the same, a
+ * FullHttpRequest being both the request and its single chunk of content, and
+ * is what the websocket handshake needs.
+ */
 @ChannelHandler.Sharable
-public class NettyFlakHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class NettyFlakHandler extends ChannelInboundHandlerAdapter {
+
+  /**
+   * The body of the request being served on a channel. A channel serves one
+   * request at a time: flak closes the connection with the response.
+   */
+  private static final AttributeKey<RequestBodyStream> BODY =
+    AttributeKey.valueOf(NettyFlakHandler.class, "body");
 
   private final NettyWebServer server;
 
@@ -41,27 +60,73 @@ public class NettyFlakHandler extends SimpleChannelInboundHandler<FullHttpReques
   }
 
   @Override
-  public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest req) {
+  public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    try {
+      if (msg instanceof HttpRequest)
+        begin(ctx, (HttpRequest) msg);
+
+      if (msg instanceof HttpContent) {
+        RequestBodyStream body = ctx.channel().attr(BODY).get();
+        if (body != null) {
+          body.offer(((HttpContent) msg).content());
+          if (msg instanceof LastHttpContent)
+            body.complete();
+        }
+      }
+    }
+    finally {
+      if (msg instanceof HttpContent)
+        ((HttpContent) msg).release();
+    }
+  }
+
+  private void begin(ChannelHandlerContext ctx, HttpRequest req) {
     if (HttpUtil.is100ContinueExpected(req)) {
+      // the aggregator used to answer this, we are on our own now
       ctx.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                                                     HttpResponseStatus.CONTINUE));
-      return;
     }
+
+    RequestBodyStream body = new RequestBodyStream(ctx.channel());
+    ctx.channel().attr(BODY).set(body);
 
     // route handlers may block, and a streamed response is written by the very
     // thread that runs them, so they cannot run on an event loop
-    req.retain();
     server.getExecutor().execute(() -> {
       try {
-        serve(ctx, req);
+        serve(ctx, req, body);
       }
       finally {
-        req.release();
+        // whatever the handler did or did not read must not be left behind
+        body.discard();
+        ctx.channel().attr(BODY).set(null);
       }
     });
   }
 
-  private void serve(ChannelHandlerContext ctx, FullHttpRequest req) {
+  @Override
+  public void channelInactive(ChannelHandlerContext ctx) {
+    failBody(ctx, new java.io.IOException("Connection closed"));
+  }
+
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    failBody(ctx, cause);
+    ctx.close();
+  }
+
+  /**
+   * Releases a handler blocked on a body that will not arrive.
+   */
+  private void failBody(ChannelHandlerContext ctx, Throwable cause) {
+    RequestBodyStream body = ctx.channel().attr(BODY).get();
+    if (body != null)
+      body.fail(cause);
+  }
+
+  private void serve(ChannelHandlerContext ctx,
+                     HttpRequest req,
+                     RequestBodyStream body) {
     URI uri;
     try {
       uri = URI.create(req.uri());
@@ -82,7 +147,8 @@ public class NettyFlakHandler extends SimpleChannelInboundHandler<FullHttpReques
     }
 
     String appRelativePath = path.substring(app.getPath().length());
-    NettyRequest r = new NettyRequest(app, ctx, req, appRelativePath, uri.getQuery());
+    NettyRequest r =
+      new NettyRequest(app, ctx, req, body, appRelativePath, uri.getQuery());
     String[] tokens = appRelativePath.split("/");
 
     try {
