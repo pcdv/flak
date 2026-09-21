@@ -19,7 +19,10 @@ import flak.Response;
 import flak.spi.SPRequest;
 import flak.spi.SPResponse;
 import flak.spi.util.BufferedOutputStream;
+import flak.annotations.MaxBodySize;
+import flak.HttpException;
 import flak.spi.util.IO;
+import flak.spi.util.LimitedInputStream;
 
 public class JdkRequest implements SPRequest, SPResponse {
 
@@ -38,6 +41,12 @@ public class JdkRequest implements SPRequest, SPResponse {
   private OutputStream outputStream;
 
   private Form form;
+  /**
+   * The limit that applies to this request, set by the handler serving it.
+   * Negative means no limit.
+   */
+  private long maxBodySize = MaxBodySize.UNLIMITED;
+
   private final HeaderList headers = new HeaderList();
   private int status;
   private boolean statusFlushed;
@@ -168,8 +177,33 @@ public class JdkRequest implements SPRequest, SPResponse {
   }
 
   public InputStream getInputStream() {
-    return exchange.getRequestBody();
+    return LimitedInputStream.limit(exchange.getRequestBody(), maxBodySize);
   }
+
+  /**
+   * Rejects the request straight away when it announces a body bigger than
+   * the handler accepts: no point reading megabytes only to refuse them.
+   */
+  @Override
+  public void setMaxBodySize(long maxBodySize) {
+    this.maxBodySize = maxBodySize;
+
+    if (maxBodySize >= 0) {
+      String len = getHeader("Content-Length");
+      if (len != null) {
+        try {
+          if (Long.parseLong(len.trim()) > maxBodySize)
+            throw new HttpException(413,
+                                    "Request body exceeds the maximum of " +
+                                    maxBodySize + " bytes");
+        }
+        catch (NumberFormatException ignored) {
+          // a malformed length is the body reader's problem, not ours
+        }
+      }
+    }
+  }
+
 
   // /////////// Response methods
 

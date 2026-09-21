@@ -44,6 +44,8 @@ public abstract class AbstractApp implements App {
 
   private final ThreadLocal<Request> localRequest = new ThreadLocal<>();
 
+  private long maxBodySize = DEFAULT_MAX_BODY_SIZE;
+
   public AbstractApp(String rootUrl) {
     this.rootUrl = rootUrl;
   }
@@ -211,6 +213,16 @@ public abstract class AbstractApp implements App {
         return extractor.extract(request);
       }
     });
+  }
+
+  @Override
+  public void setMaxBodySize(long maxBodySize) {
+    this.maxBodySize = maxBodySize;
+  }
+
+  @Override
+  public long getMaxBodySize() {
+    return maxBodySize;
   }
 
   public void addPlugin(FlakPlugin plugin) {
