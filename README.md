@@ -33,6 +33,8 @@ Flak components      | Description
 <!--ts-->
 * [Flak - A lightweight and modular web framework for Java](#flak---a-lightweight-and-modular-web-framework-for-java)
    * [Table of Contents](#table-of-contents)
+   * [New in 3.0](#new-in-30)
+      * [Migrating from 2.x](#migrating-from-2x)
    * [Getting started](#getting-started)
       * [Hello World](#hello-world)
       * [Route handlers](#route-handlers)
@@ -62,6 +64,64 @@ Flak components      | Description
 <!-- to update TOC:
  gh-md-toc --insert README.md
 -->
+
+## New in 3.0
+
+ * **Java 17** is required, and the netty backend is finished: it passes the
+   same test suite as the JDK one, serves HTTPS, and is published. See
+   [Backends](#backends).
+ * **Request bodies are streamed** to the route handlers instead of being read
+   into memory, and their size is capped per app or per handler. See
+   [Request bodies](#request-bodies).
+ * **Plugins can be listed explicitly** with `AppFactory.setPlugins()` rather
+   than only discovered in the classpath. See [Plugins](#plugins).
+ * `App.addCustomExtractor()` is part of the public API. See
+   [Custom arguments](#custom-arguments).
+ * Flak can serve its routes from a netty server the application owns, leaving
+   it free to serve websockets on the same port. See the
+   [netty backend](https://github.com/pcdv/flak/tree/master/flak-backend-netty).
+
+### Migrating from 2.x
+
+Applications should build and run unchanged, with these exceptions.
+
+**Java 17 or later.** The 2.x releases target Java 8 and remain available.
+
+**Request bodies are capped at 16MiB**, where the JDK backend had no limit at
+all. A handler that legitimately receives more has to say so:
+
+```java
+  @Route("/api/import")
+  @Post
+  @MaxBodySize(MaxBodySize.UNLIMITED)
+  public void upload(Request r) throws IOException { ... }
+```
+
+Use `App.setMaxBodySize()` to change the default for a whole app.
+
+**A request body can only be read once.** This was already true of the JDK
+backend; the netty one used to allow a second read.
+
+**404 and 500 responses now carry a short `text/plain` body** instead of being
+empty, so that a client can tell an error from an empty document.
+
+**A few classes moved.** They are internal, but some applications used them:
+
+2.x                                     | 3.0
+--------------------------------------- | ---
+`flak.backend.jdk.FormImpl`             | `flak.spi.FormImpl`, in `flak-spi`
+`flak.backend.jdk.BufferedOutputStream` | `flak.spi.util.BufferedOutputStream`, in `flak-spi`
+`flak.backend.jdk.RouteDumper`          | `flak.util.RouteDumper`, still in `flak-util`
+
+`flak-util` no longer depends on `flak-backend-jdk`, so `RouteDumper` now works
+with any backend.
+
+**For backend and plugin authors only:** `AppFactory` gained `setPlugins()` and
+`SPRequest` gained `setMaxBodySize()`, so an implementation of either outside
+the project needs those methods. `SPPlugin.install()` was added as a default
+method and is now where a plugin registers its extractors, called by
+`App.addPlugin()`. `AbstractApp.getMethodHandlers()` and
+`AbstractMethodHandler.processResponse()`/`isApplicable()` are public.
 
 ## Getting started
 
