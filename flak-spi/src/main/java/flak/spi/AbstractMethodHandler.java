@@ -10,6 +10,7 @@ import flak.annotations.Compress;
 import flak.annotations.Delete;
 import flak.annotations.Head;
 import flak.annotations.InputFormat;
+import flak.annotations.MaxBodySize;
 import flak.annotations.Options;
 import flak.annotations.OutputFormat;
 import flak.annotations.Patch;
@@ -96,6 +97,14 @@ public abstract class AbstractMethodHandler
 
   protected int splatIndex = -1;
 
+  /**
+   * The limit declared by @MaxBodySize on the method or its class, or null
+   * when the handler does not care and the app decides. Resolved at scan time
+   * but applied per request, so that setMaxBodySize() on the app still counts
+   * when it is called after the handlers are scanned.
+   */
+  private final Long declaredMaxBodySize;
+
   public AbstractMethodHandler(AbstractApp app,
                                String path,
                                String[] splitPath,
@@ -110,6 +119,7 @@ public abstract class AbstractMethodHandler
       || m.getDeclaringClass().getAnnotation(Compress.class) != null;
     this.javaMethod = m;
     this.target = target;
+    this.declaredMaxBodySize = findMaxBodySize(m);
 
     // hack for being able to call method even if not public or if the class
     // is not public
@@ -275,8 +285,24 @@ public abstract class AbstractMethodHandler
     return "GET";
   }
 
+  private static Long findMaxBodySize(Method m) {
+    MaxBodySize a = m.getAnnotation(MaxBodySize.class);
+    if (a == null)
+      a = m.getDeclaringClass().getAnnotation(MaxBodySize.class);
+    return a == null ? null : a.value();
+  }
+
+  /**
+   * The maximum body size this handler accepts: its own if it declared one,
+   * that of the app otherwise.
+   */
+  public long getMaxBodySize() {
+    return declaredMaxBodySize == null ? app.getMaxBodySize() : declaredMaxBodySize;
+  }
+
   public Object execute(SPRequest req) throws Exception {
     req.setHandler(javaMethod);
+    req.setMaxBodySize(getMaxBodySize());
 
     for (BeforeHook hook : beforeHooks) {
       hook.execute(req);

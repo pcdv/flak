@@ -8,6 +8,13 @@ import java.io.IOException;
 public interface App {
 
   /**
+   * The maximum size of a request body when nothing else is specified. Kept
+   * deliberately modest: a handler that accepts more says so explicitly, with
+   * {@link flak.annotations.MaxBodySize}.
+   */
+  long DEFAULT_MAX_BODY_SIZE = 16L * 1024 * 1024;
+
+  /**
    * Scans specified object for route handlers, i.e. public methods with @Route
    * annotation.
    *
@@ -69,6 +76,18 @@ public interface App {
   WebServer getServer();
 
   String absolutePath(String path);
+
+  /**
+   * Sets the maximum size, in bytes, of the request body accepted by the route
+   * handlers of this app, {@link flak.annotations.MaxBodySize#UNLIMITED} for
+   * no limit. A handler can override it with
+   * {@link flak.annotations.MaxBodySize}.
+   * <p>
+   * Defaults to {@link #DEFAULT_MAX_BODY_SIZE}.
+   */
+  void setMaxBodySize(long maxBodySize);
+
+  long getMaxBodySize();
 
   <T extends FlakPlugin> T getPlugin(Class<T> clazz);
 

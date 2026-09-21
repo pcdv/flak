@@ -8,6 +8,9 @@ import flak.spi.FormImpl;
 import flak.spi.SPRequest;
 import flak.spi.SPResponse;
 import flak.spi.util.BufferedOutputStream;
+import flak.annotations.MaxBodySize;
+import flak.HttpException;
+import flak.spi.util.LimitedInputStream;
 import flak.spi.util.Log;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
@@ -79,6 +82,12 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   private Method handler;
   private Form form;
+  /**
+   * The limit that applies to this request, set by the handler serving it.
+   * Negative means no limit.
+   */
+  private long maxBodySize = MaxBodySize.UNLIMITED;
+
 
   private final DefaultHttpHeaders headers = new DefaultHttpHeaders();
   private int status = HttpURLConnection.HTTP_OK;
@@ -169,8 +178,34 @@ public class NettyRequest implements SPRequest, SPResponse {
   @Override
   public InputStream getInputStream() {
     // duplicate so that reading the body does not consume it for getForm()
-    return new ByteBufInputStream(req.content().duplicate());
+    return LimitedInputStream.limit(new ByteBufInputStream(req.content().duplicate()),
+                                    maxBodySize);
   }
+
+  /**
+   * Rejects the request straight away when it announces a body bigger than
+   * the handler accepts: no point reading megabytes only to refuse them.
+   */
+  @Override
+  public void setMaxBodySize(long maxBodySize) {
+    this.maxBodySize = maxBodySize;
+
+    if (maxBodySize >= 0) {
+      String len = getHeader("Content-Length");
+      if (len != null) {
+        try {
+          if (Long.parseLong(len.trim()) > maxBodySize)
+            throw new HttpException(413,
+                                    "Request body exceeds the maximum of " +
+                                    maxBodySize + " bytes");
+        }
+        catch (NumberFormatException ignored) {
+          // a malformed length is the body reader's problem, not ours
+        }
+      }
+    }
+  }
+
 
   @Override
   public Form getForm() {
