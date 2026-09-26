@@ -96,7 +96,7 @@ public class JdkWebServer implements WebServer {
 
   /**
    * Shuts down the web sever.
-   * <p/>
+   * <p>
    * WARNING: with JDK6, HttpServer creates a zombie thread (blocked on a
    * sleep()). No problem with JDK 1.7.0_40.
    */
@@ -145,7 +145,7 @@ public class JdkWebServer implements WebServer {
 
     if (address == null)
       throw new IllegalStateException(
-        "Address not set. Call AppFactory.setHttpPort()");
+        "Address not set. Call AppFactory.setPort() or setLocalAddress()");
 
     this.srv = createServer();
     this.srv.setExecutor(executor);

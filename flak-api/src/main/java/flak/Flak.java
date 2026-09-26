@@ -11,7 +11,7 @@ public abstract class Flak {
    * Short for
    * <pre>
    * AppFactory factory = Flak.getFactory();
-   * factory.setHttpPort(port);
+   * factory.setPort(port);
    * app = factory.createApp();
    * </pre>
    */

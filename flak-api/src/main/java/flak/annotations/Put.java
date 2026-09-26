@@ -7,11 +7,8 @@ import java.lang.annotation.Target;
 
 /**
  * Indicates that the associated route handler is valid for PUT requests.
- * Instead of
- * <pre>
- *   &#64;Route(value="/some/path", method="PUT")
- * </pre>
- * you can use
+ * A route handler answers a single HTTP method: GET, unless one of these
+ * annotations says otherwise, e.g.
  * <pre>
  *   &#64;Put
  *   &#64;Route("/some/path")

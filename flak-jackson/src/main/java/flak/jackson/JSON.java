@@ -39,10 +39,10 @@ import java.lang.annotation.Target;
 public @interface JSON {
 
   /**
-   * Optional ID passed to ObjectMapper provider. Allows the Jackson plugin
-   * to return a different mapper for some requests.
+   * Optional ID of the ObjectMapper to use, for handlers that need other
+   * Jackson settings than the default mapper.
    *
-   * @see JacksonPlugin#setObjectMapperProvider(MapperProvider)
+   * @see JacksonPlugin#registerMapper(String, com.fasterxml.jackson.databind.ObjectMapper)
    */
   String value() default "";
 

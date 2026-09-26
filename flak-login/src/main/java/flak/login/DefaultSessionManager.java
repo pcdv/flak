@@ -239,7 +239,7 @@ public class DefaultSessionManager implements SessionManager {
    * Checks that the user is currently logged in. This is performed by looking
    * at the "sessionToken" cookie that has been set in session during last call
    * to openSession().
-   * <p/>
+   * <p>
    * If the user is logged in or if the URL being accessed is the login page,
    * the method simply returns true. Otherwise, if the path of the login page
    * has been set using @LoginPage or setLoginPage(), the user is redirected to

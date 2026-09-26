@@ -139,7 +139,8 @@ public abstract class AbstractApp implements App {
   }
 
   /**
-   * Adds a handler that will be notified whenever a request is rejected
+   * Adds a handler that will be notified whenever a route handler fails with
+   * an exception (500). Neither a 404 nor an HttpException is reported.
    */
   public void addErrorHandler(ErrorHandler hook) {
     errorHandlers.add(hook);

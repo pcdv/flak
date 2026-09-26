@@ -17,7 +17,10 @@ public interface Response {
   boolean hasResponseHeader(String name);
 
   /**
-   * Warning: must be called after addHeader().
+   * Sets the status of the response, 200 by default. Like the headers, it
+   * goes out with the first bytes of the body, after which it can no longer
+   * be changed: set both before writing anything big or flushing the output
+   * stream.
    *
    * @see java.net.HttpURLConnection
    */
