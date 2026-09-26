@@ -52,6 +52,14 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
     if (climbsUp(path))
       throw new HttpException(404, "Not found");
 
+    // a directory without its trailing slash is redirected to it, like its
+    // root is (see serveRoot()): otherwise the relative links of its
+    // index.html would resolve against its parent
+    if (!r.getPath().endsWith("/") && isDirectory(path)) {
+      redirectToDirectory(r);
+      return;
+    }
+
     InputStream in;
 
     OutputStream out = r.getResponse().getOutputStream();
@@ -84,6 +92,32 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
       out.write("Not found".getBytes());
       out.close();
     }
+  }
+
+  /**
+   * Serves the root of the resources, e.g. "/static" or "/static/": the
+   * former is redirected to the latter, which serves the index.html of the
+   * root. A route of its own, since the splat of doGet() needs at least one
+   * segment.
+   */
+  public void serveRoot(Request r) throws Exception {
+    if (r.getPath().endsWith("/"))
+      doGet(r, null);
+    else
+      redirectToDirectory(r);
+  }
+
+  private static void redirectToDirectory(Request r) {
+    String qs = r.getQueryString();
+    r.getResponse().redirect(r.getPath() + "/" + (qs == null ? "" : "?" + qs));
+  }
+
+  /**
+   * Tells whether specified path, relative to the root of the resources, is
+   * a directory. Only known for resources in the file system.
+   */
+  protected boolean isDirectory(String path) {
+    return false;
   }
 
   /**

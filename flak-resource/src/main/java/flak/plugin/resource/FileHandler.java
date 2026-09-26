@@ -24,8 +24,11 @@ public class FileHandler extends AbstractResourceHandler {
     this.localPath = localFile.toPath().toAbsolutePath().normalize();
   }
 
-  @Override
-  protected InputStream openPath(String p, SPResponse resp) throws IOException {
+  /**
+   * Resolves a path relative to the served directory, or returns null if it
+   * is invalid or lies outside of it.
+   */
+  private Path resolve(String p) {
     if (p.startsWith("/"))
       p = p.substring(1);
     Path file;
@@ -33,11 +36,23 @@ public class FileHandler extends AbstractResourceHandler {
       file = localPath.resolve(p).normalize();
     }
     catch (InvalidPathException e) {
-      throw new FileNotFoundException(p);
+      return null;
     }
     // besides "..", which is rejected upstream, an absolute path (e.g.
     // "/etc/passwd" or "C:/...") would make resolve() ignore the root
-    if (!file.startsWith(localPath))
+    return file.startsWith(localPath) ? file : null;
+  }
+
+  @Override
+  protected boolean isDirectory(String p) {
+    Path file = resolve(p);
+    return file != null && Files.isDirectory(file);
+  }
+
+  @Override
+  protected InputStream openPath(String p, SPResponse resp) throws IOException {
+    Path file = resolve(p);
+    if (file == null)
       throw new FileNotFoundException(p);
     try {
       if (Files.size(file) > CompressionHelper.COMPRESS_THRESHOLD)

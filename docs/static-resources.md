@@ -26,18 +26,11 @@ a directory only.
 ## What is served
 
 - `/ui/css/main.css` gives `webapp/css/main.css`, with a query string ignored.
-- A path ending with `/` gives the `index.html` of that directory, e.g.
-  `/ui/docs/` gives `webapp/docs/index.html`.
-- The root itself, `/ui` or `/ui/`, is not served. Add a route for it,
-  e.g. one that redirects to `/ui/index.html`:
-
-  ```java
-  @Route("/ui")
-  public void ui(Response r) {
-    r.redirect("/ui/index.html");
-  }
-  ```
-
+- A path ending with `/` gives the `index.html` of that directory: `/ui/`
+  gives `webapp/index.html`, and `/ui/docs/` gives `webapp/docs/index.html`.
+- `/ui` is redirected to `/ui/`, so that the relative links of the page
+  resolve against the right directory. With a directory served from the file
+  system, so is any subdirectory requested without its trailing slash.
 - A missing file gives a 404.
 - A path that climbs out of the served directory, with `..` or an absolute
   path, gives a 404.
@@ -84,8 +77,10 @@ resources.servePath("/ui", "/webapp", MyApp.class.getClassLoader(), false);
 
 ## Serving at the root
 
-`servePath("/", ...)` serves files at the root of the app. The routes of the
-app still take precedence. But a URL that matches neither a route nor a file
+`servePath("/", ...)` serves files at the root of the app, and its
+`index.html` at `/`. The routes of the app still take precedence, including
+a route at `/`, whether it was scanned before or after. But a URL that
+matches neither a route nor a file
 now gets the 404 of the resource handler, so it no longer reaches the
 [unknown page handler](errors-and-hooks.md#unknown-urls). Prefer a dedicated
 path, such as `/ui` or `/static`, when you can.
