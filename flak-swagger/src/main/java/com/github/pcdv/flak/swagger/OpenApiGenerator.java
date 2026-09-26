@@ -185,11 +185,12 @@ public class OpenApiGenerator {
 
   /**
    * Without the app, what reads and writes JSON is told by @JSON, on the
-   * method or on a parameter, as flak-jackson does.
+   * method, its class or a parameter, as flak-jackson does.
    */
   private static Endpoint endpoint(HandlerSpec spec) {
     Method m = spec.javaMethod();
-    boolean writesJson = m.isAnnotationPresent(JSON.class);
+    boolean writesJson = m.isAnnotationPresent(JSON.class)
+      || m.getDeclaringClass().isAnnotationPresent(JSON.class);
     boolean readsJson = writesJson || spec.parameters()
                                           .stream()
                                           .anyMatch(p -> p.javaParameter().isAnnotationPresent(JSON.class));
@@ -392,38 +393,78 @@ public class OpenApiGenerator {
   private void scanParameters(Endpoint e, Operation op) {
 
     for (RouteParameter p : e.parameters()) {
+      io.swagger.v3.oas.annotations.Parameter ann = parameterAnnotation(p);
+      if (ann != null && ann.hidden())
+        continue;
+
       if (p.kind() == RouteParameter.Kind.QUERY) {
         Schema<?> schema = getSchemaForType(p.type());
         if (p.defaultValue() != null)
           schema.setDefault(p.type() == String[].class
                             ? Collections.singletonList(p.defaultValue())
                             : p.defaultValue());
-        op.addParametersItem(new Parameter().in("query").name(p.name()).description(p.description()).schema(schema));
+        op.addParametersItem(annotate(new Parameter().in("query")
+                                                     .name(p.name())
+                                                     .description(p.description())
+                                                     .schema(schema),
+                                      p, ann));
       }
+      // e.g. a header read from the Request: the annotation says it all
+      else if (ann != null && p.kind() != RouteParameter.Kind.PATH)
+        op.addParametersItem(annotate(null, null, ann));
     }
 
     for (io.swagger.v3.oas.annotations.Parameter ann
       : TypeUtil.getAnnotations(e.method(), io.swagger.v3.oas.annotations.Parameter.class,
                                 Parameters.class, Parameters::value)) {
-      Type type = ParameterProcessor.getParameterType(ann, false);
-
-      Parameter param = ParameterProcessor.applyAnnotations(
-        null, type, Collections.singletonList(ann), api.getComponents(),
-        null, null, null
-      );
-      op.addParametersItem(param);
+      op.addParametersItem(annotate(null, null, ann));
     }
 
-    // complete with the variables of the route not declared with @Parameter
+    // complete with the variables of the route not declared on the method
     for (RouteParameter p : e.parameters()) {
       if (p.kind() == RouteParameter.Kind.PATH) {
         List<Parameter> parameters = op.getParameters();
         if (parameters == null || parameters.stream().noneMatch(d -> p.name().equals(d.getName()))) {
-          op.addParametersItem(new PathParameter().name(p.name()).schema(getSchemaForType(p.type())));
+          op.addParametersItem(annotate(new PathParameter().name(p.name())
+                                                           .schema(getSchemaForType(p.type())),
+                                        p, parameterAnnotation(p)));
         }
       }
     }
 
+  }
+
+  private static io.swagger.v3.oas.annotations.Parameter parameterAnnotation(RouteParameter p) {
+    return p.javaParameter().getAnnotation(io.swagger.v3.oas.annotations.Parameter.class);
+  }
+
+  /**
+   * Completes a parameter with what a @Parameter declares, e.g. its
+   * description. Its name, location and type need not be declared again
+   * when flak knows them.
+   *
+   * @param param the parameter as flak binds it, null if flak does not know it
+   * @param bound   what flak binds it to, null if flak does not know it
+   */
+  private Parameter annotate(Parameter param,
+                             RouteParameter bound,
+                             io.swagger.v3.oas.annotations.Parameter ann) {
+    if (ann == null)
+      return param;
+
+    Type type = bound == null
+      ? ParameterProcessor.getParameterType(ann, false)
+      : bound.javaParameter().getParameterizedType();
+    Schema<?> schema = param == null ? null : param.getSchema();
+
+    Parameter res = ParameterProcessor.applyAnnotations(param, type, Collections.singletonList(ann),
+                                                        api.getComponents(), null, null, null);
+
+    // swagger derives a schema from the type, which knows less than flak,
+    // e.g. the default value of a query parameter
+    if (schema != null && !AnnotationsUtils.hasSchemaAnnotation(ann.schema()))
+      res.setSchema(schema);
+    return res;
   }
 
   /**

@@ -42,6 +42,8 @@ public class JacksonPlugin implements SPPlugin {
     Method m = handler.getJavaMethod();
 
     JSON json = m.getAnnotation(JSON.class);
+    if (json == null)
+      json = m.getDeclaringClass().getAnnotation(JSON.class);
 
     if (json != null) {
       String id = json.value();

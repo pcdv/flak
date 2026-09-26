@@ -39,6 +39,8 @@ public Item update(String id, Item item) {
   }
   ```
 
+- On a class, `@JSON` applies to all the handlers the class declares, except
+  those annotated themselves, e.g. with another mapper.
 - `@JSON(inputClass = Item.class)` states the type to parse, when it cannot
   be taken from the parameter.
 - A `void` handler annotated with `@JSON` returns the JSON literal `null`.

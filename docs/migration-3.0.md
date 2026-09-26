@@ -13,7 +13,11 @@
   describe their parameters with `getParameters()`: path variables, query
   parameters, body. See [Routing](routing.md#listing-the-routes-of-an-app).
 - **The OpenAPI generator can describe a whole app**, and binds parameters
-  as Flak does. See [OpenAPI](#openapi).
+  as Flak does. A swagger `@Parameter` on a parameter completes what Flak
+  knows of it, without repeating its name, location or type. See
+  [OpenAPI](#openapi).
+- **`@JSON` can be put on a class**, for all its handlers. See
+  [JSON](json.md).
 - **Plugins can be listed explicitly** with `AppFactory.setPlugins()` rather
   than only discovered on the classpath. See [Plugins](plugins.md).
 - **`@QueryParam` supports more types**, `long`, `double`, `boolean`, their
@@ -232,6 +236,9 @@ which changes what it generates:
 - **Path variables have a type**, `string` or `integer`, and a splat is a
   path variable too: `/files/*path` becomes `/files/{path}`.
 - **Query parameters without a description** no longer get an empty one.
+- **A `@Parameter` on a parameter is no longer ignored**: its description,
+  `required`, example, etc. now reach the document. Only those on the method
+  used to.
 
 Query parameters of type `int` are described as `integer`; they used to be
 `int`, which OpenAPI does not define. Every type `@QueryParam` accepts is

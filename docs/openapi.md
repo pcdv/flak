@@ -37,7 +37,7 @@ else. Not knowing the app, it differs in three ways:
 
 - paths are written as in `@Route`, without the path of the app or the
   prefix given to `scan(obj, prefix)`
-- what is JSON is told by `@JSON`, on the method or on a parameter
+- what is JSON is told by `@JSON`, on the method, its class or a parameter
 - the custom extractors of the app are unknown, so a request body is only
   described for handlers reading JSON: the parameter with `@JSON`, or else
   the last parameter that could be a body
@@ -72,8 +72,14 @@ For each route handler, static resources excepted:
     `integer`
   - every [`@QueryParam`](arguments.md#query-parameters), with its type,
     default value and description
-  - those declared with `@Parameter`, which take precedence over a path
-    variable of the same name
+  - those declared with `@Parameter` on the method, which take precedence
+    over a path variable of the same name
+
+  A `@Parameter` on a parameter completes what Flak knows of it, without
+  repeating its name, location or type, e.g.
+  `@Parameter(required = true, example = "42") @QueryParam("id") String id`.
+  `@Parameter(hidden = true)` leaves it out. A description alone is shorter
+  with `@QueryParam(value = "id", description = "...")`.
 - **the request body**: what `@RequestBody` declares, or else the schema of
   the parameter [parsed from the body](arguments.md#objects-parsed-from-the-body),
   as `application/json` when it is read as JSON. A `Form` is not described.
