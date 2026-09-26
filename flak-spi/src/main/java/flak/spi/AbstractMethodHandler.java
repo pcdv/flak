@@ -402,19 +402,19 @@ public abstract class AbstractMethodHandler
     else {
       OutputStream out = r.getOutputStream();
       if (res instanceof String) {
-        r.setStatus(HttpURLConnection.HTTP_OK);
+        setOkUnlessSet(r);
         if (((String) res).length() > CompressionHelper.COMPRESS_THRESHOLD)
           out = CompressionHelper.maybeCompress(r);
         out.write(((String) res).getBytes(StandardCharsets.UTF_8));
       }
       else if (res instanceof byte[]) {
-        r.setStatus(HttpURLConnection.HTTP_OK);
+        setOkUnlessSet(r);
         if (((byte[]) res).length > CompressionHelper.COMPRESS_THRESHOLD)
           out = CompressionHelper.maybeCompress(r);
         out.write((byte[]) res);
       }
       else if (res instanceof InputStream) {
-        r.setStatus(HttpURLConnection.HTTP_OK);
+        setOkUnlessSet(r);
         out = CompressionHelper.maybeCompress(r);
         InputStream input = (InputStream) res;
         try {
@@ -435,6 +435,15 @@ public abstract class AbstractMethodHandler
           .toGenericString());
 
     }
+  }
+
+  /**
+   * A body goes out with 200, unless the handler chose another status, e.g. 201
+   * for a resource it created.
+   */
+  private static void setOkUnlessSet(SPResponse r) {
+    if (!r.isStatusSet())
+      r.setStatus(HttpURLConnection.HTTP_OK);
   }
 
   private static void close(Closeable c) {
