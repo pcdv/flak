@@ -1,6 +1,8 @@
 package flak.login;
 
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Hashtable;
@@ -241,7 +243,8 @@ public class DefaultSessionManager implements SessionManager {
    * If the user is logged in or if the URL being accessed is the login page,
    * the method simply returns true. Otherwise, if the path of the login page
    * has been set using @LoginPage or setLoginPage(), the user is redirected to
-   * it. Otherwise, a 401 error is returned.
+   * it, with the URL that was requested in parameter "url", query string
+   * included. Otherwise, a 401 error is returned.
    */
   public boolean checkLoggedIn(Request r) {
     if (isLoggedIn(r)) {
@@ -249,9 +252,11 @@ public class DefaultSessionManager implements SessionManager {
     }
     else {
       if (loginPage != null) {
-        if (r.getPath().equals(loginPage))
+        if (r.getPath().equals(stripQuery(loginPage)))
           return true;
-        r.getResponse().redirect(loginPage + "?url=" + r.getPath());
+        r.getResponse().redirect(loginPage + (loginPage.contains("?") ? "&" : "?")
+                                 + "url=" + URLEncoder.encode(requestedUrl(r),
+                                                              StandardCharsets.UTF_8));
       }
       else {
         Log.debug("Unauthorized (not logged in): " + r.getPath());
@@ -259,6 +264,21 @@ public class DefaultSessionManager implements SessionManager {
       }
       return false;
     }
+  }
+
+  /**
+   * What the user asked for, relative to the app, which the login page
+   * receives in its "url" parameter so as to redirect there once the user is
+   * logged in.
+   */
+  private static String requestedUrl(Request r) {
+    String qs = r.getQueryString();
+    return qs == null || qs.isEmpty() ? r.getPath() : r.getPath() + "?" + qs;
+  }
+
+  private static String stripQuery(String path) {
+    int pos = path.indexOf('?');
+    return pos == -1 ? path : path.substring(0, pos);
   }
 
   public FlakUser createUser(String login) {
