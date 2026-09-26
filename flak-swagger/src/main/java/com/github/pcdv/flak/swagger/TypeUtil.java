@@ -1,8 +1,6 @@
 package com.github.pcdv.flak.swagger;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import flak.spi.AbstractMethodHandler;
-import io.swagger.v3.oas.models.PathItem;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -23,14 +21,6 @@ public class TypeUtil {
     else if (returnType == void.class)
       return "N/A";
     return null;
-  }
-
-  /**
-   * The HTTP method of a route handler, decided exactly as flak does when it
-   * binds the handler, @Head included.
-   */
-  public static PathItem.HttpMethod getHttpMethod(Method m) {
-    return PathItem.HttpMethod.valueOf(AbstractMethodHandler.getHttpMethod(m));
   }
 
   /**

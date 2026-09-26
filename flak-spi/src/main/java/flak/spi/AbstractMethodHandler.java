@@ -5,19 +5,9 @@ import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Query;
 import flak.RouteHandler;
+import flak.RouteParameter;
 import flak.Request;
 import flak.Response;
-import flak.annotations.Compress;
-import flak.annotations.Delete;
-import flak.annotations.Head;
-import flak.annotations.InputFormat;
-import flak.annotations.MaxBodySize;
-import flak.annotations.Options;
-import flak.annotations.OutputFormat;
-import flak.annotations.Patch;
-import flak.annotations.Post;
-import flak.annotations.Put;
-import flak.annotations.QueryParam;
 import flak.spi.extractor.IntExtractor;
 import flak.spi.extractor.ParsedInputExtractor;
 import flak.spi.extractor.RequestExtractor;
@@ -35,12 +25,12 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handles a request submitted by the Context, if compatible with the HTTP
@@ -69,6 +59,11 @@ public abstract class AbstractMethodHandler
    * The method to invoke to process requests.
    */
   protected final Method javaMethod;
+
+  /**
+   * What each parameter of the method is bound to.
+   */
+  private final List<RouteParameter> parameters;
 
   /**
    * The object to invoke method on (i.e. the actual handler).
@@ -112,32 +107,36 @@ public abstract class AbstractMethodHandler
    */
   private volatile boolean fallback;
 
+  /**
+   * @param path      the route, as the backend sees it
+   * @param splitPath the part of the route the handler matches, split, e.g.
+   *                  [ ":name", "foo" ]
+   * @param spec      what the handler is made of
+   */
   public AbstractMethodHandler(AbstractApp app,
                                String path,
                                String[] splitPath,
-                               Method m,
+                               HandlerSpec spec,
                                Object target) {
     this.app = app;
     this.path = path;
     this.splitPath = splitPath;
-    this.httpMethod = getHttpMethod(m);
-    this.outputFormat = getOutputFormat(m);
-    this.allowCompress = m.getAnnotation(Compress.class) != null
-      || m.getDeclaringClass().getAnnotation(Compress.class) != null;
-    this.javaMethod = m;
+    this.httpMethod = spec.httpMethod();
+    this.outputFormat = spec.outputFormatter();
+    this.inputParser = spec.inputParser();
+    this.allowCompress = spec.compress();
+    this.javaMethod = spec.javaMethod();
+    this.parameters = spec.parameters();
     this.target = target;
-    this.maxBodySize = findMaxBodySize(m);
+    this.maxBodySize = spec.maxBodySize();
 
     // hack for being able to call method even if not public or if the class
     // is not public
-    m.setAccessible(true);
+    javaMethod.setAccessible(true);
   }
 
   public void init() {
-    if (inputParser == null)
-      inputParser = initInputParser();
-
-    extractors = createExtractors(javaMethod);
+    extractors = createExtractors();
 
     if (isNotBasic(javaMethod.getReturnType()) && outputFormat == null) {
       throw new IllegalArgumentException(
@@ -145,108 +144,82 @@ public abstract class AbstractMethodHandler
     }
   }
 
-  protected ArgExtractor<?>[] createExtractors(Method m) {
-    int[] idx = calcIndexes(splitPath);
-    Parameter[] parameters = m.getParameters();
-    ArgExtractor<?>[] extractors = new ArgExtractor[parameters.length];
-    AtomicInteger index = new AtomicInteger();
-    for (int i = 0; i < parameters.length; i++) {
-      extractors[i] = createExtractor(m, parameters[i], i, index, idx);
-    }
-    if (index.get() < idx.length) {
-      throw new IllegalArgumentException("Not enough method parameters");
+  protected ArgExtractor<?>[] createExtractors() {
+    Map<String, Integer> tokens = variableTokens();
+    ArgExtractor<?>[] extractors = new ArgExtractor[parameters.size()];
+    for (int i = 0; i < extractors.length; i++) {
+      extractors[i] = createExtractor(parameters.get(i), i, tokens);
     }
     return extractors;
   }
 
-  private int[] calcIndexes(String[] tok) {
-    int[] res = new int[tok.length];
-    int j = 0;
-    for (int i = 0; i < tok.length; i++) {
-      if (tok[i].charAt(0) == ':') {
-        if (splatIndex != -1)
+  /**
+   * The index of each variable in the split path, by name, e.g. { name: 0 }
+   * for [ ":name", "foo" ].
+   */
+  private Map<String, Integer> variableTokens() {
+    Map<String, Integer> res = new HashMap<>();
+    for (int i = 0; i < splitPath.length; i++) {
+      char c = splitPath[i].charAt(0);
+      if (c == ':' || c == '*') {
+        // nothing after the splat, which takes the rest of the path
+        if (splatIndex != -1 || (c == '*' && i != splitPath.length - 1))
           throw new IllegalArgumentException("Invalid route: " + path);
-        res[j++] = i;
-      }
-      if (tok[i].charAt(0) == '*') {
-        if (i != tok.length - 1)
-          throw new IllegalArgumentException("Invalid route: " + path);
-        res[j++] = i;
-        splatIndex = i;
+        if (c == '*')
+          splatIndex = i;
+        if (res.put(splitPath[i].substring(1), i) != null)
+          throw new IllegalArgumentException("Invalid route, a variable is repeated: " + path);
       }
     }
-    return Arrays.copyOf(res, j);
+    return res;
   }
 
   /**
-   * @param param the method parameter
-   * @param i    the extractor's index (i.e. index of argument in method)
-   * @param idx  indexes of variables in split URI, e.g. { 1 } to extract "world"
-   *             from /hello/:name
+   * @param param  the method parameter, and what it is bound to
+   * @param i      the extractor's index (i.e. index of argument in method)
+   * @param tokens the index of each variable in the split path
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  protected ArgExtractor<?> createExtractor(Method m,
-                                            Parameter param,
+  protected ArgExtractor<?> createExtractor(RouteParameter param,
                                             int i,
-                                            AtomicInteger urlParam,
-                                            int[] idx) {
-    Class<?> type = param.getType();
-    ArgExtractor<?> ex = app.getCustomExtractor(m, type);
-    if (ex != null)
-      return ex;
+                                            Map<String, Integer> tokens) {
+    Class<?> type = param.type();
 
-    QueryParam annotation = param.getAnnotation(QueryParam.class);
-    if (annotation != null)
-      return QueryExtractor.from(annotation, param, i);
+    switch (param.kind()) {
+      case QUERY:
+        return QueryExtractor.from(param, i);
 
-    if (type == Request.class) {
-      return new RequestExtractor(i);
-    }
-    else if (type == Response.class) {
-      return new ResponseExtractor(app, i);
-    }
-    else if (type == String.class) {
-      if (urlParam.get() >= idx.length) {
-        throw new IllegalArgumentException("Too many method parameters");
-      }
-      int tokenIndex = idx[urlParam.getAndIncrement()];
-      if (splatIndex == tokenIndex)
-        return new SplatExtractor(i, path);
-      else
-        return new StringExtractor(i, tokenIndex);
-    }
-    else if (type == int.class) {
-      return new IntExtractor(i, idx[urlParam.getAndIncrement()]);
-    }
-    else {
-      InputParser<?> inputParser;
-      if (type == Form.class) {
-        inputParser = new FormParser();
-      }
-      else if (type == Query.class) {
-        inputParser = new QueryParser();
-      }
-      else
-        inputParser = this.inputParser;
+      case PATH:
+        Integer token = tokens.get(param.name());
+        if (token == null)
+          throw new IllegalArgumentException("No variable " + param.name() + " in route " + path);
+        if (type == int.class)
+          return new IntExtractor(i, token);
+        if (token == splatIndex)
+          return new SplatExtractor(i, path);
+        return new StringExtractor(i, token);
 
-      if (inputParser == null)
-        throw new IllegalArgumentException(
-          "No @InputFormat or @JSON found around method " + m.getName() + "()");
+      case BODY:
+        if (type == Form.class)
+          return new ParsedInputExtractor(i, new FormParser(), type);
+        if (inputParser == null)
+          throw new IllegalArgumentException(
+            "No @InputFormat or @JSON found around method " + javaMethod.getName() + "()");
+        return new ParsedInputExtractor(i, inputParser, type);
 
-      return new ParsedInputExtractor(i, inputParser, type);
+      default:
+        ArgExtractor<?> ex = app.getCustomExtractor(javaMethod, type);
+        if (ex != null)
+          return ex;
+        if (type == Request.class)
+          return new RequestExtractor(i);
+        if (type == Response.class)
+          return new ResponseExtractor(app, i);
+        if (type == Query.class)
+          return new ParsedInputExtractor(i, new QueryParser(), type);
+        throw new IllegalArgumentException("Cannot bind parameter " + param.javaParameter()
+                                           + " of method " + javaMethod.getName() + "()");
     }
-  }
-
-  private OutputFormatter<?> getOutputFormat(Method m) {
-    OutputFormat output = m.getAnnotation(OutputFormat.class);
-    if (output != null) {
-      OutputFormatter<?> format = app.getOutputFormatter(output.value());
-      if (format == null)
-        throw new IllegalArgumentException("In method " + m.getName() + ": unknown output format: " + output.value());
-      return format;
-    }
-
-    return null;
   }
 
   public void addHook(BeforeHook hook) {
@@ -261,42 +234,20 @@ public abstract class AbstractMethodHandler
     this.outputFormat = outputFormatter;
   }
 
+  /**
+   * What converts the values returned by the method, null if it returns one
+   * of the basic types.
+   */
+  public OutputFormatter<?> getOutputFormatter() {
+    return outputFormat;
+  }
+
   public void setInputParser(InputParser<?> inputParser) {
     this.inputParser = inputParser;
   }
 
   public static boolean isNotBasic(Class<?> type) {
     return type != String.class && type != byte[].class && type != InputStream.class && type != Response.class && type != void.class;
-  }
-
-  private InputParser<?> initInputParser() {
-    InputFormat input = javaMethod.getAnnotation(InputFormat.class);
-    if (input != null)
-      return app.getInputParser(input.value());
-    return null;
-  }
-
-  public static String getHttpMethod(Method m) {
-    if (m.getAnnotation(Post.class) != null)
-      return "POST";
-    if (m.getAnnotation(Put.class) != null)
-      return "PUT";
-    if (m.getAnnotation(Patch.class) != null)
-      return "PATCH";
-    if (m.getAnnotation(Head.class) != null)
-      return "HEAD";
-    if (m.getAnnotation(Delete.class) != null)
-      return "DELETE";
-    if (m.getAnnotation(Options.class) != null)
-      return "OPTIONS";
-    return "GET";
-  }
-
-  private static Long findMaxBodySize(Method m) {
-    MaxBodySize a = m.getAnnotation(MaxBodySize.class);
-    if (a == null)
-      a = m.getDeclaringClass().getAnnotation(MaxBodySize.class);
-    return a == null ? null : a.value();
   }
 
   @Override
@@ -372,6 +323,11 @@ public abstract class AbstractMethodHandler
 
   public Method getJavaMethod() {
     return javaMethod;
+  }
+
+  @Override
+  public List<RouteParameter> getParameters() {
+    return parameters;
   }
 
   public AbstractApp getApp() {

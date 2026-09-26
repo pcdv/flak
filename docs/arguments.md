@@ -174,8 +174,7 @@ app.addInputParser("CSV", (req, type) -> Csv.read(req.getInputStream(), type));
 public String importItems(ItemList items) { ... }
 ```
 
-Register the parser before scanning the handlers that name it, and put the
-body parameter last.
+Register the parser before scanning the handlers that name it.
 
 Without a parser, a parameter of a type Flak does not know makes `scan()`
 fail with "No @InputFormat or @JSON found".

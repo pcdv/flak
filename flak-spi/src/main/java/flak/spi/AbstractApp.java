@@ -148,8 +148,20 @@ public abstract class AbstractApp implements App {
     return this;
   }
 
+  /**
+   * Adds a handler for specified method, described by its Flak annotations,
+   * e.g. @Post, @QueryParam.
+   */
   public AbstractMethodHandler addHandler0(String route, Method method, Object obj) {
-    AbstractMethodHandler handler = addHandler(route, method, obj);
+    return addHandler0(FlakAnnotations.read(this, route, method), obj);
+  }
+
+  /**
+   * Adds a handler described by specified spec, which need not come from
+   * Flak's annotations.
+   */
+  public AbstractMethodHandler addHandler0(HandlerSpec spec, Object obj) {
+    AbstractMethodHandler handler = addHandler(spec, obj);
     for (SPPlugin plugin : plugins) {
       plugin.preInit(handler);
     }
@@ -157,9 +169,10 @@ public abstract class AbstractApp implements App {
     return handler;
   }
 
-  protected abstract AbstractMethodHandler addHandler(String route,
-                                                      Method method,
-                                                      Object obj);
+  /**
+   * Creates the handler and registers it in the backend.
+   */
+  protected abstract AbstractMethodHandler addHandler(HandlerSpec spec, Object obj);
 
   public App addOutputFormatter(String name, OutputFormatter<?> conv) {
     outputFormatterMap.put(name, conv);

@@ -3,13 +3,15 @@ package com.github.pcdv.flak.swagger;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import flak.annotations.Delete;
-import flak.annotations.Patch;
-import flak.annotations.Post;
-import flak.annotations.Put;
-import flak.annotations.QueryParam;
-import flak.annotations.Route;
-import flak.jackson.JSON;
+import flak.App;
+import flak.Form;
+import flak.RouteParameter;
+import flak.jackson.JsonInputMapper;
+import flak.jackson.JsonInputReader;
+import flak.jackson.JsonOutputFormatter;
+import flak.spi.AbstractApp;
+import flak.spi.AbstractMethodHandler;
+import flak.spi.resource.AbstractResourceHandler;
 import flak.spi.util.IO;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.jackson.ModelResolver;
@@ -41,7 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -49,12 +51,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Open Api Specification (OAS) generator.
  * It creates an OpenAPI object that can be obtained with getAPI() and extended (e.g.
  * info, servers, ...)
- * Call {@link #scan(Class)} to scan Flak handlers and populate API paths, and
+ * Call {@link #scan(App)} to describe the route handlers of an app, and
  * {@link #scanSchema(Class)} to register schemas that may be missing in resources
  * (don't forget to call {@link #setObjectMapper(ObjectMapper)} before, so that all
  * Jackson settings are taken into account).
@@ -94,22 +97,32 @@ public class OpenApiGenerator {
   }
 
   /**
-   * Introspects specified class to populate paths.
+   * Describes the route handlers of specified app, at their full path, i.e.
+   * prefixed with the path of the app. Static resources are left out.
    */
-  public OpenApiGenerator scan(Class<?> clazz) {
-    Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags
-      = AnnotationsUtils.getTags(clazz.getAnnotationsByType(Tag.class), false);
+  public OpenApiGenerator scan(App app) {
+    // by class, then by method name, so that the output does not depend on
+    // the order in which the app holds its handlers
+    Map<Class<?>, List<AbstractMethodHandler>> byClass =
+      new TreeMap<>(Comparator.comparing(Class::getName));
 
-    addTags(tags);
+    ((AbstractApp) app).getMethodHandlers()
+                       .filter(h -> !(h.getTarget() instanceof AbstractResourceHandler))
+                       .forEach(h -> byClass.computeIfAbsent(h.getJavaMethod().getDeclaringClass(),
+                                                             c -> new ArrayList<>())
+                                            .add(h));
 
-    Arrays.stream(clazz.getDeclaredMethods())
-          .sorted(Comparator.comparing(Method::getName))
-          .forEach(
-            m -> {
-              Route route = m.getAnnotation(Route.class);
-              if (route != null)
-                scanMethod(m, route, tags);
-            });
+    byClass.forEach((clazz, handlers) -> {
+      Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags
+        = AnnotationsUtils.getTags(clazz.getAnnotationsByType(Tag.class), false);
+
+      addTags(tags);
+
+      handlers.stream()
+              .sorted(Comparator.comparing((AbstractMethodHandler h) -> h.getJavaMethod().getName())
+                                .thenComparing(AbstractMethodHandler::getHttpMethod))
+              .forEach(h -> scanHandler(app, h, tags));
+    });
     return this;
   }
 
@@ -123,7 +136,10 @@ public class OpenApiGenerator {
     }
   }
 
-  private void scanMethod(Method m, Route route, Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags) {
+  private void scanHandler(App app,
+                           AbstractMethodHandler h,
+                           Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags) {
+    Method m = h.getJavaMethod();
     Optional<Set<io.swagger.v3.oas.models.tags.Tag>> methodTags
       = AnnotationsUtils.getTags(m.getAnnotationsByType(Tag.class), false);
 
@@ -134,8 +150,8 @@ public class OpenApiGenerator {
     scanSchema(m.getReturnType());
 
     Operation op = new Operation().operationId(m.getName());
-    op.responses(scanResponses(m));
-    scanParameters(m, op, route);
+    op.responses(scanResponses(h));
+    scanParameters(h, op);
 
     io.swagger.v3.oas.annotations.Operation ope = m.getAnnotation(io.swagger.v3.oas.annotations.Operation.class);
     if (ope != null) {
@@ -143,12 +159,9 @@ public class OpenApiGenerator {
                                  ope.description())).summary(ope.summary());
     }
 
-    if (m.isAnnotationPresent(Post.class) || m.isAnnotationPresent(Delete.class)
-      || m.isAnnotationPresent(Put.class) || m.isAnnotationPresent(Patch.class)) {
-      op.requestBody(requestBody(m));
-    }
+    op.requestBody(requestBody(h));
 
-    String endpoint = convertPath(route.value());
+    String endpoint = convertPath(app.getPath() + h.getRoute());
     PathItem path = api.getPaths().get(endpoint);
     if (path == null) {
       path = new PathItem();
@@ -163,7 +176,7 @@ public class OpenApiGenerator {
     }
     else
       op.addTagsItem(m.getDeclaringClass().getSimpleName());
-    path.operation(TypeUtil.getHttpMethod(m), op);
+    path.operation(PathItem.HttpMethod.valueOf(h.getHttpMethod()), op);
   }
 
   private static String convertDesc(ClassLoader loader, String description) {
@@ -180,56 +193,72 @@ public class OpenApiGenerator {
     return description;
   }
 
-  private RequestBody requestBody(Method m) {
+  private RequestBody requestBody(AbstractMethodHandler h) {
     io.swagger.v3.oas.annotations.parameters.RequestBody reqBody
-      = m.getAnnotation(io.swagger.v3.oas.annotations.parameters.RequestBody.class);
+      = h.getJavaMethod().getAnnotation(io.swagger.v3.oas.annotations.parameters.RequestBody.class);
 
     if (reqBody == null) {
-      return defaultRequestBody(m);
+      return defaultRequestBody(h);
     }
 
     Content content = new Content();
     for (io.swagger.v3.oas.annotations.media.Content c : reqBody.content()) {
-      fillContent(c, content, m);
+      fillContent(c, content, readsJson(h));
     }
     return new RequestBody()
       .content(content).description(reqBody.description()).required(reqBody.required());
   }
 
   /**
-   * Guesses the request body by looking at method parameters and JSON annotation.
+   * The body the handler reads, if any, with the schema of its type.
    */
-  private RequestBody defaultRequestBody(Method m) {
-    Class<?>[] params = m.getParameterTypes();
-    if (params.length > 0 && m.getAnnotation(JSON.class) != null) {
-      // right now, the "body" parameter needs to be last
-      Class<?> lastParam = params[params.length - 1];
-      if (!lastParam.getName().startsWith("java.")) {
-        scanSchema(lastParam);
-        String ref = "#/components/schemas/" + lastParam.getSimpleName();
-        return new RequestBody().content
-                                  (new Content().addMediaType("application/json",
-                                                              new MediaType().schema(new Schema<>().$ref(
-                                                                ref))));
-      }
+  private RequestBody defaultRequestBody(AbstractMethodHandler h) {
+    RouteParameter body = h.getParameters()
+                           .stream()
+                           .filter(p -> p.kind() == RouteParameter.Kind.BODY)
+                           .findFirst()
+                           .orElse(null);
+
+    // NB: forms are not described
+    if (body == null || body.type() == Form.class)
+      return null;
+
+    Class<?> type = body.type();
+    Schema<?> schema = new Schema<>();
+    if (!type.getName().startsWith("java.")) {
+      scanSchema(type);
+      schema.$ref("#/components/schemas/" + type.getSimpleName());
     }
-    return null;
+
+    return new RequestBody().content(
+      new Content().addMediaType(readsJson(h) ? "application/json" : "*/*",
+                                 new MediaType().schema(schema)));
+  }
+
+  private static boolean readsJson(AbstractMethodHandler h) {
+    return h.getInputParser() instanceof JsonInputReader
+      || h.getInputParser() instanceof JsonInputMapper;
+  }
+
+  private static boolean writesJson(AbstractMethodHandler h) {
+    return h.getOutputFormatter() instanceof JsonOutputFormatter;
   }
 
   private void fillContent(io.swagger.v3.oas.annotations.media.Content annContent,
                            Content content,
-                           Method m) {
+                           boolean json) {
     content.addMediaType
-             (m.isAnnotationPresent(JSON.class) ? "application/json" : annContent.mediaType(),
+             (json ? "application/json" : annContent.mediaType(),
               new MediaType().schema(new Schema<>().$ref(annContent.schema().ref())));
   }
 
-  private ApiResponses scanResponses(Method m) {
-    ApiResponses responses = scanDeclaredResponses(m);
-    return responses == null ? buildDefaultResponses(m) : responses;
+  private ApiResponses scanResponses(AbstractMethodHandler h) {
+    ApiResponses responses = scanDeclaredResponses(h);
+    return responses == null ? buildDefaultResponses(h) : responses;
   }
 
-  private ApiResponses buildDefaultResponses(Method m) {
+  private ApiResponses buildDefaultResponses(AbstractMethodHandler h) {
+    Method m = h.getJavaMethod();
 
     if (m.getReturnType() == void.class)
       return null;
@@ -248,7 +277,7 @@ public class OpenApiGenerator {
     }
 
     Content content = new Content();
-    if (m.getAnnotation(JSON.class) != null)
+    if (writesJson(h))
       content.addMediaType("application/json", mt);
     else
       content.addMediaType("*/*", mt);
@@ -258,50 +287,49 @@ public class OpenApiGenerator {
     return resp;
   }
 
-  private ApiResponses scanDeclaredResponses(Method m) {
+  private ApiResponses scanDeclaredResponses(AbstractMethodHandler h) {
     ApiResponses responses = new ApiResponses();
     for (io.swagger.v3.oas.annotations.responses.ApiResponse a
-      : TypeUtil.getAnnotations(m,
+      : TypeUtil.getAnnotations(h.getJavaMethod(),
                                 io.swagger.v3.oas.annotations.responses.ApiResponse.class,
                                 io.swagger.v3.oas.annotations.responses.ApiResponses.class,
                                 io.swagger.v3.oas.annotations.responses.ApiResponses::value)) {
 
-      responses.addApiResponse(a.responseCode(), apiResponse(a, m));
+      responses.addApiResponse(a.responseCode(), apiResponse(a, writesJson(h)));
     }
 
     return !responses.isEmpty() ? responses : null;
   }
 
   private ApiResponse apiResponse(io.swagger.v3.oas.annotations.responses.ApiResponse r,
-                                  Method m) {
+                                  boolean json) {
     ApiResponse resp = new ApiResponse();
 
     Content content = new Content();
     io.swagger.v3.oas.annotations.media.Content[] annContent = r.content();
     for (io.swagger.v3.oas.annotations.media.Content c : annContent) {
-      fillContent(c, content, m);
+      fillContent(c, content, json);
     }
     resp.content(content);
     resp.description(r.description());
     return resp;
   }
 
-  private void scanParameters(Method m, Operation op, Route route) {
+  private void scanParameters(AbstractMethodHandler h, Operation op) {
 
-    for (java.lang.reflect.Parameter param : m.getParameters()) {
-      QueryParam qp = param.getAnnotation(QueryParam.class);
-      if (qp != null) {
-        Schema<?> schema = getSchemaForType(param.getType());
-        if (!QueryParam.NO_DEFAULT.equals(qp.defaultValue()))
-          schema.setDefault(param.getType() == String[].class
-                            ? Collections.singletonList(qp.defaultValue())
-                            : qp.defaultValue());
-        op.addParametersItem(new Parameter().in("query").name(qp.value()).description(qp.description()).schema(schema));
+    for (RouteParameter p : h.getParameters()) {
+      if (p.kind() == RouteParameter.Kind.QUERY) {
+        Schema<?> schema = getSchemaForType(p.type());
+        if (p.defaultValue() != null)
+          schema.setDefault(p.type() == String[].class
+                            ? Collections.singletonList(p.defaultValue())
+                            : p.defaultValue());
+        op.addParametersItem(new Parameter().in("query").name(p.name()).description(p.description()).schema(schema));
       }
     }
 
     for (io.swagger.v3.oas.annotations.Parameter ann
-      : TypeUtil.getAnnotations(m, io.swagger.v3.oas.annotations.Parameter.class,
+      : TypeUtil.getAnnotations(h.getJavaMethod(), io.swagger.v3.oas.annotations.Parameter.class,
                                 Parameters.class, Parameters::value)) {
       Type type = ParameterProcessor.getParameterType(ann, false);
 
@@ -312,13 +340,12 @@ public class OpenApiGenerator {
       op.addParametersItem(param);
     }
 
-    // complete path parameters with the ones found in route
-    for (String s : route.value().split("/")) {
-      if (s.startsWith(":")) {
-        String param = s.substring(1);
+    // complete with the variables of the route not declared with @Parameter
+    for (RouteParameter p : h.getParameters()) {
+      if (p.kind() == RouteParameter.Kind.PATH) {
         List<Parameter> parameters = op.getParameters();
-        if (parameters == null || parameters.stream().noneMatch(p -> param.equals(p.getName()))) {
-          op.addParametersItem(new PathParameter().name(param));
+        if (parameters == null || parameters.stream().noneMatch(d -> p.name().equals(d.getName()))) {
+          op.addParametersItem(new PathParameter().name(p.name()).schema(getSchemaForType(p.type())));
         }
       }
     }
@@ -326,8 +353,8 @@ public class OpenApiGenerator {
   }
 
   /**
-   * The schema of a query parameter, for each type that {@link QueryParam}
-   * supports.
+   * The schema of a query or path parameter, for each type that flak
+   * supports there.
    */
   private static Schema<?> getSchemaForType(Class<?> type) {
     if (type == String.class)
@@ -352,10 +379,14 @@ public class OpenApiGenerator {
     return new Schema<>();
   }
 
+  /**
+   * Converts the variables of a route to OpenAPI syntax: /items/:id becomes
+   * /items/{id}, and so does a splat, e.g. /files/*path.
+   */
   private String convertPath(String endpoint) {
     if (removePrefix != null && endpoint.startsWith(removePrefix))
       endpoint = endpoint.substring(removePrefix.length());
-    return endpoint.replaceAll(":([A-Za-z0-9_]+)", "{$1}");
+    return endpoint.replaceAll("[:*]([A-Za-z0-9_]+)", "{$1}");
   }
 
   /**

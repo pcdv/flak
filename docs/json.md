@@ -24,10 +24,10 @@ public Item update(String id, Item item) {
 ```
 
 - Its type tells Jackson what to build, which can be a class of your own, a
-  `Map`, a `List`, a `JsonNode`… Put the body parameter last: Flak then
-  builds a reader for its type once, rather than looking the type up on each
-  request. Types of `java.lang` (e.g. `String`) and of Flak itself are not
-  taken for a body.
+  `Map`, a `List`, a `JsonNode`… Flak builds a reader for that type once,
+  when the handler is scanned. The body can be any parameter: a `String` or
+  an `int` is a path variable, and Flak's own types (`Request`, `Form`…) are
+  never taken for a body.
 - A handler can read JSON without returning JSON: put `@JSON` on the
   parameter rather than on the method.
 

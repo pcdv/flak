@@ -1,28 +1,27 @@
 package flak.spi;
 
 import flak.HttpException;
+import flak.RouteParameter;
 import flak.annotations.QueryParam;
 
-import java.lang.reflect.Parameter;
 import java.util.function.Function;
 
 /**
  * Extracts the arguments annotated with {@link QueryParam}.
  */
 class QueryExtractor {
-  static ArgExtractor<?> from(QueryParam annotation, Parameter param, int index) {
-    Class<?> type = param.getType();
-    String name = annotation.value();
-    String def = QueryParam.NO_DEFAULT.equals(annotation.defaultValue())
-      ? null
-      : annotation.defaultValue();
+  static ArgExtractor<?> from(RouteParameter param, int index) {
+    Class<?> type = param.type();
+    String name = param.name();
+    String def = param.defaultValue();
 
     if (type == String[].class)
       return new ArrayQueryExtractor(index, name, def);
 
     Function<String, ?> converter = converter(type);
     if (converter == null)
-      throw new IllegalArgumentException("Unsupported type for a query parameter: " + param);
+      throw new IllegalArgumentException("Unsupported type for a query parameter: "
+                                         + param.javaParameter());
 
     Object fallback;
     if (def != null) {

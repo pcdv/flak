@@ -3,11 +3,11 @@ package flak.backend.jdk;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
 import flak.spi.BeforeHook;
+import flak.spi.HandlerSpec;
 import flak.spi.SPRequest;
 import flak.spi.util.Log;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
@@ -38,10 +38,8 @@ public class JdkApp extends AbstractApp {
   }
 
   @Override
-  protected AbstractMethodHandler addHandler(String route,
-                                             Method m,
-                                             Object obj) {
-    String[] tok = route.split("/+");
+  protected AbstractMethodHandler addHandler(HandlerSpec spec, Object obj) {
+    String[] tok = spec.route().split("/+");
 
     // split the static and dynamic part of the route (i.e. /app/hello/:name =>
     // "/app/hello" + "/:name"). The static part is used to get or create a
@@ -61,7 +59,7 @@ public class JdkApp extends AbstractApp {
       rest.append('/').append(tok[i]);
     }
 
-    return getContext(root.toString()).addHandler(rest.toString(), m, obj);
+    return getContext(root.toString()).addHandler(rest.toString(), spec, obj);
   }
 
   /**

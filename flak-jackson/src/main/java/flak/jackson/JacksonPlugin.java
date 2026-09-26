@@ -2,12 +2,14 @@ package flak.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.App;
+import flak.Form;
 import flak.InputParser;
+import flak.RouteParameter;
 import flak.spi.AbstractMethodHandler;
 import flak.spi.SPPlugin;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
@@ -52,10 +54,22 @@ public class JacksonPlugin implements SPPlugin {
       handler.setOutputFormatter(fmt);
     }
 
-    JSON param = paramAnnotation(m);
+    Parameter body = handler.getParameters()
+                            .stream()
+                            .filter(p -> p.kind() == RouteParameter.Kind.BODY
+                                         && p.type() != Form.class)
+                            .map(RouteParameter::javaParameter)
+                            .findFirst()
+                            .orElse(null);
+
+    JSON param = body != null && body.isAnnotationPresent(JSON.class)
+      ? body.getAnnotation(JSON.class)
+      : json;
     if (param != null) {
-      // also convert extra args from JSON
-      Class<?> inputClass = resolveInputType(param, m);
+      // also convert the body from JSON
+      Class<?> inputClass = param.inputClass();
+      if (inputClass == Object.class && body != null)
+        inputClass = body.getType();
 
       handler.setInputParser(parsers.computeIfAbsent(inputClass,
                                                      c -> {
@@ -68,38 +82,6 @@ public class JacksonPlugin implements SPPlugin {
                                                              c));
                                                      }));
     }
-  }
-
-  private JSON paramAnnotation(Method m) {
-    Annotation[][] pa = m.getParameterAnnotations();
-    if (pa.length > 0) {
-      Annotation[] last = pa[pa.length - 1];
-      for (Annotation a : last) {
-        if (a instanceof JSON)
-          return (JSON) a;
-      }
-    }
-    return m.getAnnotation(JSON.class);
-  }
-
-  /**
-   * Inspects method parameter types to guess which class should be parsed from JSON.
-   */
-  private Class<?> resolveInputType(JSON json, Method m) {
-    Class<?> inputClass = json.inputClass();
-
-    if (inputClass == Object.class) {
-      Class<?>[] types = m.getParameterTypes();
-      if (types.length > 0) {
-        Class<?> type = types[types.length - 1];
-        String name = type.getName();
-        if (!name.startsWith("flak.") && !name.startsWith("java.lang.")) {
-          return type;
-        }
-      }
-    }
-
-    return inputClass;
   }
 
   /**

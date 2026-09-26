@@ -3,6 +3,7 @@ package flask.test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pcdv.flak.swagger.OpenApiGenerator;
 import flak.annotations.Head;
+import flak.annotations.Put;
 import flak.annotations.QueryParam;
 import flak.annotations.Route;
 import flak.jackson.JSON;
@@ -24,6 +25,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @Tag(name = "Testing", description = "Test description")
 public class SwaggerTest extends AbstractAppTest {
@@ -56,21 +58,77 @@ public class SwaggerTest extends AbstractAppTest {
   @Route("/api")
   public String getAPI() {
     OpenApiGenerator gen = new OpenApiGenerator();
-    gen.scan(getClass());
+    gen.scan(app);
     return gen.toYaml();
   }
 
   @Route("/api/json")
   public String getAPIJson() throws JsonProcessingException {
     OpenApiGenerator gen = new OpenApiGenerator();
-    gen.scan(getClass());
+    gen.scan(app);
     return gen.toJSON();
+  }
+
+  @Override
+  protected void preScan() {
+    app.scan(new OtherHandler());
+    app.scan(new TypedHandler());
+    app.scan(new ItemHandler(), "/v1");
+    app.serveClasspath("/static", "/public");
   }
 
   public static class OtherHandler {
     @Route("/other")
     public void getOther() {
     }
+  }
+
+  public static class Item {
+    public String name;
+  }
+
+  public static class ItemHandler {
+    @Put
+    @Route("/items/:id")
+    @JSON
+    public Item update(Item item, int id) {
+      return item;
+    }
+
+    @Route("/files/*path")
+    public String file(String path) {
+      return path;
+    }
+  }
+
+  /**
+   * The routes are described as the app serves them: with the prefix they were
+   * scanned with, and the body and variables flak binds.
+   */
+  @Test
+  public void testRoutesAsServed() {
+    OpenApiGenerator gen = new OpenApiGenerator();
+    gen.scan(app);
+    OpenAPI api = gen.getAPI();
+
+    io.swagger.v3.oas.models.Operation update = api.getPaths().get("/v1/items/{id}").getPut();
+    // the body is not the last parameter
+    assertEquals("#/components/schemas/Item",
+                 update.getRequestBody().getContent().get("application/json").getSchema().get$ref());
+    assertNotNull(api.getComponents().getSchemas().get("Item"));
+
+    io.swagger.v3.oas.models.parameters.Parameter id = update.getParameters().get(0);
+    assertEquals("id", id.getName());
+    assertEquals("path", id.getIn());
+    assertEquals("integer", id.getSchema().getType());
+
+    io.swagger.v3.oas.models.Operation file = api.getPaths().get("/v1/files/{path}").getGet();
+    assertEquals("path", file.getParameters().get(0).getName());
+    assertEquals("string", file.getParameters().get(0).getSchema().getType());
+
+    // not part of the API
+    assertTrue(api.getPaths().keySet().toString(),
+               api.getPaths().keySet().stream().noneMatch(p -> p.startsWith("/static")));
   }
 
   public enum Color {RED, GREEN}
@@ -94,7 +152,7 @@ public class SwaggerTest extends AbstractAppTest {
   @Test
   public void testQueryParamTypes() {
     OpenApiGenerator gen = new OpenApiGenerator();
-    gen.scan(TypedHandler.class);
+    gen.scan(app);
     PathItem typed = gen.getAPI().getPaths().get("/typed");
 
     Map<String, io.swagger.v3.oas.models.media.Schema<?>> schemas = new HashMap<>();
@@ -121,8 +179,7 @@ public class SwaggerTest extends AbstractAppTest {
   @Test
   public void testSwagger() throws IOException {
     OpenApiGenerator gen = new OpenApiGenerator();
-    gen.scan(getClass());
-    gen.scan(OtherHandler.class);
+    gen.scan(app);
     OpenAPI api = gen.getAPI();
 
     assertEquals(2, api.getTags().size());

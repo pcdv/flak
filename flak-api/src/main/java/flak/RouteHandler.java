@@ -1,6 +1,7 @@
 package flak;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * A route handler of an app, seen from outside: what it is bound to, and the
@@ -34,6 +35,13 @@ public interface RouteHandler {
    * The method that is invoked to serve the requests.
    */
   Method getJavaMethod();
+
+  /**
+   * The parameters of {@link #getJavaMethod()}, in the same order, with what
+   * each one is bound to: a variable of the route, a query parameter, the
+   * body, etc.
+   */
+  List<RouteParameter> getParameters();
 
   /**
    * Sets the maximum size, in bytes, of the request body this handler

@@ -2,8 +2,8 @@
 
 `flak-swagger` generates an [OpenAPI](https://www.openapis.org/)
 specification from the route handlers of an application. What Flak knows,
-such as routes, methods, query parameters and JSON types, is filled in
-automatically. The rest can be added with
+such as routes, methods, parameters and JSON types, is filled in
+automatically, as Flak binds them. The rest can be added with
 [Swagger annotations](https://github.com/swagger-api/swagger-core/wiki/Swagger-2.X---Annotations).
 
 ```groovy
@@ -15,8 +15,7 @@ implementation "com.github.pcdv.flak:flak-swagger:3.0"
 ```java
 OpenApiGenerator gen = new OpenApiGenerator();
 gen.setObjectMapper(mapper);          // the mapper used for JSON, if configured
-gen.scan(ItemRoutes.class);
-gen.scan(OrderRoutes.class);
+gen.scan(app);
 
 gen.getAPI().info(new Info().title("Shop API").version("1.0"));
 
@@ -24,7 +23,8 @@ String yaml = gen.toYaml();
 String json = gen.toJSON();
 ```
 
-`getAPI()` returns the `OpenAPI` object of swagger-core, which can be
+Scan the app once all its routes are registered: those added later are not
+described. `getAPI()` returns the `OpenAPI` object of swagger-core, which can be
 completed at will (info, servers, security schemes…) before it is written.
 
 The specification can be served by the application itself:
@@ -38,22 +38,26 @@ public String openApi() {
 
 ## What is generated
 
-For each `@Route` method of the scanned classes:
+For each route handler of the app, static resources excepted:
 
-- **the path**, with variables in OpenAPI syntax: `/items/:id` becomes
-  `/items/{id}`
+- **the path**, as the app serves it: prefixed with the path of the app and
+  with the prefix given to `scan(obj, prefix)`, if any. Its variables are in
+  OpenAPI syntax: `/items/:id` becomes `/items/{id}`, and so does a splat,
+  `/files/*path` becoming `/files/{path}`.
 - **the operation**, for its HTTP method, `@Head` included. Its id is the
   name of the Java method.
 - **tags**: those of `@Tag` on the method, or else on the class, or else the
   simple name of the class
 - **parameters**:
-  - every variable of the route, as a path parameter
+  - every variable of the route, as a path parameter of type `string` or
+    `integer`
   - every [`@QueryParam`](arguments.md#query-parameters), with its type,
     default value and description
-  - those declared with `@Parameter`
-- **the request body** of a POST, PUT, PATCH or DELETE handler with `@JSON`
-  on the method: the schema of its last parameter, or what `@RequestBody`
-  declares
+  - those declared with `@Parameter`, which take precedence over a path
+    variable of the same name
+- **the request body**: what `@RequestBody` declares, or else the schema of
+  the parameter [parsed from the body](arguments.md#objects-parsed-from-the-body),
+  as `application/json` when it is read as JSON. A `Form` is not described.
 - **the response**: the schema of the return type, as `application/json`
   with `@JSON`. `@ApiResponse` annotations replace it, for instance to
   document several status codes. A `void` handler has none.
@@ -67,11 +71,5 @@ of the application, e.g. ignored properties or naming strategies.
 `scanSchema(type)` adds the schema of a type that no handler mentions
 directly, such as a subtype listed in `@Schema(oneOf = ...)`.
 
-## Limitations
-
-- The generator scans classes, not apps. It does not know the path of the
-  app, nor the prefix given to `scan(obj, prefix)`: routes appear as written
-  in `@Route`. `setRemovePrefix("/api")` strips a common prefix from all
-  paths, e.g. to declare it once in `servers`.
-- Only `@JSON` handlers get a request body without annotations. Document the
-  others with `@RequestBody`.
+`setRemovePrefix("/api")` strips a common prefix from all paths, e.g. to
+declare it once in `servers`.

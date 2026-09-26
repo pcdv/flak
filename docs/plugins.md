@@ -72,9 +72,10 @@ response itself and throw `BeforeHook.STOP`, as `flak-login` does when it
 redirects to the login page.
 
 Besides hooks, `preInit()` can call `setOutputFormatter()` or
-`setInputParser()` on the handler, as `flak-jackson` does for `@JSON`. A
-plugin that brings argument types registers them from `install()`, with
-`app.addCustomExtractor()`.
+`setInputParser()` on the handler, as `flak-jackson` does for `@JSON`. By
+then, `getParameters()` tells what each parameter is bound to, e.g. which one
+is the body and of which type. A plugin that brings argument types registers
+them from `install()`, with `app.addCustomExtractor()`.
 
 For the plugin to be discovered, give it a
 [FlakPluginLoader](../flak-spi/src/main/java/flak/spi/FlakPluginLoader.java):

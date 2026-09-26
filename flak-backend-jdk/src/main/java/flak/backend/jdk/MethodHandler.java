@@ -1,8 +1,7 @@
 package flak.backend.jdk;
 
 import flak.spi.AbstractMethodHandler;
-
-import java.lang.reflect.Method;
+import flak.spi.HandlerSpec;
 
 /**
  * Handles a request submitted by the Context, if compatible with the HTTP
@@ -14,11 +13,11 @@ public class MethodHandler extends AbstractMethodHandler {
 
   private static final String[] EMPTY = {};
 
-  MethodHandler(Context ctx, String uri, Method m, Object target) {
+  MethodHandler(Context ctx, String uri, HandlerSpec spec, Object target) {
     super(ctx.app,
           ctx.getRootURI() + uri,
           uri.isEmpty() ? EMPTY : uri.substring(1).split("/"),
-          m,
+          spec,
           target);
   }
 

@@ -136,6 +136,10 @@ A [RouteHandler](../flak-api/src/main/java/flak/RouteHandler.java) provides:
   included (e.g. `/users/:name`). Prepend `app.getPath()` for an absolute path.
 - `getHttpMethod()`
 - `getJavaMethod()`: the Java method it invokes, whose annotations can be read
+- `getParameters()`: what each parameter of the method is bound to, as a
+  [RouteParameter](../flak-api/src/main/java/flak/RouteParameter.java): a
+  path variable, a query parameter with its default value, the body, or
+  something else, such as the `Request`
 - `setMaxBodySize()`: see [Request bodies](request-bodies.md)
 
 `flak-util` provides a ready-made listing, grouped by path:

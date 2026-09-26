@@ -9,7 +9,11 @@
   into memory, and their size is capped per app or per handler. See
   [Request bodies](request-bodies.md).
 - **Route handlers can be looked up and configured** at runtime with
-  `App.getHandler()` and `App.getHandlers()`, whatever the backend.
+  `App.getHandler()` and `App.getHandlers()`, whatever the backend. They
+  describe their parameters with `getParameters()`: path variables, query
+  parameters, body. See [Routing](routing.md#listing-the-routes-of-an-app).
+- **The OpenAPI generator describes an app** rather than classes, from what
+  Flak actually binds. See [OpenAPI](#openapi).
 - **Plugins can be listed explicitly** with `AppFactory.setPlugins()` rather
   than only discovered on the classpath. See [Plugins](plugins.md).
 - **`@QueryParam` supports more types**, `long`, `double`, `boolean`, their
@@ -191,6 +195,12 @@ given with the path of the app, so in an app at `/shop`,
 **An `int` path variable that is not a number gets 404**, e.g. `/items/abc`
 for `@Route("/items/:id")`. It used to fail with 500.
 
+**The body can be any parameter.** With `@JSON`, it used to be parsed as the
+type of the last parameter, so `update(Item item, int id)` failed, and so did
+a body followed by an argument of a custom extractor.
+
+**A route that repeats a variable**, e.g. `/:x/:x`, fails to scan.
+
 **Static resources stay inside the directory they are served from.** A
 request that climbs out of it, with `..` or an absolute path, used to be
 served whatever it pointed to, class files included when serving from the
@@ -205,10 +215,31 @@ its trailing slash. A route of the app at the same path keeps precedence.
 
 ### OpenAPI
 
+**`OpenApiGenerator.scan(App)` replaces `scan(Class)`.** Instead of reading
+the annotations of classes again, the generator describes the handlers of the
+app, as Flak binds them:
+
+```java
+gen.scan(ItemRoutes.class);   // 2.x
+gen.scan(app);                // 3.0
+```
+
+As a result:
+
+- **Paths include the path of the app and the prefix given to
+  `scan(obj, prefix)`**, which the generator could not know. Use
+  `setRemovePrefix()` to strip them if they are declared in `servers`.
+- **The request body is the parameter Flak reads from the body**, wherever
+  it is, and whatever the HTTP method. It used to be the last parameter of a
+  POST, PUT, PATCH or DELETE handler with `@JSON`.
+- **Path variables have a type**, `string` or `integer`, and a splat is a
+  path variable too: `/files/*path` becomes `/files/{path}`.
+- **Static resources are left out.**
+
 Query parameters of type `int` are described as `integer`; they used to be
 `int`, which OpenAPI does not define. Every type `@QueryParam` accepts is
 described, where the generator used to fail on `String[]`. `@Head` routes are
-reported as HEAD instead of GET.
+reported as HEAD instead of GET. `TypeUtil.getHttpMethod()` was removed.
 
 ### For backend and plugin authors
 
@@ -220,6 +251,20 @@ reported as HEAD instead of GET.
 - `AbstractApp.getMethodHandlers()` and
   `AbstractMethodHandler.processResponse()`/`isApplicable()` are public.
 - `AbstractApp.addHandler0()` returns the handler it added.
+- **Handlers are built from a `HandlerSpec`**: the route, HTTP method,
+  parameters, formats and limits of a handler, which `flak-spi` reads from
+  Flak's annotations in a single place. The handler and the backends no
+  longer read annotations:
+  - a backend implements `AbstractApp.addHandler(HandlerSpec, Object)`
+    instead of `addHandler(String, Method, Object)`, and passes the spec to
+    the constructor of `AbstractMethodHandler`
+  - `AbstractApp.addHandler0(HandlerSpec, Object)` registers a handler
+    described otherwise than with Flak's annotations
+  - the static `AbstractMethodHandler.getHttpMethod(Method)` was removed:
+    call `getHttpMethod()` on the handler
+  - `createExtractors()` and `createExtractor()` work from the
+    `RouteParameter`s of the handler
+- `AbstractMethodHandler.getOutputFormatter()` was added.
 - A handler can be a fallback (`AbstractMethodHandler.setFallback()`): it
   only serves what no other handler of the same route takes. A backend must
   try the other handlers first.

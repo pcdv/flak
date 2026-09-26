@@ -3,7 +3,6 @@ package flak.backend.jdk;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +11,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import flak.HttpException;
 import flak.spi.BeforeHook;
+import flak.spi.HandlerSpec;
 import flak.spi.SPRequest;
 import flak.spi.util.Log;
 
@@ -46,11 +46,11 @@ public class Context implements HttpHandler {
    * specified URI (relative to rootURI).
    *
    * @param uri URI schema relative to rootURI (eg. "/:name")
-   * @param method a java method
+   * @param spec the java method, and how to call it
    * @param obj the object on which the method must be invoked
    */
-  public MethodHandler addHandler(String uri, Method method, Object obj) {
-    MethodHandler handler = new MethodHandler(this, uri, method, obj);
+  public MethodHandler addHandler(String uri, HandlerSpec spec, Object obj) {
+    MethodHandler handler = new MethodHandler(this, uri, spec, obj);
     handlers.add(handler);
     return handler;
   }
