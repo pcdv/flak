@@ -5,10 +5,10 @@ import java.net.HttpURLConnection;
 import java.util.Collections;
 import java.util.HashSet;
 
+import flak.BeforeHook;
 import flak.HttpException;
+import flak.Request;
 import flak.spi.AbstractMethodHandler;
-import flak.spi.BeforeHook;
-import flak.spi.SPRequest;
 
 /**
  * Rejects the requests of users lacking the permissions required by
@@ -45,7 +45,7 @@ public class CheckPermission implements BeforeHook {
   }
 
   @Override
-  public void execute(SPRequest request) throws StopProcessingException {
+  public void execute(Request request) throws StopProcessingException {
     if (!permissions.isEmpty()) {
       // a permission implies a logged-in user: one who is not is treated as
       // with @LoginRequired, i.e. redirected to the login page or given 401.

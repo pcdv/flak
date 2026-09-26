@@ -65,7 +65,7 @@ public class InternalOnlyPlugin implements SPPlugin {
 ```
 
 A hook is a
-[BeforeHook](../flak-spi/src/main/java/flak/spi/BeforeHook.java). It runs
+[BeforeHook](../flak-api/src/main/java/flak/BeforeHook.java). It runs
 before the arguments are extracted and the handler is called. It can reject
 the request by throwing an `HttpException`. Alternatively, it can write the
 response itself and throw `BeforeHook.STOP`, as `flak-login` does when it

@@ -115,17 +115,17 @@ It runs before the response is written.
 ## Hooks before every request
 
 A hook added with `addBeforeAllHook()` runs before each request, including
-requests for unknown URLs. Adding one is part of the service provider
-interface, so it requires a cast:
+requests for unknown URLs:
 
 ```java
-((AbstractApp) app).addBeforeAllHook(req -> {
+app.addBeforeAllHook(req -> {
   req.getResponse().addHeader("X-Frame-Options", "DENY");
 });
 ```
 
-To reject a request, a hook writes the response (status, body) and throws
-`BeforeHook.STOP`. Nothing else then runs for that request.
+To reject a request, a hook throws an `HttpException`, or writes the response
+itself (status, body) and throws `BeforeHook.STOP`. Nothing else then runs for
+that request.
 
 Hooks that apply to some handlers only, e.g. depending on their annotations,
 are what [plugins](plugins.md#writing-a-plugin) are for.

@@ -111,6 +111,14 @@ public interface App {
   void addSuccessHandler(SuccessHandler handler);
 
   /**
+   * Adds a hook run before each request is routed, including the requests
+   * that match no route. It can reject the request by throwing an
+   * {@link HttpException}, or by writing the response itself and throwing
+   * {@link BeforeHook#STOP}.
+   */
+  void addBeforeAllHook(BeforeHook hook);
+
+  /**
    * Returns the request being served by the current thread, so that code
    * called by a route handler can reach it without it being passed around.
    */

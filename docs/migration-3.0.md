@@ -30,6 +30,8 @@
   `App.serveClasspath()`. `flak-resource` is gone. See
   [Static resources](static-resources.md).
 - `App.addCustomExtractor()` is part of the public API.
+- `App.addBeforeAllHook()` is part of the public API, along with
+  `BeforeHook`, which moved to `flak`.
 - Flak can serve its routes from a Netty server the application owns,
   leaving it free to serve websockets on the same port.
 
@@ -49,6 +51,7 @@ from the most to the least likely to affect you.
 | `flak.backend.jdk.FormImpl` | `flak.spi.FormImpl`, in `flak-spi` |
 | `flak.backend.jdk.BufferedOutputStream` | `flak.spi.util.BufferedOutputStream`, in `flak-spi` |
 | `flak.backend.jdk.RouteDumper` | `flak.util.RouteDumper`, still in `flak-util` |
+| `flak.spi.BeforeHook` | `flak.BeforeHook`, in `flak-api` |
 
 `flak-util` no longer depends on `flak-backend-jdk`, so `RouteDumper` works
 with any backend.
@@ -253,6 +256,9 @@ reported as HEAD instead of GET. `TypeUtil.getHttpMethod()` was removed.
 ### For backend and plugin authors
 
 - `AppFactory` gained `setPlugins()`.
+- `BeforeHook` moved from `flak.spi` to `flak`, and its `execute()` takes a
+  `Request` instead of an `SPRequest`: a hook added with
+  `AbstractMethodHandler.addHook()` changes its import and signature.
 - `SPRequest` gained `setMaxBodySize()`: an implementation outside the
   project needs it.
 - `SPPlugin.install()` was added as a default method. It is now where a
