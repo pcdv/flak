@@ -45,6 +45,24 @@ public class JsonTest extends AbstractAppTest {
       client.put("/api/foo", "{\"stuff\":1235}"));
   }
 
+  /**
+   * The body need not be the last parameter: it used to be parsed as the type
+   * of the last one, here an int.
+   */
+  @Put
+  @Route("/api/foo/:times")
+  @JSON
+  public Foo putFooTimes(Foo foo, int times) {
+    foo.stuff *= times;
+    return foo;
+  }
+
+  @Test
+  public void testBodyBeforePathVariable() throws IOException {
+    assertEquals("{\"stuff\":30}",
+      client.put("/api/foo/3", "{\"stuff\":10}"));
+  }
+
   @Test
   public void errorWhenMissingInputFormat() {
     TestUtil.assertFails(() -> app.scan(new Object() {
@@ -145,8 +163,7 @@ public class JsonTest extends AbstractAppTest {
 
 
   /**
-   * Check that we can mix a custom arg extractor and JSON data. But as of now
-   * the JSON data must be the last argument in method.
+   * Check that we can mix a custom arg extractor and JSON data, in any order.
    */
   @Test
   public void testJsonAndCustomExtractor() throws IOException {
@@ -167,8 +184,16 @@ public class JsonTest extends AbstractAppTest {
         assertNotNull(obj);
         assertEquals(42, obj.value);
       }
+
+      @JSON
+      @Route("/customObjLast")
+      @Post
+      public String jsonBeforeCustomExtractor(Map<String, String> map, CustomObj obj) {
+        return map.get("hello") + obj.value;
+      }
     });
 
     client.post("/customObj", "{\"hello\":\"world\"}");
+    assertEquals("\"world42\"", client.post("/customObjLast", "{\"hello\":\"world\"}"));
   }
 }

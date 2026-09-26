@@ -1,9 +1,9 @@
 package flak.backend.netty;
 
 import flak.spi.AbstractMethodHandler;
+import flak.spi.HandlerSpec;
 import flak.spi.util.Log;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 public class NettyMethodHandler extends AbstractMethodHandler {
@@ -15,16 +15,16 @@ public class NettyMethodHandler extends AbstractMethodHandler {
    *               to "bar", itself a child of "foo"
    * @param tokens result of splitting the path and chopping all constant elements,
    *               e.g. if path is /foo/bar/:id/stuff then tokens = [ ":id", "stuff" ]
-   * @param method the method to invoke
+   * @param spec   the method to invoke, and how to call it
    * @param obj    the object on which the method is invoked
    */
-  public NettyMethodHandler(NettyApp app, NettyRoute route, List<String> tokens, Method method, Object obj) {
+  public NettyMethodHandler(NettyApp app, NettyRoute route, List<String> tokens, HandlerSpec spec, Object obj) {
     super(app,
           // no trailing slash when the route has no dynamic token, so that
           // getRoute() reads the same as with the other backends
           tokens.isEmpty() ? route.path : route.path + "/" + String.join("/", tokens),
           tokens.toArray(new String[0]),
-          method,
+          spec,
           obj);
     this.route = route;
 

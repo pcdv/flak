@@ -1,8 +1,8 @@
 package flak.backend.netty;
 
+import flak.spi.HandlerSpec;
 import flak.spi.util.Log;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,19 +29,20 @@ public class NettyRoute {
     assert path.isEmpty() || !path.matches("[:*].*");
   }
 
-  public NettyMethodHandler addHandler(String route, Method method, Object target) {
+  public NettyMethodHandler addHandler(HandlerSpec spec, Object target) {
+    String route = spec.route();
     List<String> tokens = route.equals("/")
       ? Collections.emptyList()
       : Arrays.asList(route.replaceAll("^/*(.*?)/*$", "$1").split("/+"));
-    return addHandler(tokens, method, target);
+    return addHandler(tokens, spec, target);
   }
 
-  public NettyMethodHandler addHandler(List<String> tokens, Method method, Object target) {
+  public NettyMethodHandler addHandler(List<String> tokens, HandlerSpec spec, Object target) {
     if (tokens.isEmpty() || tokens.get(0).matches("[:*].*")) {
       NettyMethodHandler handler = new NettyMethodHandler(app,
                                                           this,
                                                           tokens,
-                                                          method,
+                                                          spec,
                                                           target);
       self.add(handler);
       return handler;
@@ -52,7 +53,7 @@ public class NettyRoute {
                                                       this,
                                                       path + "/" + h,
                                                       httpMethod))
-                 .addHandler(tokens.subList(1, tokens.size()), method, target);
+                 .addHandler(tokens.subList(1, tokens.size()), spec, target);
   }
 
   @Override

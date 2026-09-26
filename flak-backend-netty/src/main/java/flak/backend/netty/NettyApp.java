@@ -3,13 +3,11 @@ package flak.backend.netty;
 import flak.WebServer;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
+import flak.spi.HandlerSpec;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.stream.Stream;
-
-import static flak.spi.AbstractMethodHandler.getHttpMethod;
 
 public class NettyApp extends AbstractApp {
   private final NettyWebServer srv;
@@ -43,11 +41,11 @@ public class NettyApp extends AbstractApp {
   }
 
   @Override
-  protected AbstractMethodHandler addHandler(String route, Method method, Object target) {
+  protected AbstractMethodHandler addHandler(HandlerSpec spec, Object target) {
     NettyRoute nr = routeByMethod.computeIfAbsent
-      (getHttpMethod(method),
+      (spec.httpMethod(),
        m -> new NettyRoute(this, null, "", m));
-    return nr.addHandler(route, method, target);
+    return nr.addHandler(spec, target);
   }
 
   public boolean route(NettyRequest req, String[] tokens, int i) throws Exception {
