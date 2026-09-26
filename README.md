@@ -73,6 +73,11 @@ Flak components      | Description
  * **Request bodies are streamed** to the route handlers instead of being read
    into memory, and their size is capped per app or per handler. See
    [Request bodies](#request-bodies).
+ * **Static resources stay inside the directory they are served from.** A
+   request that climbs out of it, with `..` or an absolute path, used to be
+   served whatever it pointed to, class files included when serving from the
+   classpath. It is now answered with 404, as is a missing file under
+   `serveDir()`, which used to fail with 500.
  * **Plugins can be listed explicitly** with `AppFactory.setPlugins()` rather
    than only discovered in the classpath. See [Plugins](#plugins).
  * `App.addCustomExtractor()` is part of the public API. See
