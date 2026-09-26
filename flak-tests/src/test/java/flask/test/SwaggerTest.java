@@ -3,6 +3,7 @@ package flask.test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pcdv.flak.swagger.OpenApiGenerator;
 import flak.annotations.Head;
+import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.QueryParam;
 import flak.annotations.Route;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -131,6 +133,54 @@ public class SwaggerTest extends AbstractAppTest {
                api.getPaths().keySet().stream().noneMatch(p -> p.startsWith("/static")));
   }
 
+  public static class Token {
+  }
+
+  /**
+   * Not scanned by the app: the custom extractor of Token is unknown to
+   * scan(Class).
+   */
+  public static class TokenHandler {
+    @Post
+    @Route("/tokens/:id")
+    @JSON
+    public void save(Token token, int id, Item item) {
+    }
+
+    @Post
+    @Route("/tokens/:id/check")
+    public void check(Token token, int id) {
+    }
+  }
+
+  /**
+   * An app can serve several APIs, each documented from its own classes: only
+   * the handlers of the scanned class are described, as written in @Route.
+   */
+  @Test
+  public void testScanClass() {
+    OpenApiGenerator gen = new OpenApiGenerator();
+    gen.scan(ItemHandler.class);
+    gen.scan(TokenHandler.class);
+    OpenAPI api = gen.getAPI();
+
+    assertEquals("[/files/{path}, /items/{id}, /tokens/{id}, /tokens/{id}/check]",
+                 new TreeSet<>(api.getPaths().keySet()).toString());
+
+    io.swagger.v3.oas.models.Operation update = api.getPaths().get("/items/{id}").getPut();
+    assertEquals("#/components/schemas/Item",
+                 update.getRequestBody().getContent().get("application/json").getSchema().get$ref());
+    assertEquals("integer", update.getParameters().get(0).getSchema().getType());
+
+    // the body is the last parameter that could be one
+    assertEquals("#/components/schemas/Item",
+                 api.getPaths().get("/tokens/{id}").getPost().getRequestBody().getContent()
+                    .get("application/json").getSchema().get$ref());
+
+    // no JSON, so what could be a body must come from a custom extractor
+    assertNull(api.getPaths().get("/tokens/{id}/check").getPost().getRequestBody());
+  }
+
   public enum Color {RED, GREEN}
 
   public static class TypedHandler {
@@ -152,7 +202,7 @@ public class SwaggerTest extends AbstractAppTest {
   @Test
   public void testQueryParamTypes() {
     OpenApiGenerator gen = new OpenApiGenerator();
-    gen.scan(app);
+    gen.scan(TypedHandler.class);
     PathItem typed = gen.getAPI().getPaths().get("/typed");
 
     Map<String, io.swagger.v3.oas.models.media.Schema<?>> schemas = new HashMap<>();
@@ -179,7 +229,8 @@ public class SwaggerTest extends AbstractAppTest {
   @Test
   public void testSwagger() throws IOException {
     OpenApiGenerator gen = new OpenApiGenerator();
-    gen.scan(app);
+    gen.scan(getClass());
+    gen.scan(OtherHandler.class);
     OpenAPI api = gen.getAPI();
 
     assertEquals(2, api.getTags().size());

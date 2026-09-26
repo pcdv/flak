@@ -23,8 +23,26 @@ String yaml = gen.toYaml();
 String json = gen.toJSON();
 ```
 
-Scan the app once all its routes are registered: those added later are not
-described. `getAPI()` returns the `OpenAPI` object of swagger-core, which can be
+`scan(app)` describes every route of the app, once they are all registered:
+those added later are not described. When an app serves several APIs, each
+documented on its own, scan the classes of one API instead:
+
+```java
+gen.scan(ItemRoutes.class);
+gen.scan(OrderRoutes.class);
+```
+
+This describes the `@Route` methods declared by those classes, and nothing
+else. Not knowing the app, it differs in three ways:
+
+- paths are written as in `@Route`, without the path of the app or the
+  prefix given to `scan(obj, prefix)`
+- what is JSON is told by `@JSON`, on the method or on a parameter
+- the custom extractors of the app are unknown, so a request body is only
+  described for handlers reading JSON: the parameter with `@JSON`, or else
+  the last parameter that could be a body
+
+`getAPI()` returns the `OpenAPI` object of swagger-core, which can be
 completed at will (info, servers, security schemes…) before it is written.
 
 The specification can be served by the application itself:
@@ -38,10 +56,11 @@ public String openApi() {
 
 ## What is generated
 
-For each route handler of the app, static resources excepted:
+For each route handler, static resources excepted:
 
-- **the path**, as the app serves it: prefixed with the path of the app and
-  with the prefix given to `scan(obj, prefix)`, if any. Its variables are in
+- **the path**, as the app serves it with `scan(app)`: prefixed with the
+  path of the app and with the prefix given to `scan(obj, prefix)`, if any.
+  Its variables are in
   OpenAPI syntax: `/items/:id` becomes `/items/{id}`, and so does a splat,
   `/files/*path` becoming `/files/{path}`.
 - **the operation**, for its HTTP method, `@Head` included. Its id is the

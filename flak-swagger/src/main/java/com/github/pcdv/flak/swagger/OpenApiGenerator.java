@@ -6,11 +6,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.App;
 import flak.Form;
 import flak.RouteParameter;
+import flak.annotations.Route;
+import flak.jackson.JSON;
 import flak.jackson.JsonInputMapper;
 import flak.jackson.JsonInputReader;
 import flak.jackson.JsonOutputFormatter;
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
+import flak.spi.FlakAnnotations;
+import flak.spi.HandlerSpec;
 import flak.spi.resource.AbstractResourceHandler;
 import flak.spi.util.IO;
 import io.swagger.v3.core.converter.ModelConverters;
@@ -57,7 +61,8 @@ import java.util.TreeMap;
  * Open Api Specification (OAS) generator.
  * It creates an OpenAPI object that can be obtained with getAPI() and extended (e.g.
  * info, servers, ...)
- * Call {@link #scan(App)} to describe the route handlers of an app, and
+ * Call {@link #scan(App)} to describe the route handlers of an app, or
+ * {@link #scan(Class)} for those of a class, and
  * {@link #scanSchema(Class)} to register schemas that may be missing in resources
  * (don't forget to call {@link #setObjectMapper(ObjectMapper)} before, so that all
  * Jackson settings are taken into account).
@@ -97,33 +102,113 @@ public class OpenApiGenerator {
   }
 
   /**
+   * What the generator needs to know of a route handler, whether it comes
+   * from an app or from a class.
+   *
+   * @param path       the path to document, variables in flak syntax
+   * @param parameters what the parameters of the method are bound to
+   * @param readsJson  whether the body is read as JSON
+   * @param writesJson whether the response is written as JSON
+   */
+  private record Endpoint(String path,
+                          String httpMethod,
+                          Method method,
+                          List<RouteParameter> parameters,
+                          boolean readsJson,
+                          boolean writesJson) {
+  }
+
+  /**
    * Describes the route handlers of specified app, at their full path, i.e.
    * prefixed with the path of the app. Static resources are left out.
+   * <p>
+   * Use {@link #scan(Class)} instead when the app serves several APIs, each
+   * documented separately.
    */
   public OpenApiGenerator scan(App app) {
-    // by class, then by method name, so that the output does not depend on
-    // the order in which the app holds its handlers
-    Map<Class<?>, List<AbstractMethodHandler>> byClass =
-      new TreeMap<>(Comparator.comparing(Class::getName));
+    // by class, so that the class tags come first
+    Map<Class<?>, List<Endpoint>> byClass = new TreeMap<>(Comparator.comparing(Class::getName));
 
     ((AbstractApp) app).getMethodHandlers()
                        .filter(h -> !(h.getTarget() instanceof AbstractResourceHandler))
                        .forEach(h -> byClass.computeIfAbsent(h.getJavaMethod().getDeclaringClass(),
                                                              c -> new ArrayList<>())
-                                            .add(h));
+                                            .add(endpoint(app, h)));
 
-    byClass.forEach((clazz, handlers) -> {
-      Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags
-        = AnnotationsUtils.getTags(clazz.getAnnotationsByType(Tag.class), false);
-
-      addTags(tags);
-
-      handlers.stream()
-              .sorted(Comparator.comparing((AbstractMethodHandler h) -> h.getJavaMethod().getName())
-                                .thenComparing(AbstractMethodHandler::getHttpMethod))
-              .forEach(h -> scanHandler(app, h, tags));
-    });
+    byClass.forEach(this::scan);
     return this;
+  }
+
+  /**
+   * Describes the @Route methods declared by specified class, at the path
+   * given in their @Route: the generator does not know the app, nor the
+   * prefix the class may be scanned with.
+   * <p>
+   * The parameters are bound as flak binds them, except that without the app
+   * the custom extractors are unknown: a request body is only described for
+   * handlers reading JSON, the parameter with @JSON or else the last one that
+   * could be a body.
+   */
+  public OpenApiGenerator scan(Class<?> clazz) {
+    List<Endpoint> endpoints = new ArrayList<>();
+    for (Method m : clazz.getDeclaredMethods()) {
+      Route route = m.getAnnotation(Route.class);
+      if (route != null)
+        endpoints.add(endpoint(FlakAnnotations.describe(route.value(), m)));
+    }
+    return scan(clazz, endpoints);
+  }
+
+  private OpenApiGenerator scan(Class<?> clazz, List<Endpoint> endpoints) {
+    Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags
+      = AnnotationsUtils.getTags(clazz.getAnnotationsByType(Tag.class), false);
+
+    addTags(tags);
+
+    // so that the output does not depend on the order of the handlers
+    endpoints.stream()
+             .sorted(Comparator.comparing((Endpoint e) -> e.method().getName())
+                               .thenComparing(Endpoint::httpMethod))
+             .forEach(e -> scanEndpoint(e, tags));
+    return this;
+  }
+
+  private static Endpoint endpoint(App app, AbstractMethodHandler h) {
+    return new Endpoint(app.getPath() + h.getRoute(),
+                        h.getHttpMethod(),
+                        h.getJavaMethod(),
+                        h.getParameters(),
+                        h.getInputParser() instanceof JsonInputReader
+                          || h.getInputParser() instanceof JsonInputMapper,
+                        h.getOutputFormatter() instanceof JsonOutputFormatter);
+  }
+
+  /**
+   * Without the app, what reads and writes JSON is told by @JSON, on the
+   * method or on a parameter, as flak-jackson does.
+   */
+  private static Endpoint endpoint(HandlerSpec spec) {
+    Method m = spec.javaMethod();
+    boolean writesJson = m.isAnnotationPresent(JSON.class);
+    boolean readsJson = writesJson || spec.parameters()
+                                          .stream()
+                                          .anyMatch(p -> p.javaParameter().isAnnotationPresent(JSON.class));
+
+    // a body can only be told from what a custom extractor provides by the
+    // app, so only that of a JSON handler is kept, and if it has several
+    // candidates, the one with @JSON, or else the last one
+    List<RouteParameter> params = new ArrayList<>();
+    RouteParameter body = null;
+    for (RouteParameter p : spec.parameters()) {
+      if (p.kind() != RouteParameter.Kind.BODY)
+        params.add(p);
+      else if (readsJson && (body == null || !body.javaParameter().isAnnotationPresent(JSON.class)))
+        body = p;
+    }
+    if (body != null)
+      params.add(body);
+
+    return new Endpoint(spec.route(), spec.httpMethod(), m, params, readsJson, writesJson);
   }
 
   private void addTags(Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags) {
@@ -136,10 +221,8 @@ public class OpenApiGenerator {
     }
   }
 
-  private void scanHandler(App app,
-                           AbstractMethodHandler h,
-                           Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags) {
-    Method m = h.getJavaMethod();
+  private void scanEndpoint(Endpoint e, Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags) {
+    Method m = e.method();
     Optional<Set<io.swagger.v3.oas.models.tags.Tag>> methodTags
       = AnnotationsUtils.getTags(m.getAnnotationsByType(Tag.class), false);
 
@@ -150,8 +233,8 @@ public class OpenApiGenerator {
     scanSchema(m.getReturnType());
 
     Operation op = new Operation().operationId(m.getName());
-    op.responses(scanResponses(h));
-    scanParameters(h, op);
+    op.responses(scanResponses(e));
+    scanParameters(e, op);
 
     io.swagger.v3.oas.annotations.Operation ope = m.getAnnotation(io.swagger.v3.oas.annotations.Operation.class);
     if (ope != null) {
@@ -159,9 +242,9 @@ public class OpenApiGenerator {
                                  ope.description())).summary(ope.summary());
     }
 
-    op.requestBody(requestBody(h));
+    op.requestBody(requestBody(e));
 
-    String endpoint = convertPath(app.getPath() + h.getRoute());
+    String endpoint = convertPath(e.path());
     PathItem path = api.getPaths().get(endpoint);
     if (path == null) {
       path = new PathItem();
@@ -176,7 +259,7 @@ public class OpenApiGenerator {
     }
     else
       op.addTagsItem(m.getDeclaringClass().getSimpleName());
-    path.operation(PathItem.HttpMethod.valueOf(h.getHttpMethod()), op);
+    path.operation(PathItem.HttpMethod.valueOf(e.httpMethod()), op);
   }
 
   private static String convertDesc(ClassLoader loader, String description) {
@@ -193,17 +276,17 @@ public class OpenApiGenerator {
     return description;
   }
 
-  private RequestBody requestBody(AbstractMethodHandler h) {
+  private RequestBody requestBody(Endpoint e) {
     io.swagger.v3.oas.annotations.parameters.RequestBody reqBody
-      = h.getJavaMethod().getAnnotation(io.swagger.v3.oas.annotations.parameters.RequestBody.class);
+      = e.method().getAnnotation(io.swagger.v3.oas.annotations.parameters.RequestBody.class);
 
     if (reqBody == null) {
-      return defaultRequestBody(h);
+      return defaultRequestBody(e);
     }
 
     Content content = new Content();
     for (io.swagger.v3.oas.annotations.media.Content c : reqBody.content()) {
-      fillContent(c, content, readsJson(h));
+      fillContent(c, content, e.readsJson());
     }
     return new RequestBody()
       .content(content).description(reqBody.description()).required(reqBody.required());
@@ -212,8 +295,8 @@ public class OpenApiGenerator {
   /**
    * The body the handler reads, if any, with the schema of its type.
    */
-  private RequestBody defaultRequestBody(AbstractMethodHandler h) {
-    RouteParameter body = h.getParameters()
+  private RequestBody defaultRequestBody(Endpoint e) {
+    RouteParameter body = e.parameters()
                            .stream()
                            .filter(p -> p.kind() == RouteParameter.Kind.BODY)
                            .findFirst()
@@ -231,17 +314,8 @@ public class OpenApiGenerator {
     }
 
     return new RequestBody().content(
-      new Content().addMediaType(readsJson(h) ? "application/json" : "*/*",
+      new Content().addMediaType(e.readsJson() ? "application/json" : "*/*",
                                  new MediaType().schema(schema)));
-  }
-
-  private static boolean readsJson(AbstractMethodHandler h) {
-    return h.getInputParser() instanceof JsonInputReader
-      || h.getInputParser() instanceof JsonInputMapper;
-  }
-
-  private static boolean writesJson(AbstractMethodHandler h) {
-    return h.getOutputFormatter() instanceof JsonOutputFormatter;
   }
 
   private void fillContent(io.swagger.v3.oas.annotations.media.Content annContent,
@@ -252,13 +326,13 @@ public class OpenApiGenerator {
               new MediaType().schema(new Schema<>().$ref(annContent.schema().ref())));
   }
 
-  private ApiResponses scanResponses(AbstractMethodHandler h) {
-    ApiResponses responses = scanDeclaredResponses(h);
-    return responses == null ? buildDefaultResponses(h) : responses;
+  private ApiResponses scanResponses(Endpoint e) {
+    ApiResponses responses = scanDeclaredResponses(e);
+    return responses == null ? buildDefaultResponses(e) : responses;
   }
 
-  private ApiResponses buildDefaultResponses(AbstractMethodHandler h) {
-    Method m = h.getJavaMethod();
+  private ApiResponses buildDefaultResponses(Endpoint e) {
+    Method m = e.method();
 
     if (m.getReturnType() == void.class)
       return null;
@@ -277,7 +351,7 @@ public class OpenApiGenerator {
     }
 
     Content content = new Content();
-    if (writesJson(h))
+    if (e.writesJson())
       content.addMediaType("application/json", mt);
     else
       content.addMediaType("*/*", mt);
@@ -287,15 +361,15 @@ public class OpenApiGenerator {
     return resp;
   }
 
-  private ApiResponses scanDeclaredResponses(AbstractMethodHandler h) {
+  private ApiResponses scanDeclaredResponses(Endpoint e) {
     ApiResponses responses = new ApiResponses();
     for (io.swagger.v3.oas.annotations.responses.ApiResponse a
-      : TypeUtil.getAnnotations(h.getJavaMethod(),
+      : TypeUtil.getAnnotations(e.method(),
                                 io.swagger.v3.oas.annotations.responses.ApiResponse.class,
                                 io.swagger.v3.oas.annotations.responses.ApiResponses.class,
                                 io.swagger.v3.oas.annotations.responses.ApiResponses::value)) {
 
-      responses.addApiResponse(a.responseCode(), apiResponse(a, writesJson(h)));
+      responses.addApiResponse(a.responseCode(), apiResponse(a, e.writesJson()));
     }
 
     return !responses.isEmpty() ? responses : null;
@@ -315,9 +389,9 @@ public class OpenApiGenerator {
     return resp;
   }
 
-  private void scanParameters(AbstractMethodHandler h, Operation op) {
+  private void scanParameters(Endpoint e, Operation op) {
 
-    for (RouteParameter p : h.getParameters()) {
+    for (RouteParameter p : e.parameters()) {
       if (p.kind() == RouteParameter.Kind.QUERY) {
         Schema<?> schema = getSchemaForType(p.type());
         if (p.defaultValue() != null)
@@ -329,7 +403,7 @@ public class OpenApiGenerator {
     }
 
     for (io.swagger.v3.oas.annotations.Parameter ann
-      : TypeUtil.getAnnotations(h.getJavaMethod(), io.swagger.v3.oas.annotations.Parameter.class,
+      : TypeUtil.getAnnotations(e.method(), io.swagger.v3.oas.annotations.Parameter.class,
                                 Parameters.class, Parameters::value)) {
       Type type = ParameterProcessor.getParameterType(ann, false);
 
@@ -341,7 +415,7 @@ public class OpenApiGenerator {
     }
 
     // complete with the variables of the route not declared with @Parameter
-    for (RouteParameter p : h.getParameters()) {
+    for (RouteParameter p : e.parameters()) {
       if (p.kind() == RouteParameter.Kind.PATH) {
         List<Parameter> parameters = op.getParameters();
         if (parameters == null || parameters.stream().noneMatch(d -> p.name().equals(d.getName()))) {

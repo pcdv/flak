@@ -23,12 +23,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Reads the annotations of a route handler method: the only place where
  * Flak's own annotations are interpreted. Plugins read theirs, e.g. @JSON.
  */
-final class FlakAnnotations {
+public final class FlakAnnotations {
 
   private FlakAnnotations() {
   }
@@ -37,12 +38,30 @@ final class FlakAnnotations {
    * @param route the route, relative to the app, e.g. "/items/:id"
    */
   static HandlerSpec read(AbstractApp app, String route, Method m) {
+    return read(app, route, m, type -> app.getCustomExtractor(m, type) != null);
+  }
+
+  /**
+   * Describes a handler method without an app, e.g. to document it: its
+   * formatter and parser are unknown, and so are custom extractors, so that
+   * a parameter which one of them provides is taken for the body.
+   *
+   * @param route the route, e.g. the value of its @Route
+   */
+  public static HandlerSpec describe(String route, Method m) {
+    return read(null, route, m, type -> false);
+  }
+
+  private static HandlerSpec read(AbstractApp app,
+                                  String route,
+                                  Method m,
+                                  Predicate<Class<?>> hasCustomExtractor) {
     return new HandlerSpec(route,
                            httpMethod(m),
                            m,
-                           parameters(app, route, m),
-                           outputFormatter(app, m),
-                           inputParser(app, m),
+                           parameters(route, m, hasCustomExtractor),
+                           app == null ? null : outputFormatter(app, m),
+                           app == null ? null : inputParser(app, m),
                            m.isAnnotationPresent(Compress.class)
                              || m.getDeclaringClass().isAnnotationPresent(Compress.class),
                            maxBodySize(m));
@@ -69,7 +88,9 @@ final class FlakAnnotations {
    * then by type. A String or int is the next variable of the route, anything
    * not recognized is the body.
    */
-  private static List<RouteParameter> parameters(AbstractApp app, String route, Method m) {
+  private static List<RouteParameter> parameters(String route,
+                                                 Method m,
+                                                 Predicate<Class<?>> hasCustomExtractor) {
     List<String> variables = variables(route);
     List<RouteParameter> res = new ArrayList<>();
     int bound = 0; // the variables bound so far
@@ -78,7 +99,7 @@ final class FlakAnnotations {
       Class<?> type = p.getType();
       QueryParam query = p.getAnnotation(QueryParam.class);
 
-      if (app.getCustomExtractor(m, type) != null)
+      if (hasCustomExtractor.test(type))
         res.add(new RouteParameter(Kind.OTHER, null, p, null, null));
       else if (query != null)
         res.add(new RouteParameter(Kind.QUERY,
