@@ -170,21 +170,6 @@ The API initially shared a lot of similarities with [Flask](https://flask.pallet
 But now the style differs quite a bit since objects can be automatically
 passed in method arguments.
 
-## History
-
-Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
-
-### Goals of the migration from JFlask
- * have a clean API, well separated from implementation
- * provide several back-ends:
- [flak-backend-jdk](flak-backend-jdk)
- and, since 3.0,
- [flak-backend-netty](flak-backend-netty)
- based on [Netty](https://netty.io/). Other back-ends, e.g.
- [Jetty](https://jetty.org/), could be added the same way.
- * provide SSL support
- * optional plugins for user management, JSON serialization, CSRF protection...
-
 ## Build
 
 Building Flak requires a JDK 17 or later. Everything else, including the
