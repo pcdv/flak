@@ -60,7 +60,9 @@ public class JdkRequest implements SPRequest, SPResponse {
                     HttpExchange r) {
     this.app = app;
     this.exchange = r;
-    this.qs = r.getRequestURI().getQuery();
+    // raw: decoded, a value containing an encoded '&' could no longer be told
+    // from two parameters
+    this.qs = r.getRequestURI().getRawQuery();
     this.appRelativePath = appRelativePath;
     this.split = (contextRelativePath.isEmpty() || contextRelativePath.equals("/"))
       ? EMPTY
@@ -118,8 +120,7 @@ public class JdkRequest implements SPRequest, SPResponse {
 
   @Override
   public Query getQuery() {
-    // looks like the string is already url decoded, do not do it twice
-    return new FormImpl(getQueryString(), false);
+    return new FormImpl(getQueryString(), true);
   }
 
   @Override
@@ -133,7 +134,9 @@ public class JdkRequest implements SPRequest, SPResponse {
       if (form == null)
         form = new FormImpl(readData(), true);
     }
-    catch (Exception e) {
+    catch (IOException e) {
+      // NB: not any exception, which would turn the HttpException of an
+      // oversized body (413) or of malformed data (400) into a 500
       throw new RuntimeException(e);
     }
     return form;
