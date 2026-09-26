@@ -71,6 +71,15 @@ public class FlakResourceImpl implements FlakResource {
                       h.getClass().getMethod("doGet", Request.class, String.class),
                       h);
 
+      // the root itself, which the splat does not match. A fallback, so that
+      // a route of the app at the same path, e.g. "/", stays in charge
+      String root = rootURI.length() > 1 && rootURI.endsWith("/")
+        ? rootURI.substring(0, rootURI.length() - 1)
+        : rootURI;
+      app.addHandler0(root.isEmpty() ? "/" : root,
+                      h.getClass().getMethod("serveRoot", Request.class),
+                      h)
+         .setFallback(true);
     }
     catch (NoSuchMethodException e) {
       throw new RuntimeException(e);

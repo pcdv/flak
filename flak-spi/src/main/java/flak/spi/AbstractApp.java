@@ -86,12 +86,13 @@ public abstract class AbstractApp implements App {
     return this;
   }
 
-  public void addHandler0(String route, Method method, Object obj) {
+  public AbstractMethodHandler addHandler0(String route, Method method, Object obj) {
     AbstractMethodHandler handler = addHandler(route, method, obj);
     for (SPPlugin plugin : plugins) {
       plugin.preInit(handler);
     }
     handler.init();
+    return handler;
   }
 
   protected abstract AbstractMethodHandler addHandler(String route,

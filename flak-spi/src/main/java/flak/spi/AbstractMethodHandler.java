@@ -107,6 +107,11 @@ public abstract class AbstractMethodHandler
    */
   private Long maxBodySize;
 
+  /**
+   * See {@link #setFallback(boolean)}.
+   */
+  private volatile boolean fallback;
+
   public AbstractMethodHandler(AbstractApp app,
                                String path,
                                String[] splitPath,
@@ -302,6 +307,20 @@ public abstract class AbstractMethodHandler
   @Override
   public long getMaxBodySize() {
     return maxBodySize == null ? app.getMaxBodySize() : maxBodySize;
+  }
+
+  /**
+   * Makes this handler serve a request only if no other handler of the same
+   * route would, whatever the order in which they were registered. This is
+   * how the index of static resources served at "/" leaves the app's own "/"
+   * route, if any, in charge. Every backend must honor it when dispatching.
+   */
+  public void setFallback(boolean fallback) {
+    this.fallback = fallback;
+  }
+
+  public boolean isFallback() {
+    return fallback;
   }
 
   public Object execute(SPRequest req) throws Exception {

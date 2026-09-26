@@ -12,6 +12,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import flak.HttpException;
 import flak.spi.BeforeHook;
+import flak.spi.SPRequest;
 import flak.spi.util.Log;
 
 /**
@@ -58,19 +59,31 @@ public class Context implements HttpHandler {
     return rootURI;
   }
 
+  /**
+   * Returns the first handler applicable to the request among the fallback
+   * ones or the others: fallbacks are only tried when no other applies.
+   */
+  private MethodHandler find(SPRequest req, boolean fallback) {
+    for (MethodHandler h : handlers) {
+      if (h.isFallback() == fallback && h.isApplicable(req))
+        return h;
+    }
+    return null;
+  }
+
   public void handle(HttpExchange r) throws IOException {
     String path = r.getRequestURI().getPath();
     JdkRequest req =
       new JdkRequest(app, app.relativePath(path), makeRelativePath(path), r);
     try {
       app.handle(req, request -> {
-        for (MethodHandler h : handlers) {
-          if (h.isApplicable(request)) {
-            h.processResponse(req, h.execute(request));
-            return true;
-          }
-        }
-        return false;
+        MethodHandler h = find(request, false);
+        if (h == null)
+          h = find(request, true);
+        if (h == null)
+          return false;
+        h.processResponse(req, h.execute(request));
+        return true;
       });
     }
     finally {

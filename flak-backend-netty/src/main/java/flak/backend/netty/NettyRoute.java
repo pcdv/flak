@@ -70,8 +70,13 @@ public class NettyRoute {
     // handlers of this route only see the tokens that follow it
     req.setRouteLevel(level);
 
+    // fallback handlers only get what none of the others takes
     for (NettyMethodHandler h : self) {
-      if (h.handle(req))
+      if (!h.isFallback() && h.handle(req))
+        return true;
+    }
+    for (NettyMethodHandler h : self) {
+      if (h.isFallback() && h.handle(req))
         return true;
     }
 
