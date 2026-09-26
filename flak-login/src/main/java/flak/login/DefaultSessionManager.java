@@ -241,7 +241,7 @@ public class DefaultSessionManager implements SessionManager {
    * If the user is logged in or if the URL being accessed is the login page,
    * the method simply returns true. Otherwise, if the path of the login page
    * has been set using @LoginPage or setLoginPage(), the user is redirected to
-   * it. Otherwise, a 403 error is returned.
+   * it. Otherwise, a 401 error is returned.
    */
   public boolean checkLoggedIn(Request r) {
     if (isLoggedIn(r)) {
@@ -254,8 +254,8 @@ public class DefaultSessionManager implements SessionManager {
         r.getResponse().redirect(loginPage + "?url=" + r.getPath());
       }
       else {
-        Log.debug("Forbidden (not logged in): " + r.getPath());
-        r.getResponse().setStatus(HttpURLConnection.HTTP_FORBIDDEN);
+        Log.debug("Unauthorized (not logged in): " + r.getPath());
+        r.getResponse().setStatus(HttpURLConnection.HTTP_UNAUTHORIZED);
       }
       return false;
     }
