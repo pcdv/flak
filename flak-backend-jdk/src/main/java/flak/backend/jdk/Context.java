@@ -10,7 +10,6 @@ import java.util.List;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import flak.HttpException;
-import flak.spi.BeforeHook;
 import flak.spi.HandlerSpec;
 import flak.spi.SPRequest;
 import flak.spi.util.Log;

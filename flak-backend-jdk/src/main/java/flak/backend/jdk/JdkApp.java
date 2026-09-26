@@ -2,7 +2,6 @@ package flak.backend.jdk;
 
 import flak.spi.AbstractApp;
 import flak.spi.AbstractMethodHandler;
-import flak.spi.BeforeHook;
 import flak.spi.HandlerSpec;
 import flak.spi.SPRequest;
 import flak.spi.util.Log;

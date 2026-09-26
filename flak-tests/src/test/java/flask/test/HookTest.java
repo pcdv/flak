@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 
 import flak.HttpException;
 import flak.annotations.Route;
-import flak.spi.AbstractApp;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -86,7 +85,7 @@ public class HookTest extends AbstractAppTest {
 
   @Test
   public void testBeforeAllHook() throws Exception {
-    ((AbstractApp) app).addBeforeAllHook(r -> {
+    app.addBeforeAllHook(r -> {
       r.getResponse().addHeader("X-forwarded-by", "172.16.0.5");
     });
 
@@ -99,5 +98,23 @@ public class HookTest extends AbstractAppTest {
                         client.head("/an/unhandled/route") // 404 Not found
                               .get("X-forwarded-by")
                               .get(0));
+  }
+
+  @Test
+  public void testBeforeAllHookRejects() throws Exception {
+    app.addBeforeAllHook(r -> {
+      if (r.getPath().startsWith("/hello"))
+        throw new HttpException(403, "Forbidden");
+    });
+
+    try {
+      client.get("/hello/world");
+      Assert.fail("hook should have rejected the request");
+    }
+    catch (HttpException e) {
+      Assert.assertEquals(403, e.getResponseCode());
+    }
+
+    Assert.assertEquals("root", client.get("/"));
   }
 }

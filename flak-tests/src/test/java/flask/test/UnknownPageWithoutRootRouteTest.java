@@ -3,7 +3,6 @@ package flask.test;
 import flak.App;
 import flak.AppFactory;
 import flak.annotations.Route;
-import flak.spi.AbstractApp;
 import flask.test.util.SimpleClient;
 import org.junit.After;
 import org.junit.Test;
@@ -53,7 +52,7 @@ public class UnknownPageWithoutRootRouteTest extends AbstractAppTest {
   @Test
   public void testDefault404() throws Exception {
     AtomicInteger hooks = new AtomicInteger();
-    ((AbstractApp) app).addBeforeAllHook(r -> hooks.incrementAndGet());
+    app.addBeforeAllHook(r -> hooks.incrementAndGet());
 
     HttpURLConnection con = (HttpURLConnection) new URL(app.getRootUrl() + "/foo").openConnection();
     assertEquals(404, con.getResponseCode());

@@ -461,6 +461,7 @@ public abstract class AbstractApp implements App {
     return getRequest().getResponse();
   }
 
+  @Override
   public void addBeforeAllHook(BeforeHook hook) {
     beforeHooks.add(hook);
   }

@@ -2,10 +2,10 @@ package flak.login;
 
 import java.lang.reflect.Method;
 
+import flak.BeforeHook;
+import flak.Request;
 import flak.spi.AbstractMethodHandler;
-import flak.spi.BeforeHook;
 import flak.spi.RestrictedTarget;
-import flak.spi.SPRequest;
 
 /**
  * @author pcdv
@@ -49,7 +49,7 @@ public class CheckLoggedIn implements BeforeHook {
   }
 
   @Override
-  public void execute(SPRequest req) throws StopProcessingException {
+  public void execute(Request req) throws StopProcessingException {
     if (isLoginRequired() && !manager.checkLoggedIn(req)) {
       throw STOP;
     }

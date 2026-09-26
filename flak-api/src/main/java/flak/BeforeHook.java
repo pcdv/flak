@@ -1,4 +1,4 @@
-package flak.spi;
+package flak;
 
 /**
  * A hook that is executed before the route handler. For example it can be
@@ -6,6 +6,7 @@ package flak.spi;
  * go through.
  *
  * @author pcdv
+ * @see App#addBeforeAllHook(BeforeHook)
  */
 public interface BeforeHook {
   class StopProcessingException extends Exception {}
@@ -16,5 +17,5 @@ public interface BeforeHook {
    */
   StopProcessingException STOP = new StopProcessingException();
 
-  void execute(SPRequest request) throws StopProcessingException;
+  void execute(Request request) throws StopProcessingException;
 }
