@@ -139,6 +139,13 @@ included and the whole value is url-encoded, e.g.
 `@QueryParam` receives it decoded. A login page whose path already has a
 query string gets `&url=`.
 
+**The session cookie is `Secure` over HTTPS**, so that browsers never send
+the token in clear.
+
+**Expired sessions are closed** when another session opens, at most once a
+minute, through `closeSession()`. They used to stay in memory until a request
+presented them again, which could be never.
+
 The `Set-Cookie` header of a session that expires no longer ends with a
 stray `;`.
 
@@ -155,11 +162,25 @@ every route with its own HTML 404. The unknown page handler and the
 before-all hooks now see those requests too, and the 404 is Flak's
 `text/plain` one, as with Netty.
 
+**`redirect()` keeps URLs as they are.** It used to prefix whatever it was
+given with the path of the app, so in an app at `/shop`,
+`redirect("https://example.com/")` sent the client to
+`/shophttps://example.com/`. A path is still relative to the app.
+
+**An `int` path variable that is not a number gets 404**, e.g. `/items/abc`
+for `@Route("/items/:id")`. It used to fail with 500.
+
 **Static resources stay inside the directory they are served from.** A
 request that climbs out of it, with `..` or an absolute path, used to be
 served whatever it pointed to, class files included when serving from the
 classpath. It now gets 404, as does a missing file under `serveDir()`, which
 used to fail with 500.
+
+**The root of static resources is served.** `/static/` used to be a 404
+for `servePath("/static", ...)`, and so was `/` for resources served at the
+root. It now serves the `index.html` there, and `/static` redirects to
+`/static/`, as does a subdirectory of a served directory requested without
+its trailing slash. A route of the app at the same path keeps precedence.
 
 ### OpenAPI
 
@@ -177,3 +198,9 @@ reported as HEAD instead of GET.
   plugin registers its extractors, called by `App.addPlugin()`.
 - `AbstractApp.getMethodHandlers()` and
   `AbstractMethodHandler.processResponse()`/`isApplicable()` are public.
+- `AbstractApp.addHandler0()` returns the handler it added.
+- A handler can be a fallback (`AbstractMethodHandler.setFallback()`): it
+  only serves what no other handler of the same route takes. A backend must
+  try the other handlers first.
+- The Netty backend no longer logs each request, nor prints its address to
+  stdout, unless `-Ddebug=true`.
