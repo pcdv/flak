@@ -62,6 +62,11 @@ public class FlakLogin implements SPPlugin {
   }
 
   @Override
+  public boolean enforcesRestrictions() {
+    return true;
+  }
+
+  @Override
   public void preInit(AbstractMethodHandler handler) {
     // TODO do not systematically add hooks (if access is not restricted)
     handler.addHook(new CheckLoggedIn(handler, sessionManager));

@@ -1,6 +1,0 @@
-description = "Flak add-on allowing to serve static resources"
-
-dependencies {
-  implementation project(":flak-api")
-  implementation project(":flak-spi")
-}

@@ -2,7 +2,6 @@ import javax.inject.Inject
 
 dependencies {
   implementation project(':flak-api')
-  implementation project(':flak-resource')
   runtimeOnly project(':flak-backend-jdk')
 }
 

@@ -3,7 +3,6 @@ package flask.test;
 import flak.App;
 import flak.AppFactory;
 import flak.annotations.Route;
-import flak.plugin.resource.FlakResourceImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +51,7 @@ public class StaticRootTest {
   @Test
   public void testServeDir() throws Exception {
     createApp();
-    new FlakResourceImpl(app).serveDir("/static", dir.toFile());
+    app.serveDir("/static", dir.toFile());
     app.start();
 
     assertEquals("302 /static/", get("/static"));
@@ -67,7 +66,7 @@ public class StaticRootTest {
   @Test
   public void testServePathFromClasspath() throws Exception {
     createApp();
-    new FlakResourceImpl(app).servePath("/cp", "/test-resources");
+    app.serveClasspath("/cp", "/test-resources");
     app.start();
 
     assertEquals("302 /cp/", get("/cp"));
@@ -79,7 +78,7 @@ public class StaticRootTest {
   @Test
   public void testServeRoot() throws Exception {
     createApp();
-    new FlakResourceImpl(app).serveDir("/", dir.toFile());
+    app.serveDir("/", dir.toFile());
     app.start();
 
     assertEquals("200 INDEX", get("/"));
@@ -101,7 +100,7 @@ public class StaticRootTest {
   @Test
   public void testRouteScannedAfterResourcesWins() throws Exception {
     createApp();
-    new FlakResourceImpl(app).serveDir("/", dir.toFile());
+    app.serveDir("/", dir.toFile());
     app.scan(new RootRoute());
     app.start();
     assertEquals("200 ROUTE", get("/"));
@@ -112,7 +111,7 @@ public class StaticRootTest {
   public void testRouteScannedBeforeResourcesWins() throws Exception {
     createApp();
     app.scan(new RootRoute());
-    new FlakResourceImpl(app).serveDir("/", dir.toFile());
+    app.serveDir("/", dir.toFile());
     app.start();
     assertEquals("200 ROUTE", get("/"));
   }

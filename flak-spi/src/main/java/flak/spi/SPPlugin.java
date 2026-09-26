@@ -20,4 +20,13 @@ public interface SPPlugin extends FlakPlugin {
    * of the method, inject hooks, customize input parser or output formatter.
    */
   void preInit(AbstractMethodHandler handler);
+
+  /**
+   * Tells whether this plugin keeps the handlers of a {@link RestrictedTarget}
+   * away from users who are not logged in. Without such a plugin, serving
+   * restricted resources fails, since nothing would protect them.
+   */
+  default boolean enforcesRestrictions() {
+    return false;
+  }
 }

@@ -3,8 +3,8 @@ package samples;
 import flak.App;
 import flak.AppFactory;
 import flak.Flak;
+import flak.ResourceOptions;
 import flak.annotations.Route;
-import flak.plugin.resource.FlakResourceImpl;
 
 public class WebApp {
 
@@ -21,10 +21,9 @@ public class WebApp {
       }
     });
 
-    // static resources are served from local file system or directly
-    // from the web-app jar
-    FlakResourceImpl res = new FlakResourceImpl(app);
-    res.servePath("/", "app/", WebApp.class.getClassLoader(), false);
+    // static resources are served from the classpath, i.e. from the web-app
+    // jar, or from the project dir when run from the IDE
+    app.serveClasspath("/", "/app", new ResourceOptions().classLoader(WebApp.class.getClassLoader()));
 
     app.start();
     System.out.println("Listening on " + app.getRootUrl());

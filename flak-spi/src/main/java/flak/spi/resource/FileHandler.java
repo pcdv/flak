@@ -1,4 +1,6 @@
-package flak.plugin.resource;
+package flak.spi.resource;
+
+import flak.ContentTypeProvider;
 
 import flak.spi.CompressionHelper;
 import flak.spi.SPResponse;

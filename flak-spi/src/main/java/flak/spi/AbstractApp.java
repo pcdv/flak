@@ -1,5 +1,6 @@
 package flak.spi;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
@@ -18,6 +19,9 @@ import java.util.stream.Stream;
 
 import flak.*;
 import flak.annotations.Route;
+import flak.spi.resource.AbstractResourceHandler;
+import flak.spi.resource.FileHandler;
+import flak.spi.resource.ResourceHandler;
 import flak.spi.util.Log;
 
 public abstract class AbstractApp implements App {
@@ -82,6 +86,64 @@ public abstract class AbstractApp implements App {
           throw new ScanException("Error while scanning " + method, e);
         }
       }
+    }
+    return this;
+  }
+
+  @Override
+  public App serveDir(String path, File dir) {
+    return serveDir(path, dir, new ResourceOptions());
+  }
+
+  @Override
+  public App serveDir(String path, File dir, ResourceOptions options) {
+    // NB: it may not exist yet, e.g. a cache created on demand
+    if (dir.exists() && !dir.isDirectory())
+      throw new IllegalArgumentException("Not a directory: " + dir);
+    return serve(path, new FileHandler(options.getContentTypes(),
+                                       path,
+                                       dir,
+                                       options.isRestricted()),
+                 options);
+  }
+
+  @Override
+  public App serveClasspath(String path, String resourcePath) {
+    return serveClasspath(path, resourcePath, new ResourceOptions());
+  }
+
+  @Override
+  public App serveClasspath(String path, String resourcePath, ResourceOptions options) {
+    return serve(path, new ResourceHandler(options.getContentTypes(),
+                                           path,
+                                           resourcePath,
+                                           options.getClassLoader(),
+                                           options.isRestricted()),
+                 options);
+  }
+
+  private App serve(String path, AbstractResourceHandler h, ResourceOptions options) {
+    if (options.isRestricted() && plugins.stream().noneMatch(SPPlugin::enforcesRestrictions))
+      throw new IllegalStateException("Restricted resources require a plugin checking logins, "
+                                      + "e.g. flak-login: without it, " + path
+                                      + " would be open to anyone");
+    try {
+      addHandler0(path + "/*splat",
+                  h.getClass().getMethod("doGet", Request.class, String.class),
+                  h);
+
+      // the root itself, which the splat does not match. A fallback, so that
+      // a route of the app at the same path, e.g. "/", stays in charge
+      String root = path.length() > 1 && path.endsWith("/")
+        ? path.substring(0, path.length() - 1)
+        : path;
+      addHandler0(root.isEmpty() ? "/" : root,
+                  h.getClass().getMethod("serveRoot", Request.class),
+                  h)
+        .setFallback(true);
+    }
+    catch (NoSuchMethodException e) {
+      throw new IllegalStateException(e);
     }
     return this;
   }

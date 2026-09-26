@@ -2,11 +2,11 @@ package flask.test;
 
 import flak.App;
 import flak.AppFactory;
+import flak.ResourceOptions;
 import flak.WebServer;
 import flak.annotations.Route;
 import flak.login.FlakLogin;
 import flak.login.SessionManager;
-import flak.plugin.resource.FlakResourceImpl;
 import flask.test.util.SimpleClient;
 import org.junit.After;
 import org.junit.Assert;
@@ -42,7 +42,7 @@ public class ServePathTest {
     WebServer ws = fac.getServer();
     ws.start();
     app = fac.createApp("/app");
-    new FlakResourceImpl(app).servePath("/static", "/test-resources");
+    app.serveClasspath("/static", "/test-resources");
     app.start();
 
     SimpleClient client = new SimpleClient(app.getRootUrl());
@@ -57,7 +57,7 @@ public class ServePathTest {
     ws.start();
     app = factory.createApp("/app");
     FlakLogin fl = app.getPlugin(FlakLogin.class);
-    new FlakResourceImpl(app).servePath("/static", "/test-resources");
+    app.serveClasspath("/static", "/test-resources");
     fl.getSessionManager().setRequireLoggedInByDefault(true);
     fl.getSessionManager().setLoginPage("/static/login.html");
     app.scan(this);
@@ -70,10 +70,7 @@ public class ServePathTest {
   @Test
   public void testServePathWithProtectedAccess() throws Exception {
     app = createApp();
-    new FlakResourceImpl(app).servePath("/static",
-                                        "/test-resources",
-                                        null,
-                                        true);
+    app.serveClasspath("/static", "/test-resources", new ResourceOptions().restricted());
     sessionManager.setLoginPage("/static/login.html");
     app.start();
 
@@ -84,7 +81,7 @@ public class ServePathTest {
   @Test
   public void testServeRootWithProtectedAccess() throws Exception {
     app = createApp();
-    new FlakResourceImpl(app).servePath("/", "/test-resources/", null, true);
+    app.serveClasspath("/", "/test-resources/", new ResourceOptions().restricted());
     sessionManager.setLoginPage("/login.html");
     app.start();
 
@@ -92,13 +89,24 @@ public class ServePathTest {
     Assert.assertEquals("Please login", client.get("/static/anything"));
   }
 
+  /**
+   * Without flak-login, nothing would keep anyone away from them.
+   */
+  @Test
+  public void testRestrictedRequiresLogin() {
+    AppFactory factory = TestUtil.getFactory();
+    factory.setPlugins();
+    app = factory.createApp();
+    TestUtil.assertFails(() -> app.serveClasspath("/static", "/test-resources", new ResourceOptions().restricted()),
+                         "Restricted resources require a plugin checking logins");
+  }
+
   @Test
   public void testServeRootWithProtectedAccessAndClassLoader() throws Exception {
     app = createApp();
-    new FlakResourceImpl(app).servePath("/",
-                                        "/test-resources/",
-                                        getClass().getClassLoader(),
-                                        true);
+    app.serveClasspath("/",
+                       "/test-resources/",
+                       new ResourceOptions().restricted().classLoader(getClass().getClassLoader()));
     sessionManager.setLoginPage("/login.html");
     app.start();
 

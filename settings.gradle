@@ -13,7 +13,6 @@ include 'flak-tests'
 include 'flak-util'
 include 'flak-examples'
 include 'flak-login'
-include 'flak-resource'
 include 'flak-spi'
 include 'flak-swagger'
 include "webapp"
