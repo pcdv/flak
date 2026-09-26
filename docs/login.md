@@ -156,8 +156,8 @@ sessions.openSession(app, new DefaultFlakSession(user, sessions.generateSessionT
 
 The cookie then expires at the same time. A request presenting an expired
 session is treated as not logged in, and the session is discarded. Expired
-sessions that are never presented again stay in memory; call
-`closeSession()` from a periodic task if that matters.
+sessions that are never presented again are closed when another session
+opens, at most once a minute, so they do not pile up in memory.
 
 Other useful methods of the session manager:
 
