@@ -78,8 +78,8 @@ public class NettyRequest implements SPRequest, SPResponse {
   private String[] split;
 
   /**
-   * Percent-decoded but with '+' left alone, like the JDK backend gets it from
-   * HttpExchange.getRequestURI().
+   * As it was sent, i.e. still encoded: decoded, a value containing an
+   * encoded '&' could no longer be told from two parameters.
    */
   private final String queryString;
 
@@ -171,8 +171,7 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   @Override
   public Query getQuery() {
-    // the query string is already decoded, do not do it twice
-    return new FormImpl(queryString, false);
+    return new FormImpl(queryString, true);
   }
 
   @Override

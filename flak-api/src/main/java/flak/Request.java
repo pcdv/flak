@@ -17,9 +17,12 @@ public interface Request {
   String getPath();
 
   /**
-   * Returns the query string contained in request URL after the path. This
-   * method returns <code>null</code> if the URL does not have a query string.
-   * Same as the value of the CGI variable QUERY_STRING.
+   * Returns the query string contained in request URL after the path, as it
+   * was sent, i.e. still url-encoded. This method returns <code>null</code> if
+   * the URL does not have a query string. Same as the value of the CGI
+   * variable QUERY_STRING.
+   * <p>
+   * {@link #getQuery()} is what decodes it, name by name and value by value.
    *
    * @return a <code>String</code> containing the query string or
    *         <code>null</code> if the URL contains no query string

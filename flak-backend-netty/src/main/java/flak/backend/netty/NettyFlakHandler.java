@@ -148,7 +148,7 @@ public class NettyFlakHandler extends ChannelInboundHandlerAdapter {
 
     String appRelativePath = path.substring(app.getPath().length());
     NettyRequest r =
-      new NettyRequest(app, ctx, req, body, appRelativePath, uri.getQuery());
+      new NettyRequest(app, ctx, req, body, appRelativePath, uri.getRawQuery());
     String[] tokens = appRelativePath.split("/");
 
     try {

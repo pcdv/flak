@@ -1,9 +1,12 @@
 package flask.test;
 
 import java.io.IOException;
+import java.util.Arrays;
 
+import flak.Form;
 import flak.Query;
 import flak.Request;
+import flak.annotations.Post;
 import flak.annotations.Route;
 import org.junit.Test;
 
@@ -39,15 +42,57 @@ public class QueryTest extends AbstractAppTest {
     return q.parameters().toString();
   }
 
+  @Route("/queryString")
+  public String queryString(Request req) {
+    return req.getQueryString();
+  }
+
+  @Route("/form")
+  @Post
+  public String showFormParams(Form f) {
+    return f.parameters() + " " + Arrays.toString(f.getArray("a b"));
+  }
+
   @Test
   public void testShowParams() throws Exception {
     assertEquals("[a=+]", client.get("/showParams?a=%2B"));
     assertEquals("[a= ]", client.get("/showParams?a=%20"));
-    assertEquals("[a=+]", client.get("/showParams?a=+"));
+    // as HTML forms encode a space
+    assertEquals("[a= ]", client.get("/showParams?a=+"));
+    assertEquals("[a=x y]", client.get("/showParams?a=x+y"));
     assertEquals("[]", client.get("/showParams"));
     assertEquals("[a=b]", client.get("/showParams?a=b"));
     assertEquals("[a=b, c=d]", client.get("/showParams?a=b&c=d"));
     assertEquals("[a=1, a=2, a=3]", client.get("/showParams?a=1&a=2&a=3"));
+  }
+
+  /**
+   * A value is decoded after the query string is split, not before: an
+   * encoded '&' or '=' belongs to it.
+   */
+  @Test
+  public void testEncodedSeparators() throws Exception {
+    assertEquals("[url=/data?x=1&y=2]", client.get("/showParams?url=%2Fdata%3Fx%3D1%26y%3D2"));
+    assertEquals("[a b=c&d, é=ü]", client.get("/showParams?a+b=c%26d&%C3%A9=%C3%BC"));
+  }
+
+  @Test
+  public void testQueryStringIsRaw() throws Exception {
+    assertEquals("a=x+y&b=%26", client.get("/queryString?a=x+y&b=%26"));
+  }
+
+  @Test
+  public void testFormIsDecodedLikeQuery() throws Exception {
+    assertEquals("[a b=1, a b=x&y] [1, x&y]", client.post("/form", "a+b=1&a%20b=x%26y"));
+  }
+
+  /**
+   * Only a form can get there: both backends reject such a query string
+   * before we see it, as java.net.URI does.
+   */
+  @Test
+  public void testMalformedEncoding() {
+    TestUtil.assertFails(() -> client.post("/form", "a=%zz"), "400 Malformed url-encoded data: %zz");
   }
 
   @Test
