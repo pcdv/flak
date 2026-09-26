@@ -1,5 +1,6 @@
 package flak.spi.extractor;
 
+import flak.HttpException;
 import flak.spi.ArgExtractor;
 import flak.spi.SPRequest;
 
@@ -14,8 +15,18 @@ public class IntExtractor extends ArgExtractor<Integer> {
     this.tokenIndex = tokenIndex;
   }
 
+  /**
+   * A path that is not a number designates no resource: 404, as JAX-RS
+   * answers a path parameter it cannot convert, rather than a server error.
+   */
   @Override
   public Integer extract(SPRequest request) {
-    return Integer.valueOf(request.getSplit(tokenIndex));
+    String s = request.getSplit(tokenIndex);
+    try {
+      return Integer.valueOf(s);
+    }
+    catch (NumberFormatException e) {
+      throw new HttpException(404, "Not found");
+    }
   }
 }
