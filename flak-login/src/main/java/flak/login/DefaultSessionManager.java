@@ -2,6 +2,7 @@ package flak.login;
 
 import java.net.HttpURLConnection;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Locale;
@@ -38,6 +39,14 @@ public class DefaultSessionManager implements SessionManager {
   protected boolean requireLoggedInByDefault;
 
   private LongSupplier timeProvider = System::currentTimeMillis;
+
+  /**
+   * How often, at most, expired sessions are looked for, see
+   * closeExpiredSessions().
+   */
+  public static final long PURGE_PERIOD_MS = 60_000;
+
+  private long lastPurge;
 
   /**
    * Changes the name of the cookie in which the session token is stored. This
@@ -144,8 +153,33 @@ public class DefaultSessionManager implements SessionManager {
   }
 
   public FlakSession addSession(FlakSession session) {
+    closeExpiredSessions();
     sessions.put(session.getAuthToken(), session);
     return session;
+  }
+
+  /**
+   * Closes the sessions that have expired. An expired session is discarded
+   * when a request presents it, but one that is never presented again would
+   * stay in memory for good: they are looked for whenever a session opens,
+   * at most once per {@link #PURGE_PERIOD_MS}, which costs nothing to the
+   * requests of logged-in users.
+   * <p>
+   * NB: through closeSession(), so that a subclass persisting sessions
+   * forgets them too.
+   */
+  private void closeExpiredSessions() {
+    long now = timeProvider.getAsLong();
+    synchronized (this) {
+      if (now - lastPurge < PURGE_PERIOD_MS)
+        return;
+      lastPurge = now;
+    }
+    // a copy, since sessions may be added concurrently
+    for (FlakSession s : new ArrayList<>(sessions.values())) {
+      if (!isSessionValid(s))
+        closeSession(s);
+    }
   }
 
   /**
