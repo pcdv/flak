@@ -89,13 +89,18 @@ public class DefaultSessionManager implements SessionManager {
   }
 
   /**
-   * Fills the Set-Cookie header in specified response.
+   * Fills the Set-Cookie header in specified response. The cookie is marked
+   * Secure when the app is served over HTTPS.
    */
   public void setCookie(App app, FlakSession session, Response response) {
     String path = app.getPath();
     if (path == null || path.isEmpty())
       path = "/";
-    response.addHeader("Set-Cookie", generateSetCookieHeader(path, session));
+    String header = generateSetCookieHeader(path, session);
+    // over HTTPS, a browser must never send the token in clear
+    if ("https".equals(app.getServer().getProtocol()))
+      header += "; Secure";
+    response.addHeader("Set-Cookie", header);
   }
 
   /**

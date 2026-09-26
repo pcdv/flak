@@ -68,14 +68,14 @@ public class SSLTest {
 
   // https://stackoverflow.com/questions/2308479/simple-java-https-server
   @SuppressWarnings("SameParameterValue")
-  private SSLContext getSslContext(String keyStorePath, String pwd) throws Exception {
+  static SSLContext getSslContext(String keyStorePath, String pwd) throws Exception {
     char[] password = pwd.toCharArray();
 
     SSLContext sslContext = SSLContext.getInstance("TLS");
 
     // initialise the keystore
     KeyStore keyStore = KeyStore.getInstance("JKS");
-    keyStore.load(getClass().getResourceAsStream(keyStorePath), password);
+    keyStore.load(SSLTest.class.getResourceAsStream(keyStorePath), password);
 
     // setup the key manager factory
     KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -91,7 +91,7 @@ public class SSLTest {
   }
 
   // http://stacktips.com/snippet/how-to-trust-all-certificates-for-httpurlconnection-in-android
-  private void trustAllCertificates() {
+  static void trustAllCertificates() {
     try {
       TrustManager[] trustAllCerts = new TrustManager[]{
         new X509TrustManager() {

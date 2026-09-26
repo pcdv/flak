@@ -190,9 +190,11 @@ The token travels in a cookie:
 - `HttpOnly` and `SameSite=Strict` by default. Change them per session with
   `setHttpOnly()` and `setSameSite()` on `DefaultFlakSession`.
 - with `Expires` when the session expires
+- `Secure` when the app is served over HTTPS, so that browsers never send
+  the token in clear
 
-Flak does not add the `Secure` attribute. To add it when serving over HTTPS,
-override `generateSetCookieHeader()`:
+Behind a proxy that terminates TLS, Flak serves plain HTTP and cannot tell.
+To mark the cookie `Secure` anyway, override `generateSetCookieHeader()`:
 
 ```java
 DefaultSessionManager sessions = new DefaultSessionManager() {
