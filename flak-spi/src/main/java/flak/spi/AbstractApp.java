@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Vector;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -195,6 +196,19 @@ public abstract class AbstractApp implements App {
   @Override
   public String absolutePath(String path) {
     return rootUrl == null || rootUrl.equals("/") ? path : rootUrl + path;
+  }
+
+  private static final Pattern URL_WITH_SCHEME = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:");
+
+  /**
+   * The Location header of a redirect to specified target: a path, relative
+   * to the app, or a URL, with a scheme ("https://...") or without one
+   * ("//host/..."), which is kept as is.
+   */
+  public String redirectLocation(String target) {
+    if (target.startsWith("//") || URL_WITH_SCHEME.matcher(target).find())
+      return target;
+    return absolutePath(target);
   }
 
   @SuppressWarnings("unused")

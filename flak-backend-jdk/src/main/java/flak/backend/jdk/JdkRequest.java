@@ -13,6 +13,7 @@ import com.sun.net.httpserver.HttpExchange;
 import flak.App;
 import flak.Form;
 import flak.Query;
+import flak.spi.AbstractApp;
 import flak.spi.FormImpl;
 import flak.Request;
 import flak.Response;
@@ -253,7 +254,7 @@ public class JdkRequest implements SPRequest, SPResponse {
 
   @Override
   public void redirect(String location) {
-    addHeader("Location", app.absolutePath(location));
+    addHeader("Location", ((AbstractApp) app).redirectLocation(location));
     setStatus(HttpURLConnection.HTTP_MOVED_TEMP);
   }
 
