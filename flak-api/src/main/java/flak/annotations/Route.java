@@ -50,7 +50,7 @@ public @interface Route {
    * <p>
    * <pre>
    * &#064;Route(&quot;/foo/bar&quot;)
-   * public void fooBar() {
+   * public String fooBar() {
    *   return &quot;...&quot;;
    * }
    * </pre>
@@ -59,7 +59,7 @@ public @interface Route {
    * <p>
    * <pre>
    * &#064;Route(&quot;/hello/:name&quot;)
-   * public void hello(String name) {
+   * public String hello(String name) {
    *   return &quot;Hello &quot; + name;
    * }
    * </pre>

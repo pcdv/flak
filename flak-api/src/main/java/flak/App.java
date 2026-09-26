@@ -23,6 +23,10 @@ public interface App {
    */
   App scan(Object obj);
 
+  /**
+   * Same as {@link #scan(Object)}, binding the routes of the object under
+   * specified prefix, e.g. "/v2": a same class can serve several paths.
+   */
   App scan(Object obj, String prefix);
 
   /**
@@ -60,22 +64,52 @@ public interface App {
    */
   void stop();
 
+  /**
+   * Adds a handler notified whenever a route handler fails with an
+   * exception, i.e. with a 500.
+   */
   void addErrorHandler(ErrorHandler handler);
 
+  /**
+   * Adds a handler notified whenever a route handler returns normally.
+   */
   void addSuccessHandler(SuccessHandler handler);
 
+  /**
+   * Returns the request being served by the current thread, so that code
+   * called by a route handler can reach it without it being passed around.
+   */
   Request getRequest();
 
+  /**
+   * Returns the response of the request being served by the current thread.
+   */
   Response getResponse();
 
+  /**
+   * Sets the handler serving the requests that match no route, instead of
+   * the default 404.
+   */
   void setUnknownPageHandler(UnknownPageHandler handler);
 
+  /**
+   * Returns the path at which the app is hosted, e.g. "/app1", or an empty
+   * string for an app at the root of the server.
+   */
   String getPath();
 
+  /**
+   * Returns the URL of the app, e.g. "http://localhost:8080/app1", built
+   * from the host name of the server, see {@link WebServer#setHostName}.
+   */
   String getRootUrl();
 
   WebServer getServer();
 
+  /**
+   * Prepends the path of the app to specified path, e.g. "/foo" becomes
+   * "/app1/foo".
+   */
   String absolutePath(String path);
 
   /**
@@ -112,7 +146,17 @@ public interface App {
    */
   RouteHandler getHandler(String httpMethod, String route);
 
+  /**
+   * Returns the plugin of specified class installed in this app, e.g.
+   * <code>app.getPlugin(FlakLogin.class)</code>.
+   *
+   * @throws java.util.NoSuchElementException if it is not installed
+   */
   <T extends FlakPlugin> T getPlugin(Class<T> clazz);
 
+  /**
+   * Installs a plugin by hand, typically one of the application's own, which
+   * no FlakPluginLoader can discover.
+   */
   void addPlugin(FlakPlugin plugin);
 }

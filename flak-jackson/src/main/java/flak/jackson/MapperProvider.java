@@ -3,9 +3,15 @@ package flak.jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Providers an ObjectMapper for a given request. By default, a new mapper is
- * created for each request in order to execute concurrent requests without
- * contention.
+ * Provides the ObjectMapper associated with an ID, i.e. with the value of
+ * a {@link JSON} annotation. It is mostly asked once per handler, to build an
+ * ObjectReader and an ObjectWriter, which are immutable and shared by all the
+ * requests; only a body parsed without a known type asks for it on each
+ * request.
+ * <p>
+ * Registering mappers with
+ * {@link JacksonPlugin#registerMapper(String, ObjectMapper)} is simpler than
+ * providing an implementation.
  */
 public interface MapperProvider {
 

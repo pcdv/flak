@@ -25,10 +25,11 @@ public class FormImpl implements Form, Query {
   private final List<Map.Entry<String, String>> params = new ArrayList<>();
 
   /**
-   * @param data the encoded data, e.g. "a=1&b=x+y", or null for none
+   * @param data the encoded data, e.g. <code>a=1&amp;b=x+y</code>, or null for
+   * none
    * @param urlDecode whether to decode the names and values, which is always
    * the case unless data was decoded already. It must be decoded after being
-   * split: decoded before, an encoded '&' or '=' in a value would split it
+   * split: decoded before, an encoded '&amp;' or '=' in a value would split it
    */
   public FormImpl(String data, boolean urlDecode) {
     if (data != null)

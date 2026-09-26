@@ -8,12 +8,7 @@ import java.lang.annotation.Target;
 /**
  * Indicates that the associated handler method should have its return value
  * converted with specified converter (which is supposed to have been
- * registered in the flak App).
- * Instead of
- * <pre>
- *   &#64;Route(value="/some/path", method="POST", converter="JSON)
- * </pre>
- * you can use
+ * registered in the flak App with {@link flak.App#addOutputFormatter}), e.g.
  * <pre>
  *   &#64;Post
  *   &#64;OutputFormat("JSON")

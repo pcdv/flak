@@ -7,11 +7,8 @@ import java.lang.annotation.Target;
 
 /**
  * Indicates that the associated route handler is valid for OPTIONS requests.
- * Instead of
- * <pre>
- *   &#64;Route(value="/some/path", method="OPTIONS")
- * </pre>
- * you can use
+ * A route handler answers a single HTTP method: GET, unless one of these
+ * annotations says otherwise, e.g.
  * <pre>
  *   &#64;Options
  *   &#64;Route("/some/path")
