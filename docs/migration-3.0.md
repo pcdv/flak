@@ -21,7 +21,8 @@
 - **Plugins can be listed explicitly** with `AppFactory.setPlugins()` rather
   than only discovered on the classpath. See [Plugins](plugins.md).
 - **`@QueryParam` supports more types**, `long`, `double`, `boolean`, their
-  boxed counterparts and enums, and a `defaultValue`. See
+  boxed counterparts and enums, a `defaultValue`, and `required`, which
+  rejects a request without it with 400. See
   [Handler arguments](arguments.md#query-parameters).
 - **`@WithPermission` and `@WithAnyPermission` work on classes.** They
   could be put there before, but were ignored.
@@ -236,6 +237,10 @@ which changes what it generates:
 - **Path variables have a type**, `string` or `integer`, and a splat is a
   path variable too: `/files/*path` becomes `/files/{path}`.
 - **Query parameters without a description** no longer get an empty one.
+- **The response is a 200 described as "OK"**, where it used to be a
+  `default` response described as "Missing description.". A `void` handler
+  gets one too, without content, where it had no response at all, which
+  OpenAPI does not allow.
 - **A `@Parameter` on a parameter is no longer ignored**: its description,
   `required`, example, etc. now reach the document. Only those on the method
   used to.

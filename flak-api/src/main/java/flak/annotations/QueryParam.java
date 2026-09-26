@@ -18,7 +18,8 @@ import java.lang.annotation.Target;
  * <code>double</code>, <code>boolean</code>, their boxed counterparts, and
  * enums (by constant name).
  * <p>
- * A parameter that is absent takes its {@link #defaultValue()} if there is
+ * A parameter that is absent is rejected with 400 if it is
+ * {@link #required()}, and takes its {@link #defaultValue()} if there is
  * one. Otherwise it is <code>null</code>, an empty array for
  * <code>String[]</code>, <code>false</code> for a <code>boolean</code> and -1
  * for the other primitive types: use a boxed type to tell a missing number
@@ -55,4 +56,11 @@ public @interface QueryParam {
    * early.
    */
   String defaultValue() default NO_DEFAULT;
+
+  /**
+   * Whether the parameter must be given: when it is absent, or empty for a
+   * type other than <code>String</code>, the request is rejected with 400
+   * before the handler is called. It cannot have a {@link #defaultValue()}.
+   */
+  boolean required() default false;
 }

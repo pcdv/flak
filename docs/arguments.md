@@ -56,9 +56,18 @@ boolean must be `true` or `false`, in any case.
 The default is checked when the handler is scanned, so an invalid default
 fails at startup.
 
+A parameter the handler cannot do without is declared `required`: a request
+without it is rejected with **400** "Missing query parameter q" before the
+handler is called. It counts as absent as above, so an empty value is
+rejected, except for a `String`. A required parameter cannot have a default.
+
+```java
+public String search(@QueryParam(value = "q", required = true) String q) { ... }
+```
+
 A `@QueryParam` also documents itself: the [OpenAPI generator](openapi.md)
-lists it, with its type, default and description
-(`@QueryParam(value = "q", description = "Search terms")`).
+lists it, with its type, default, whether it is required and its
+description (`@QueryParam(value = "q", description = "Search terms")`).
 
 ## The query string
 

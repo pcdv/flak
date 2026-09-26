@@ -100,7 +100,7 @@ public final class FlakAnnotations {
       QueryParam query = p.getAnnotation(QueryParam.class);
 
       if (hasCustomExtractor.test(type))
-        res.add(new RouteParameter(Kind.OTHER, null, p, null, null));
+        res.add(new RouteParameter(Kind.OTHER, null, p, null, false, null));
       else if (query != null)
         res.add(new RouteParameter(Kind.QUERY,
                                    query.value(),
@@ -108,17 +108,18 @@ public final class FlakAnnotations {
                                    QueryParam.NO_DEFAULT.equals(query.defaultValue())
                                      ? null
                                      : query.defaultValue(),
+                                   query.required(),
                                    query.description().isEmpty() ? null : query.description()));
       else if (type == Request.class || type == Response.class || type == Query.class)
-        res.add(new RouteParameter(Kind.OTHER, null, p, null, null));
+        res.add(new RouteParameter(Kind.OTHER, null, p, null, false, null));
       else if (type == String.class || type == int.class) {
         if (bound >= variables.size())
           throw new IllegalArgumentException("Too many method parameters");
-        res.add(new RouteParameter(Kind.PATH, variables.get(bound++), p, null, null));
+        res.add(new RouteParameter(Kind.PATH, variables.get(bound++), p, null, true, null));
       }
       else
         // a Form, or whatever the input parser reads
-        res.add(new RouteParameter(Kind.BODY, null, p, null, null));
+        res.add(new RouteParameter(Kind.BODY, null, p, null, false, null));
     }
 
     if (bound < variables.size())

@@ -71,7 +71,7 @@ For each route handler, static resources excepted:
   - every variable of the route, as a path parameter of type `string` or
     `integer`
   - every [`@QueryParam`](arguments.md#query-parameters), with its type,
-    default value and description
+    default value, description, and whether it is required
   - those declared with `@Parameter` on the method, which take precedence
     over a path variable of the same name
 
@@ -83,9 +83,10 @@ For each route handler, static resources excepted:
 - **the request body**: what `@RequestBody` declares, or else the schema of
   the parameter [parsed from the body](arguments.md#objects-parsed-from-the-body),
   as `application/json` when it is read as JSON. A `Form` is not described.
-- **the response**: the schema of the return type, as `application/json`
-  with `@JSON`. `@ApiResponse` annotations replace it, for instance to
-  document several status codes. A `void` handler has none.
+- **the response**: a 200 with the schema of the return type, as
+  `application/json` with `@JSON`, and no content for a `void` handler.
+  `@ApiResponse` annotations replace it, for instance to document several
+  status codes, or another one set by the handler.
 - **descriptions**, from `@Operation(summary = ..., description = ...)`. A
   description of the form `include:docs/items.md` is read from that
   classpath resource, so long descriptions can live in files.

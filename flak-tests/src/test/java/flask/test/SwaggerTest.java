@@ -187,7 +187,7 @@ public class SwaggerTest extends AbstractAppTest {
     gen.scan(JsonTest.JsonRoutes.class);
     PathItem foo = gen.getAPI().getPaths().get("/classJson/foo");
 
-    assertNotNull(foo.getGet().getResponses().getDefault().getContent().get("application/json"));
+    assertNotNull(foo.getGet().getResponses().get("200").getContent().get("application/json"));
     assertNotNull(foo.getPut().getRequestBody().getContent().get("application/json"));
   }
 
@@ -197,6 +197,7 @@ public class SwaggerTest extends AbstractAppTest {
                     @Parameter(description = "Where to start", required = true, example = "0")
                     @QueryParam("from") String from,
                     @QueryParam(value = "to", description = "Where to stop") int to,
+                    @QueryParam(value = "key", required = true) String key,
                     @Parameter(hidden = true) @QueryParam("debug") boolean debug,
                     @Parameter(description = "The color")
                     @QueryParam(value = "c", defaultValue = "RED") Color c) {
@@ -216,7 +217,7 @@ public class SwaggerTest extends AbstractAppTest {
     gen.getAPI().getPaths().get("/described/{id}").getGet().getParameters()
        .forEach(p -> params.put(p.getName(), p));
 
-    assertEquals("[c, from, id, to]", new TreeSet<>(params.keySet()).toString());
+    assertEquals("[c, from, id, key, to]", new TreeSet<>(params.keySet()).toString());
 
     io.swagger.v3.oas.models.parameters.Parameter id = params.get("id");
     assertEquals("path", id.getIn());
@@ -235,6 +236,7 @@ public class SwaggerTest extends AbstractAppTest {
     assertEquals("Where to stop", to.getDescription());
     assertEquals("integer", to.getSchema().getType());
     assertNull(to.getRequired());
+    assertEquals(Boolean.TRUE, params.get("key").getRequired());
 
     // what flak knows is kept
     io.swagger.v3.oas.models.parameters.Parameter color = params.get("c");
@@ -313,7 +315,11 @@ public class SwaggerTest extends AbstractAppTest {
     // getOneParam()
     assertEquals(1, getOneParam.getGet().getParameters().size());
     assertEquals("one", getOneParam.getGet().getParameters().get(0).getName());
-    assertNull(getOneParam.getGet().getResponses()); // void => no response
+    // void => 200 with no content
+    assertEquals("OK", getOneParam.getGet().getResponses().get("200").getDescription());
+    assertNull(getOneParam.getGet().getResponses().get("200").getContent());
+    assertEquals("OK", getData.getGet().getResponses().get("200").getDescription());
+    assertNotNull(getData.getGet().getResponses().get("200").getContent().get("application/json"));
     assertEquals("[Testing]", getOneParam.getGet().getTags().toString());
 
     // getTwoParam()

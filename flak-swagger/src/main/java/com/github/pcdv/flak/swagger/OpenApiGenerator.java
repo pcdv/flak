@@ -335,8 +335,13 @@ public class OpenApiGenerator {
   private ApiResponses buildDefaultResponses(Endpoint e) {
     Method m = e.method();
 
+    // what flak answers when the handler returns, unless it sets another
+    // status: @ApiResponse documents the others
+    ApiResponse ok = new ApiResponse().description("OK");
+    ApiResponses resp = new ApiResponses().addApiResponse("200", ok);
+
     if (m.getReturnType() == void.class)
-      return null;
+      return resp;
 
     MediaType mt = new MediaType();
 
@@ -357,8 +362,7 @@ public class OpenApiGenerator {
     else
       content.addMediaType("*/*", mt);
 
-    ApiResponses resp = new ApiResponses();
-    resp._default(new ApiResponse().content(content).description("Missing description."));
+    ok.content(content);
     return resp;
   }
 
@@ -406,6 +410,7 @@ public class OpenApiGenerator {
         op.addParametersItem(annotate(new Parameter().in("query")
                                                      .name(p.name())
                                                      .description(p.description())
+                                                     .required(p.required() ? true : null)
                                                      .schema(schema),
                                       p, ann));
       }
