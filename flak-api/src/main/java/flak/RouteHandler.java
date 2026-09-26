@@ -57,4 +57,36 @@ public interface RouteHandler {
    * set or annotated, that of the app otherwise.
    */
   long getMaxBodySize();
+
+  /**
+   * What reads the request body into an argument of the method, null if none
+   * of its parameters needs one.
+   *
+   * @see flak.annotations.InputFormat
+   */
+  InputParser<?> getInputParser();
+
+  /**
+   * What converts the values returned by the method, null if it returns one
+   * of the basic types.
+   *
+   * @see flak.annotations.OutputFormat
+   */
+  OutputFormatter<?> getOutputFormatter();
+
+  /**
+   * Adds a hook run before this handler, once a request has been routed to
+   * it, and before its arguments are extracted. It can reject the request by
+   * throwing an {@link HttpException}, or by writing the response itself and
+   * throwing {@link BeforeHook#STOP}.
+   * <p>
+   * Unlike {@link App#addBeforeAllHook(BeforeHook)}, it only runs for this
+   * handler, e.g. for those with a given annotation:
+   * <pre>
+   * app.getHandlers()
+   *    .filter(h -&gt; h.getJavaMethod().isAnnotationPresent(Admin.class))
+   *    .forEach(h -&gt; h.addHook(adminCheck));
+   * </pre>
+   */
+  void addHook(BeforeHook hook);
 }

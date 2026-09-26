@@ -335,17 +335,26 @@ public abstract class AbstractApp implements App {
    */
   public abstract Stream<AbstractMethodHandler> getMethodHandlers();
 
+  /**
+   * The handlers of the routes of the application, without those serving
+   * static resources, which are only an implementation of serveDir() and
+   * serveClasspath().
+   */
   @Override
   public Stream<RouteHandler> getHandlers() {
-    return getMethodHandlers().map(h -> h);
+    return routeHandlers().map(h -> h);
+  }
+
+  private Stream<AbstractMethodHandler> routeHandlers() {
+    return getMethodHandlers().filter(h -> !(h.getTarget() instanceof AbstractResourceHandler));
   }
 
   @Override
   public RouteHandler getHandler(String httpMethod, String route) {
     String method = httpMethod.toUpperCase();
 
-    return getMethodHandlers().filter(h -> h.getHttpMethod().equals(method)
-                                           && h.getRoute().equals(route))
+    return routeHandlers().filter(h -> h.getHttpMethod().equals(method)
+                                       && h.getRoute().equals(route))
                               .findFirst()
                               .orElseThrow(() -> new NoSuchElementException(
                                 "No handler for " + method + " " + route +
@@ -354,10 +363,10 @@ public abstract class AbstractApp implements App {
   }
 
   private String routesFor(String httpMethod) {
-    String routes = getMethodHandlers().filter(h -> h.getHttpMethod().equals(httpMethod))
-                                       .map(AbstractMethodHandler::getRoute)
-                                       .sorted()
-                                       .collect(Collectors.joining(", "));
+    String routes = routeHandlers().filter(h -> h.getHttpMethod().equals(httpMethod))
+                                   .map(AbstractMethodHandler::getRoute)
+                                   .sorted()
+                                   .collect(Collectors.joining(", "));
     return routes.isEmpty() ? "none" : routes;
   }
 

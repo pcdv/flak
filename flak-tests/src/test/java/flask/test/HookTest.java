@@ -101,6 +101,25 @@ public class HookTest extends AbstractAppTest {
   }
 
   @Test
+  public void testHandlerHook() throws Exception {
+    app.getHandler("GET", "/hello/:name")
+       .addHook(r -> {
+         throw new HttpException(403, "Forbidden");
+       });
+
+    try {
+      client.get("/hello/world");
+      Assert.fail("hook should have rejected the request");
+    }
+    catch (HttpException e) {
+      Assert.assertEquals(403, e.getResponseCode());
+    }
+
+    // other handlers are not affected
+    Assert.assertEquals("root", client.get("/"));
+  }
+
+  @Test
   public void testBeforeAllHookRejects() throws Exception {
     app.addBeforeAllHook(r -> {
       if (r.getPath().startsWith("/hello"))

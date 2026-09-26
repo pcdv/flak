@@ -7,13 +7,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import flak.RouteHandler;
 import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.Route;
 import flak.jackson.JSON;
 import flak.jackson.JsonInputReader;
 import flak.spi.AbstractApp;
-import flak.spi.AbstractMethodHandler;
 import flak.spi.ArgExtractor;
 import flak.spi.SPRequest;
 import flask.test.OutputFormatTest.Foo;
@@ -157,8 +157,8 @@ public class JsonTest extends AbstractAppTest {
     client.post("/api/jsonMapVoid2", new ObjectMapper().writeValueAsString(m));
   }
 
-  AbstractMethodHandler getMethodHandler(String name) {
-    return ((AbstractApp) app).getMethodHandlers().filter(h -> h.getJavaMethod().getName().equals(name)).findAny().get();
+  RouteHandler getMethodHandler(String name) {
+    return app.getHandlers().filter(h -> h.getJavaMethod().getName().equals(name)).findAny().get();
   }
 
   @JSON

@@ -5,17 +5,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.App;
 import flak.Form;
+import flak.RouteHandler;
 import flak.RouteParameter;
 import flak.annotations.Route;
 import flak.jackson.JSON;
 import flak.jackson.JsonInputMapper;
 import flak.jackson.JsonInputReader;
 import flak.jackson.JsonOutputFormatter;
-import flak.spi.AbstractApp;
-import flak.spi.AbstractMethodHandler;
 import flak.spi.FlakAnnotations;
 import flak.spi.HandlerSpec;
-import flak.spi.resource.AbstractResourceHandler;
 import flak.spi.util.IO;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.jackson.ModelResolver;
@@ -129,11 +127,10 @@ public class OpenApiGenerator {
     // by class, so that the class tags come first
     Map<Class<?>, List<Endpoint>> byClass = new TreeMap<>(Comparator.comparing(Class::getName));
 
-    ((AbstractApp) app).getMethodHandlers()
-                       .filter(h -> !(h.getTarget() instanceof AbstractResourceHandler))
-                       .forEach(h -> byClass.computeIfAbsent(h.getJavaMethod().getDeclaringClass(),
-                                                             c -> new ArrayList<>())
-                                            .add(endpoint(app, h)));
+    app.getHandlers()
+       .forEach(h -> byClass.computeIfAbsent(h.getJavaMethod().getDeclaringClass(),
+                                             c -> new ArrayList<>())
+                            .add(endpoint(app, h)));
 
     byClass.forEach(this::scan);
     return this;
@@ -173,7 +170,7 @@ public class OpenApiGenerator {
     return this;
   }
 
-  private static Endpoint endpoint(App app, AbstractMethodHandler h) {
+  private static Endpoint endpoint(App app, RouteHandler h) {
     return new Endpoint(app.getPath() + h.getRoute(),
                         h.getHttpMethod(),
                         h.getJavaMethod(),

@@ -223,6 +223,7 @@ public abstract class AbstractMethodHandler
     }
   }
 
+  @Override
   public void addHook(BeforeHook hook) {
     beforeHooks.add(hook);
   }
@@ -235,14 +236,15 @@ public abstract class AbstractMethodHandler
     this.outputFormat = outputFormatter;
   }
 
-  /**
-   * What converts the values returned by the method, null if it returns one
-   * of the basic types.
-   */
+  @Override
   public OutputFormatter<?> getOutputFormatter() {
     return outputFormat;
   }
 
+  /**
+   * Must be called before {@link #init()}, e.g. from a plugin's preInit():
+   * the extractors are created with the parser.
+   */
   public void setInputParser(InputParser<?> inputParser) {
     this.inputParser = inputParser;
   }
@@ -335,6 +337,7 @@ public abstract class AbstractMethodHandler
     return app;
   }
 
+  @Override
   public InputParser<?> getInputParser() {
     return inputParser;
   }

@@ -1,11 +1,10 @@
 package flak.util;
 
 import flak.App;
-import flak.spi.AbstractApp;
-import flak.spi.AbstractMethodHandler;
+import flak.RouteHandler;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -21,20 +20,21 @@ public class RouteDumper {
    */
   public StringBuilder dumpRoutes(App app, StringBuilder b) {
 
-    Map<String, List<AbstractMethodHandler>> byPrefix = new TreeMap<>();
+    Map<String, List<RouteHandler>> byPrefix = new TreeMap<>();
 
-    ((AbstractApp) app).getMethodHandlers()
-                       .forEach(h -> byPrefix.computeIfAbsent(staticPrefix(h.getRoute()),
-                                                              k -> new ArrayList<>())
-                                             .add(h));
+    app.getHandlers()
+       .forEach(h -> byPrefix.computeIfAbsent(staticPrefix(h.getRoute()),
+                                              k -> new ArrayList<>())
+                             .add(h));
 
-    for (Map.Entry<String, List<AbstractMethodHandler>> e : byPrefix.entrySet()) {
+    for (Map.Entry<String, List<RouteHandler>> e : byPrefix.entrySet()) {
       b.append(app.getPath()).append(e.getKey()).append(":\n");
 
-      List<AbstractMethodHandler> handlers = e.getValue();
-      Collections.sort(handlers);
+      List<RouteHandler> handlers = e.getValue();
+      handlers.sort(Comparator.comparing(RouteHandler::getRoute)
+                              .thenComparing(RouteHandler::getHttpMethod));
 
-      for (AbstractMethodHandler mh : handlers) {
+      for (RouteHandler mh : handlers) {
         b.append(String.format("%-50s  %-8s  %-15s %s\n",
                                app.getPath() + mh.getRoute(),
                                mh.getHttpMethod(),
