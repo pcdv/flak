@@ -120,7 +120,7 @@ public class DefaultSessionManager implements SessionManager {
         = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
       format.setTimeZone(TimeZone.getTimeZone("GMT"));
       Date expiresDate = new Date(session.getExpiry());
-      s.append("; Expires=").append(format.format(expiresDate)).append(';');
+      s.append("; Expires=").append(format.format(expiresDate));
     }
 
     return s.toString();
