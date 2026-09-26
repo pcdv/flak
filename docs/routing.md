@@ -53,9 +53,9 @@ unannotated `String` and `int` parameters must match the number of
 variables; `scan()` fails otherwise. Other kinds of parameters, such as `Request` or `Query`, can
 appear anywhere in the list (see [Handler arguments](arguments.md)).
 
-An `int` variable must be a number, and only `int` is supported, not
-`Integer`. If you want to decide how a non-numeric value is answered, take a
-`String` and parse it yourself.
+Only `int` is supported, not `Integer`. A value that is not a number, e.g.
+`/users/bob/orders/abc`, gets a 404: there is no such resource. To answer it
+otherwise, take a `String` and parse it yourself.
 
 ## Splats
 
