@@ -13,7 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * A route handler tells what each parameter of its method is bound to.
@@ -46,6 +48,7 @@ public class RouteParametersTest extends AbstractAppTest {
     assertEquals(int.class, limit.type());
     assertEquals("10", limit.defaultValue());
     assertEquals("At most", limit.description());
+    assertFalse(limit.required());
 
     assertEquals(Kind.BODY, params.get(2).kind());
     assertEquals(Map.class, params.get(2).type());
@@ -54,5 +57,6 @@ public class RouteParametersTest extends AbstractAppTest {
     assertEquals(Kind.PATH, id.kind());
     assertEquals("id", id.name());
     assertNull(id.defaultValue());
+    assertTrue(id.required());
   }
 }

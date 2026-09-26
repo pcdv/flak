@@ -14,9 +14,14 @@ class QueryExtractor {
     Class<?> type = param.type();
     String name = param.name();
     String def = param.defaultValue();
+    boolean required = param.required();
+
+    if (required && def != null)
+      throw new IllegalArgumentException("Query parameter " + name
+                                         + " cannot be both required and have a default value");
 
     if (type == String[].class)
-      return new ArrayQueryExtractor(index, name, def);
+      return new ArrayQueryExtractor(index, name, def, required);
 
     Function<String, ?> converter = converter(type);
     if (converter == null)
@@ -36,7 +41,7 @@ class QueryExtractor {
     else
       fallback = missingValue(type);
 
-    return new ValueQueryExtractor(index, name, converter, fallback, type != String.class);
+    return new ValueQueryExtractor(index, name, converter, fallback, type != String.class, required);
   }
 
   /**
@@ -89,6 +94,10 @@ class QueryExtractor {
     return null;
   }
 
+  private static HttpException missing(String name) {
+    return new HttpException(400, "Missing query parameter " + name);
+  }
+
   private static class ValueQueryExtractor extends ArgExtractor<Object> {
     private final String name;
     private final Function<String, ?> converter;
@@ -98,24 +107,30 @@ class QueryExtractor {
      * does for everything but a String, for which it is a value like another.
      */
     private final boolean emptyIsAbsent;
+    private final boolean required;
 
     ValueQueryExtractor(int index,
                         String name,
                         Function<String, ?> converter,
                         Object fallback,
-                        boolean emptyIsAbsent) {
+                        boolean emptyIsAbsent,
+                        boolean required) {
       super(index);
       this.name = name;
       this.converter = converter;
       this.fallback = fallback;
       this.emptyIsAbsent = emptyIsAbsent;
+      this.required = required;
     }
 
     @Override
     public Object extract(SPRequest request) {
       String s = request.getQuery().get(name);
-      if (s == null || (emptyIsAbsent && s.isEmpty()))
+      if (s == null || (emptyIsAbsent && s.isEmpty())) {
+        if (required)
+          throw missing(name);
         return fallback;
+      }
       try {
         return converter.apply(s);
       }
@@ -128,16 +143,20 @@ class QueryExtractor {
   private static class ArrayQueryExtractor extends ArgExtractor<String[]> {
     private final String name;
     private final String def;
+    private final boolean required;
 
-    ArrayQueryExtractor(int index, String name, String def) {
+    ArrayQueryExtractor(int index, String name, String def, boolean required) {
       super(index);
       this.name = name;
       this.def = def;
+      this.required = required;
     }
 
     @Override
     public String[] extract(SPRequest request) {
       String[] values = request.getQuery().getArray(name);
+      if (values.length == 0 && required)
+        throw missing(name);
       return values.length == 0 && def != null ? new String[]{def} : values;
     }
   }

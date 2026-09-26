@@ -14,6 +14,9 @@ import java.lang.reflect.Parameter;
  * @param defaultValue  the value of a query parameter when it is absent, as
  *                      it would be written in the query string, null if it
  *                      has none
+ * @param required      whether it must be given: always for a path variable,
+ *                      and for a query parameter declared so, a request
+ *                      without it being rejected with 400
  * @param description   a description of a query parameter, null if it has
  *                      none
  * @see RouteHandler#getParameters()
@@ -22,6 +25,7 @@ public record RouteParameter(Kind kind,
                              String name,
                              Parameter javaParameter,
                              String defaultValue,
+                             boolean required,
                              String description) {
 
   public enum Kind {

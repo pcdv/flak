@@ -60,6 +60,41 @@ public class QueryAnnotationTest extends AbstractAppTest {
     return s + " " + i + " " + b + " " + c + " " + Arrays.toString(a);
   }
 
+  @Route("/required")
+  public String required(@QueryParam(value = "s", required = true) String s,
+                         @QueryParam(value = "i", required = true) int i) {
+    return s + " " + i;
+  }
+
+  @Route("/required_array")
+  public String required_array(@QueryParam(value = "a", required = true) String[] a) {
+    return Arrays.toString(a);
+  }
+
+  @Test
+  public void testRequired() throws Exception {
+    assertEquals("a 1", client.get("/required?s=a&i=1"));
+    // an empty string is a value, an empty number is not
+    assertEquals(" 1", client.get("/required?s=&i=1"));
+    TestUtil.assertFails(() -> client.get("/required?i=1"), "400 Missing query parameter s");
+    TestUtil.assertFails(() -> client.get("/required?s=a&i="), "400 Missing query parameter i");
+
+    assertEquals("[x]", client.get("/required_array?a=x"));
+    TestUtil.assertFails(() -> client.get("/required_array"), "400 Missing query parameter a");
+  }
+
+  @Test
+  public void testRequiredWithDefaultFailsScan() {
+    AppFactory factory = TestUtil.getFactory();
+    App other = factory.createApp();
+    TestUtil.assertFails(() -> other.scan(new Object() {
+      @Route("/bad")
+      public String bad(@QueryParam(value = "i", required = true, defaultValue = "1") int i) {
+        return "";
+      }
+    }), "Query parameter i cannot be both required and have a default value");
+  }
+
   @Test
   public void testQueryParameters() throws Exception {
     assertEquals("foobar", client.get("/string?num=42&foo=foobar"));
