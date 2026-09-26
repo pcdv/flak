@@ -146,7 +146,7 @@ public class NettyWebServer implements WebServer {
 
     try {
       channel = b.bind(address).sync().channel();
-      System.out.println("Server started: http://127.0.0.1:" + address.getPort() + '/');
+      Log.debug("Server started on " + channel.localAddress());
     }
     catch (InterruptedException e) {
       e.printStackTrace();

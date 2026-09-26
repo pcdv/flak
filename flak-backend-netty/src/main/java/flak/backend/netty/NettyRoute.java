@@ -25,7 +25,7 @@ public class NettyRoute {
     this.app = app;
     this.path = path;
     this.httpMethod = httpMethod;
-    Log.info("Create route " + httpMethod + " " + path);
+    Log.debug("Create route " + httpMethod + " " + path);
     assert path.isEmpty() || !path.matches("[:*].*");
   }
 
