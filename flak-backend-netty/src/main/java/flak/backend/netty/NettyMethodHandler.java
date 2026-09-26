@@ -28,7 +28,7 @@ public class NettyMethodHandler extends AbstractMethodHandler {
           obj);
     this.route = route;
 
-    Log.info("Create handler " + this);
+    Log.debug("Create handler " + this);
   }
 
   /**

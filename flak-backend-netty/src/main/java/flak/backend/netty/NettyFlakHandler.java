@@ -137,7 +137,7 @@ public class NettyFlakHandler extends ChannelInboundHandlerAdapter {
     }
 
     String path = uri.getPath();
-    Log.info("Handle request at " + path);
+    Log.debug("Handle request at " + path);
 
     // several apps can be plugged at different paths on a same server
     NettyApp app = server.getApp(path);
