@@ -1,6 +1,6 @@
 package flask.test;
 
-import flak.plugin.resource.DefaultContentTypeProvider;
+import flak.DefaultContentTypeProvider;
 import org.junit.Assert;
 import org.junit.Test;
 

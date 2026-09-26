@@ -30,6 +30,41 @@ public interface App {
   App scan(Object obj, String prefix);
 
   /**
+   * Serves the files of a directory under specified path of the app, e.g.
+   * <code>serveDir("/downloads", new File("/var/data"))</code> serves
+   * /var/data/a.zip at /downloads/a.zip. The directory may not exist yet.
+   * <p>
+   * A path ending with "/" serves the index.html of that directory, and a
+   * directory without its trailing slash is redirected to it. A request that
+   * climbs out of the directory, with ".." or otherwise, gets 404.
+   *
+   * @throws IllegalArgumentException if the file exists and is not a
+   * directory
+   */
+  App serveDir(String path, java.io.File dir);
+
+  /**
+   * Same as {@link #serveDir(String, java.io.File)}, with options, e.g. to
+   * restrict the files to logged-in users.
+   */
+  App serveDir(String path, java.io.File dir, ResourceOptions options);
+
+  /**
+   * Serves resources of the classpath under specified path of the app, e.g.
+   * <code>serveClasspath("/ui", "/webapp")</code> serves the resource
+   * /webapp/index.html, typically packaged in the jar of the application, at
+   * /ui/index.html. Otherwise the same as
+   * {@link #serveDir(String, java.io.File)}.
+   */
+  App serveClasspath(String path, String resourcePath);
+
+  /**
+   * Same as {@link #serveClasspath(String, String)}, with options, e.g. the
+   * class loader to look resources up with.
+   */
+  App serveClasspath(String path, String resourcePath, ResourceOptions options);
+
+  /**
    * Adds a formatter that takes the value returned by the route handler and
    * writes it into the response. The method must be decorated with {@link
    * flak.annotations.OutputFormat}.

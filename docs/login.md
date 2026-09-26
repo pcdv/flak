@@ -207,13 +207,12 @@ DefaultSessionManager sessions = new DefaultSessionManager() {
 
 ## Static resources
 
-Resources served by [flak-resource](static-resources.md) can be restricted to
-logged-in users, and the login page can itself be a static file:
+[Static resources](static-resources.md) can be restricted to logged-in
+users, and the login page can itself be a static file:
 
 ```java
-FlakResourceImpl resources = new FlakResourceImpl(app);
-resources.servePath("/app", "/webapp", null, true);   // restricted
-resources.servePath("/public", "/public");            // login.html is in there
+app.serveClasspath("/app", "/webapp", new ResourceOptions().restricted());
+app.serveClasspath("/public", "/public");     // login.html is in there
 sessions.setLoginPage("/public/login.html");
 ```
 

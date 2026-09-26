@@ -22,7 +22,7 @@ public String report() { ... }
 | a returned `String` or `byte[]` | if larger than the threshold |
 | a returned `InputStream` | always, since its size is unknown |
 | JSON written by [flak-jackson](json.md) | always |
-| static files from [flak-resource](static-resources.md) | automatically, see below |
+| [static files](static-resources.md) | automatically, see below |
 | bytes written by the handler into `getOutputStream()` | never |
 
 The threshold is 1024 bytes. Set the `flak.compressThreshold` system property
@@ -34,7 +34,7 @@ It sets `Content-Encoding: gzip` and wraps the stream in a
 
 ## Static resources
 
-[flak-resource](static-resources.md) compresses files according to their
+[Static files](static-resources.md) are compressed according to their
 content type, without any annotation. That means text, JSON and JavaScript by
 default. Files from a directory must also exceed the threshold, while
 resources from the classpath are always compressed, since their size is

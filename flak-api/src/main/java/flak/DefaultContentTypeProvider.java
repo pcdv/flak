@@ -1,4 +1,4 @@
-package flak.plugin.resource;
+package flak;
 
 import java.util.HashMap;
 import java.util.Map;

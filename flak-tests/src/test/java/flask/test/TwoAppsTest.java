@@ -5,7 +5,6 @@ import flak.AppFactory;
 import flak.Request;
 import flak.WebServer;
 import flak.annotations.Route;
-import flak.plugin.resource.FlakResourceImpl;
 import flask.test.util.SimpleClient;
 import flask.test.util.ThreadState;
 import org.junit.After;
@@ -85,7 +84,7 @@ public class TwoAppsTest {
   @Test
   public void testServeDir() throws Exception {
     Files.write(tmp.newFile("foo").toPath(), "Foobar".getBytes());
-    new FlakResourceImpl(app1).serveDir("/stuff", tmp.getRoot());
+    app1.serveDir("/stuff", tmp.getRoot());
     assertEquals("Foobar", client.get("/app1/stuff/foo"));
   }
 

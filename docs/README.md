@@ -17,14 +17,14 @@ app. These pages cover each feature in detail.
 - [Errors and hooks](errors-and-hooks.md): error statuses, error and success
   handlers, unknown URLs, hooks that run before every request
 - [Compression](compression.md): gzip
+- [Static resources](static-resources.md): serving files from a directory
+  or the classpath
 
 **Add-ons**
 
 - [Plugins](plugins.md): how add-ons are installed, and how to write one
 - [JSON](json.md): `flak-jackson`
 - [Authentication](login.md): `flak-login`, sessions and permissions
-- [Static resources](static-resources.md): `flak-resource`, serving files
-  from a directory or the classpath
 - [OpenAPI](openapi.md): `flak-swagger`, generating a specification
 
 **Running**

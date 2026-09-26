@@ -17,6 +17,9 @@
   [Handler arguments](arguments.md#query-parameters).
 - **`@WithPermission` and `@WithAnyPermission` work on classes.** They
   could be put there before, but were ignored.
+- **Serving static files is part of the API**, with `App.serveDir()` and
+  `App.serveClasspath()`. `flak-resource` is gone. See
+  [Static resources](static-resources.md).
 - `App.addCustomExtractor()` is part of the public API.
 - Flak can serve its routes from a Netty server the application owns,
   leaving it free to serve websockets on the same port.
@@ -40,6 +43,24 @@ from the most to the least likely to affect you.
 
 `flak-util` no longer depends on `flak-backend-jdk`, so `RouteDumper` works
 with any backend.
+
+**`flak-resource` was removed**: static files are served by the app itself.
+Drop the dependency and replace `FlakResourceImpl`:
+
+| 2.x | 3.0 |
+| --- | --- |
+| `new FlakResourceImpl(app).serveDir(url, dir)` | `app.serveDir(url, dir)` |
+| `servePath(url, dir)`, for a directory | `app.serveDir(url, new File(dir))` |
+| `servePath(url, path)`, for the classpath | `app.serveClasspath(url, path)` |
+| `servePath(url, path, loader, restricted)` | `app.serveClasspath(url, path, new ResourceOptions().classLoader(loader).restricted())` |
+| `setContentTypeProvider(provider)` | `new ResourceOptions().contentTypes(provider)` |
+| `flak.plugin.resource.ContentTypeProvider`, `DefaultContentTypeProvider` | `flak.ContentTypeProvider`, `flak.DefaultContentTypeProvider`, in `flak-api` |
+
+`servePath()` served a directory if one existed at that path, and the
+classpath otherwise, so a typo in a directory name silently became a
+classpath lookup. The two cases are now separate methods. Restricted
+resources now fail to be served without flak-login, rather than being left
+open to anyone.
 
 **Listing the route handlers of an app no longer needs the backend.**
 `App.getHandlers()` returns them all and `App.getHandler()` looks one up.
@@ -177,8 +198,8 @@ classpath. It now gets 404, as does a missing file under `serveDir()`, which
 used to fail with 500.
 
 **The root of static resources is served.** `/static/` used to be a 404
-for `servePath("/static", ...)`, and so was `/` for resources served at the
-root. It now serves the `index.html` there, and `/static` redirects to
+for resources served at `/static`, and so was `/` for resources served at
+the root. It now serves the `index.html` there, and `/static` redirects to
 `/static/`, as does a subdirectory of a served directory requested without
 its trailing slash. A route of the app at the same path keeps precedence.
 

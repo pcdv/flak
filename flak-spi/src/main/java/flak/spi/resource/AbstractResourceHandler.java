@@ -1,4 +1,6 @@
-package flak.plugin.resource;
+package flak.spi.resource;
+
+import flak.ContentTypeProvider;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

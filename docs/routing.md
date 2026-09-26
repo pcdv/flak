@@ -79,7 +79,7 @@ public byte[] file(String path) throws IOException {
   segment of the route.
 
 Validate a splat before using it as a file path, as in the example above.
-[flak-resource](static-resources.md) does this for you when serving files.
+[`app.serveDir()`](static-resources.md) does this for you when serving files.
 
 ## Matching rules
 

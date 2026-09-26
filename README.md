@@ -23,7 +23,6 @@ Flak components      | Description
 `flak-backend-jdk`   | Binding for the web server included in the JDK
 `flak-backend-netty` | Binding for [Netty](https://netty.io/), see [Backends](docs/backends.md)
 `flak-login`         | Add-on for managing authentication, see [Authentication](docs/login.md)
-`flak-resource`      | Add-on for serving static resources, see [Static resources](docs/static-resources.md)
 `flak-jackson`       | Add-on for conversion to/from JSON using Jackson, see [JSON](docs/json.md)
 `flak-swagger`       | Add-on to generate OpenAPI specifications, see [OpenAPI](docs/openapi.md)
 `flak-util`          | Misc utilities (e.g. route dumper)
@@ -125,8 +124,9 @@ The [documentation](docs/README.md) covers each of them in detail.
 - **[Authentication](docs/login.md)**: sessions, login page,
   `@LoginRequired`, permissions with `@WithPermission`, custom
   authentication schemes
-- **[Static resources](docs/static-resources.md)**: serve a directory or a
-  folder of the classpath, optionally restricted to logged-in users
+- **[Static resources](docs/static-resources.md)**: `app.serveDir()` and
+  `app.serveClasspath()` serve files, optionally restricted to logged-in
+  users
 - **[OpenAPI](docs/openapi.md)**: generate a specification from the handlers
 - **[Plugins](docs/plugins.md)**: installed automatically or listed
   explicitly, and easy to write

@@ -2,8 +2,11 @@ package flak.spi;
 
 /**
  * Can be implemented by some classes implementing some route handlers.
- * Allows to indicate whether routes require a logged-in session. This
- * is a wart that allows to decouple flak-resource and flak-login.
+ * Allows to indicate whether routes require a logged-in session, without
+ * annotations: this is how static resources served by {@link AbstractApp}
+ * tell flak-login that they are restricted.
+ *
+ * @see SPPlugin#enforcesRestrictions()
  *
  * @author pcdv
  */

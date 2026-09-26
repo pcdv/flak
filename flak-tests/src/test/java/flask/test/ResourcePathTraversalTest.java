@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import flak.plugin.resource.FlakResourceImpl;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -35,7 +34,7 @@ public class ResourcePathTraversalTest extends AbstractAppTest {
     Path secret = base.resolve("secret.txt");
     Files.write(secret, SECRET.getBytes());
 
-    new FlakResourceImpl(app).serveDir("/static", root.toFile());
+    app.serveDir("/static", root.toFile());
 
     assertTrue(get("/static/ok.txt").contains("PUBLIC"));
 
@@ -51,7 +50,7 @@ public class ResourcePathTraversalTest extends AbstractAppTest {
 
   @Test
   public void testServePathFromClasspath() throws Exception {
-    new FlakResourceImpl(app).servePath("/static", "/test-resources");
+    app.serveClasspath("/static", "/test-resources");
 
     assertTrue(get("/static/foo.html").contains("FOO"));
 

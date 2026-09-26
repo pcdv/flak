@@ -1,27 +1,22 @@
 # Static resources
 
-`flak-resource` serves files, from a directory or from the classpath (e.g.
-the web front end packaged in the application's jar).
-
-```groovy
-implementation "com.github.pcdv.flak:flak-resource:3.0"
-```
-
-It is not a plugin: create it on the app that serves the files.
+An app can serve files, from a directory or from the classpath (e.g. the web
+front end packaged in the application's jar). No extra dependency is needed.
 
 ```java
-FlakResourceImpl resources = new FlakResourceImpl(app);
-
 // from the classpath: src/main/resources/webapp/... in the jar
-resources.servePath("/ui", "/webapp");
+app.serveClasspath("/ui", "/webapp");
 
 // from a directory
-resources.serveDir("/downloads", new File("/var/data/downloads"));
+app.serveDir("/downloads", new File("/var/data/downloads"));
 ```
 
-`servePath(url, path)` serves from a directory if `path` is an existing
-directory, and from the classpath otherwise. `serveDir(url, dir)` serves from
-a directory only.
+The first argument is the path under which the files are served, relative to
+the app. Both methods return the app, so calls can be chained.
+
+`serveDir()` accepts a directory that does not exist yet, e.g. a cache
+created on demand: its files are served once they are there. It fails if the
+file exists but is not a directory.
 
 ## What is served
 
@@ -35,52 +30,66 @@ a directory only.
 - A path that climbs out of the served directory, with `..` or an absolute
   path, gives a 404.
 
-## Content types
+## Options
+
+A [ResourceOptions](../flak-api/src/main/java/flak/ResourceOptions.java)
+argument changes how files are served:
+
+```java
+app.serveClasspath("/ui", "/webapp", new ResourceOptions()
+  .restricted()
+  .classLoader(MyApp.class.getClassLoader())
+  .contentTypes(myContentTypes));
+```
+
+| Option | Effect |
+| ------ | ------ |
+| `restricted()` | only logged-in users get the files, see below |
+| `classLoader(loader)` | the class loader to look classpath resources up with |
+| `contentTypes(provider)` | decides the content type of each file, and whether it is compressed |
+
+### Content types
 
 The `Content-Type` of a file is chosen from its extension, in any case,
 among the common web types (HTML, CSS, JavaScript, JSON, images, fonts,
 archives…). A file with an unknown extension is served without one. To
-change the mapping, give the resources your own
-[ContentTypeProvider](../flak-resource/src/main/java/flak/plugin/resource/ContentTypeProvider.java):
+change the mapping, pass your own
+[ContentTypeProvider](../flak-api/src/main/java/flak/ContentTypeProvider.java):
 
 ```java
 ContentTypeProvider defaults = new DefaultContentTypeProvider();
-resources.setContentTypeProvider(path ->
-  path.endsWith(".wasm") ? "application/wasm" : defaults.getContentType(path));
+app.serveClasspath("/ui", "/webapp", new ResourceOptions().contentTypes(path ->
+  path.endsWith(".wasm") ? "application/wasm" : defaults.getContentType(path)));
 ```
 
 Text, JSON and JavaScript are [compressed](compression.md) automatically.
-`shouldCompress()` changes that.
+Override `shouldCompress()` in the provider to change that.
 
-## Restricting access
+### Restricting access
 
-With [flak-login](login.md), resources can be restricted to logged-in users:
+With [flak-login](login.md), files can be restricted to logged-in users:
 
 ```java
-resources.servePath("/ui", "/webapp", null, true);
-resources.serveDir("/downloads", dir, true);
+app.serveDir("/reports", reportsDir, new ResourceOptions().restricted());
 ```
 
 A user who is not logged in is redirected to the login page, which can
-itself be a static file served from a public path.
+itself be a static file served from a public path. Without flak-login,
+nothing would keep anyone away from the files, so serving them fails
+instead.
 
-## Class loader
+### Class loader
 
-By default, classpath resources are looked up with the class loader of
-`flak-resource`. If the resources are not visible to it, e.g. in an
-application server or a plugin system with its own class loaders, pass the
-one to use:
-
-```java
-resources.servePath("/ui", "/webapp", MyApp.class.getClassLoader(), false);
-```
+By default, classpath resources are looked up with the class loader of Flak.
+If they are not visible to it, e.g. in an application server or a plugin
+system with its own class loaders, pass the one to use with
+`classLoader()`.
 
 ## Serving at the root
 
-`servePath("/", ...)` serves files at the root of the app, and its
+`serveClasspath("/", ...)` serves files at the root of the app, and its
 `index.html` at `/`. The routes of the app still take precedence, including
 a route at `/`, whether it was scanned before or after. But a URL that
-matches neither a route nor a file
-now gets the 404 of the resource handler, so it no longer reaches the
-[unknown page handler](errors-and-hooks.md#unknown-urls). Prefer a dedicated
-path, such as `/ui` or `/static`, when you can.
+matches neither a route nor a file gets the 404 of the resources, so it
+never reaches the [unknown page handler](errors-and-hooks.md#unknown-urls).
+Prefer a dedicated path, such as `/ui` or `/static`, when you can.
