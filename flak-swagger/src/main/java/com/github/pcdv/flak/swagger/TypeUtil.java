@@ -1,11 +1,7 @@
 package com.github.pcdv.flak.swagger;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import flak.annotations.Delete;
-import flak.annotations.Options;
-import flak.annotations.Patch;
-import flak.annotations.Post;
-import flak.annotations.Put;
+import flak.spi.AbstractMethodHandler;
 import io.swagger.v3.oas.models.PathItem;
 
 import java.lang.annotation.Annotation;
@@ -29,18 +25,12 @@ public class TypeUtil {
     return null;
   }
 
+  /**
+   * The HTTP method of a route handler, decided exactly as flak does when it
+   * binds the handler, @Head included.
+   */
   public static PathItem.HttpMethod getHttpMethod(Method m) {
-    if (m.isAnnotationPresent(Options.class))
-      return PathItem.HttpMethod.OPTIONS;
-    if (m.isAnnotationPresent(Delete.class))
-      return PathItem.HttpMethod.DELETE;
-    if (m.isAnnotationPresent(Put.class))
-      return PathItem.HttpMethod.PUT;
-    if (m.isAnnotationPresent(Post.class))
-      return PathItem.HttpMethod.POST;
-    if (m.isAnnotationPresent(Patch.class))
-      return PathItem.HttpMethod.PATCH;
-    return PathItem.HttpMethod.GET;
+    return PathItem.HttpMethod.valueOf(AbstractMethodHandler.getHttpMethod(m));
   }
 
   /**

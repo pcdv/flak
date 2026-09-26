@@ -23,9 +23,14 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.BooleanSchema;
 import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.PathParameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
@@ -286,7 +291,12 @@ public class OpenApiGenerator {
     for (java.lang.reflect.Parameter param : m.getParameters()) {
       QueryParam qp = param.getAnnotation(QueryParam.class);
       if (qp != null) {
-        op.addParametersItem(new Parameter().in("query").name(qp.value()).description(qp.description()).schema(getSchemaForType(param.getType())));
+        Schema<?> schema = getSchemaForType(param.getType());
+        if (!QueryParam.NO_DEFAULT.equals(qp.defaultValue()))
+          schema.setDefault(param.getType() == String[].class
+                            ? Collections.singletonList(qp.defaultValue())
+                            : qp.defaultValue());
+        op.addParametersItem(new Parameter().in("query").name(qp.value()).description(qp.description()).schema(schema));
       }
     }
 
@@ -315,20 +325,31 @@ public class OpenApiGenerator {
 
   }
 
-  private Schema<?> getSchemaForType(Class<?> type) {
-    if (type == String.class) {
-      Schema<Object> s = new Schema<>();
-      s.type("string");
+  /**
+   * The schema of a query parameter, for each type that {@link QueryParam}
+   * supports.
+   */
+  private static Schema<?> getSchemaForType(Class<?> type) {
+    if (type == String.class)
+      return new StringSchema();
+    if (type == String[].class)
+      return new ArraySchema().items(new StringSchema());
+    if (type == Integer.class || type == int.class)
+      return new IntegerSchema();
+    if (type == Long.class || type == long.class)
+      return new IntegerSchema().format("int64");
+    if (type == Double.class || type == double.class)
+      return new NumberSchema().format("double");
+    if (type == Boolean.class || type == boolean.class)
+      return new BooleanSchema();
+    if (type.isEnum()) {
+      StringSchema s = new StringSchema();
+      for (Object constant : type.getEnumConstants())
+        s.addEnumItem(((Enum<?>) constant).name());
       return s;
     }
-
-    if (type == Integer.class || type == int.class) {
-      Schema<Object> s = new Schema<>();
-      s.type("int");
-      return s;
-    }
-
-    throw new RuntimeException("TODO " + type);
+    // not a type flak accepts, the app would fail to start anyway
+    return new Schema<>();
   }
 
   private String convertPath(String endpoint) {
