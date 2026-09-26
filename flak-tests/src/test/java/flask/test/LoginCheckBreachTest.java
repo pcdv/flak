@@ -66,7 +66,7 @@ public class LoginCheckBreachTest extends AbstractAppTest {
       }
     });
 
-    TestUtil.assertFails(() -> client.get("/test1"), "403");
-    TestUtil.assertFails(() -> client.get("/test2"), "403");
+    TestUtil.assertFails(() -> client.get("/test1"), "401");
+    TestUtil.assertFails(() -> client.get("/test2"), "401");
   }
 }
