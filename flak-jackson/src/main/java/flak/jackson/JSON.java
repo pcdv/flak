@@ -7,8 +7,8 @@ import java.lang.annotation.Target;
 
 /**
  * Automatically converts the return type to a JSON string (except if
- * the return type is String, byte[], InputStream ...) and if a non "basic"
- * parameter type is found in method at last position, parse the request's input as JSON.
+ * the return type is String, byte[], InputStream ...) and parses the request
+ * body as JSON into the parameter that flak binds to it, if any.
  * <p>
  * <b>Example</b>
  * <pre>
@@ -20,8 +20,8 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  *
- * Since 2.0.1, if the method needs to receive some JSON input but outputs something else
- * than JSON, you can annotate the last parameter of the method with the JSON annotation.
+ * If the method needs to receive some JSON input but outputs something else
+ * than JSON, annotate the body parameter rather than the method.
  * <p>
  * <b>Example</b>
  * <pre>
@@ -32,9 +32,12 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  *
+ * On a class, it applies to all the route handlers the class declares, except
+ * those annotated themselves, e.g. with another mapper.
+ *
  * @author pcdv
  */
-@Target({ElementType.METHOD, ElementType.PARAMETER})
+@Target({ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JSON {
 
@@ -47,13 +50,9 @@ public @interface JSON {
   String value() default "";
 
   /**
-   * Specifies the class to instantiate when parsing JSON from request body. It is not
-   * mandatory to specify it but it allows to improve parsing performance by using a
-   * specialized {@link com.fasterxml.jackson.databind.ObjectReader}.
-   *
-   * Note that if the class to parse is already specified as the last parameter of the
-   * handler method, JacksonPlugin will automatically use it (unless the class is from
-   * the "java.lang" package).
+   * Specifies the class to instantiate when parsing JSON from request body.
+   * Only needed when it cannot be taken from the type of the body parameter,
+   * which is used by default.
    */
   Class<?> inputClass() default Object.class;
 }

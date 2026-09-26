@@ -57,6 +57,30 @@ public class JsonTest extends AbstractAppTest {
     return foo;
   }
 
+  @JSON
+  public static class JsonRoutes {
+    @Route("/classJson/foo")
+    public Foo getFoo() {
+      return new Foo();
+    }
+
+    @Put
+    @Route("/classJson/foo")
+    public Foo putFoo(Foo foo) {
+      return foo;
+    }
+  }
+
+  /**
+   * @JSON on a class applies to all its handlers, input and output.
+   */
+  @Test
+  public void testJsonOnClass() throws IOException {
+    app.scan(new JsonRoutes());
+    assertEquals("{\"stuff\":42}", client.get("/classJson/foo"));
+    assertEquals("{\"stuff\":7}", client.put("/classJson/foo", "{\"stuff\":7}"));
+  }
+
   @Test
   public void testBodyBeforePathVariable() throws IOException {
     assertEquals("{\"stuff\":30}",

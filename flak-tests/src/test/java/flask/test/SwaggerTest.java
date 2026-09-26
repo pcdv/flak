@@ -181,6 +181,68 @@ public class SwaggerTest extends AbstractAppTest {
     assertNull(api.getPaths().get("/tokens/{id}/check").getPost().getRequestBody());
   }
 
+  @Test
+  public void testJsonOnClass() {
+    OpenApiGenerator gen = new OpenApiGenerator();
+    gen.scan(JsonTest.JsonRoutes.class);
+    PathItem foo = gen.getAPI().getPaths().get("/classJson/foo");
+
+    assertNotNull(foo.getGet().getResponses().getDefault().getContent().get("application/json"));
+    assertNotNull(foo.getPut().getRequestBody().getContent().get("application/json"));
+  }
+
+  public static class DescribedHandler {
+    @Route("/described/:id")
+    public void get(@Parameter(description = "The item") int id,
+                    @Parameter(description = "Where to start", required = true, example = "0")
+                    @QueryParam("from") String from,
+                    @QueryParam(value = "to", description = "Where to stop") int to,
+                    @Parameter(hidden = true) @QueryParam("debug") boolean debug,
+                    @Parameter(description = "The color")
+                    @QueryParam(value = "c", defaultValue = "RED") Color c) {
+    }
+  }
+
+  /**
+   * A @Parameter on a parameter completes what flak knows of it: its name,
+   * location and type need not be repeated.
+   */
+  @Test
+  public void testParameterAnnotations() {
+    OpenApiGenerator gen = new OpenApiGenerator();
+    gen.scan(DescribedHandler.class);
+
+    Map<String, io.swagger.v3.oas.models.parameters.Parameter> params = new HashMap<>();
+    gen.getAPI().getPaths().get("/described/{id}").getGet().getParameters()
+       .forEach(p -> params.put(p.getName(), p));
+
+    assertEquals("[c, from, id, to]", new TreeSet<>(params.keySet()).toString());
+
+    io.swagger.v3.oas.models.parameters.Parameter id = params.get("id");
+    assertEquals("path", id.getIn());
+    assertEquals("The item", id.getDescription());
+    assertEquals(Boolean.TRUE, id.getRequired());
+    assertEquals("integer", id.getSchema().getType());
+
+    io.swagger.v3.oas.models.parameters.Parameter from = params.get("from");
+    assertEquals("query", from.getIn());
+    assertEquals("Where to start", from.getDescription());
+    assertEquals(Boolean.TRUE, from.getRequired());
+    assertEquals("0", String.valueOf(from.getExample()));
+    assertEquals("string", from.getSchema().getType());
+
+    io.swagger.v3.oas.models.parameters.Parameter to = params.get("to");
+    assertEquals("Where to stop", to.getDescription());
+    assertEquals("integer", to.getSchema().getType());
+    assertNull(to.getRequired());
+
+    // what flak knows is kept
+    io.swagger.v3.oas.models.parameters.Parameter color = params.get("c");
+    assertEquals("The color", color.getDescription());
+    assertEquals("[RED, GREEN]", String.valueOf(color.getSchema().getEnum()));
+    assertEquals("RED", color.getSchema().getDefault());
+  }
+
   public enum Color {RED, GREEN}
 
   public static class TypedHandler {
