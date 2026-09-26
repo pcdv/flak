@@ -94,6 +94,15 @@ public class JdkApp extends AbstractApp {
   public void start() throws IOException {
     if (started)
       throw new IllegalStateException("Already started");
+
+    // HttpServer only passes on the requests under one of its contexts, i.e.
+    // under the static prefix of a route, and answers the others with a 404
+    // of its own. A context at the root of the app, even without any route,
+    // makes every request under the app ours, so that the unknown page
+    // handler and the hooks see them, as with the netty backend.
+    // NB: before setting started, which would register it a second time
+    getContext("");
+
     started = true;
     srv.addApp(this);
 
