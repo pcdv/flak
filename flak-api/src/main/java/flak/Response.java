@@ -31,8 +31,9 @@ public interface Response {
   OutputStream getOutputStream();
 
   /**
-   * Replies to current request with an HTTP redirect response with specified
-   * location.
+   * Replies to current request with an HTTP redirect (302) to specified
+   * location: a path, relative to the app (e.g. "/login"), or a URL, which is
+   * kept as is (e.g. "https://example.com/").
    */
   void redirect(String path);
 

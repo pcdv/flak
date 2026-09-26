@@ -336,7 +336,7 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   @Override
   public void redirect(String location) {
-    addHeader("Location", app.absolutePath(location));
+    addHeader("Location", app.redirectLocation(location));
     setStatus(HttpURLConnection.HTTP_MOVED_TEMP);
   }
 

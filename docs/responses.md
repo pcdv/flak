@@ -90,14 +90,9 @@ public void old(Response r) {
 }
 ```
 
-This answers 302 with a `Location` header. The path is relative to the app:
-in an app at `/shop`, `redirect("/new")` sends the client to `/shop/new`. To
-send it to another site, set the header yourself:
-
-```java
-r.addHeader("Location", "https://example.com/");
-r.setStatus(302);
-```
+This answers 302 with a `Location` header. A path is relative to the app:
+in an app at `/shop`, `redirect("/new")` sends the client to `/shop/new`. A
+URL, such as `https://example.com/` or `//cdn.example.com/`, is used as is.
 
 ## Writing the body yourself
 
