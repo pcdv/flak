@@ -47,6 +47,11 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
       uri += "index.html";
     String path = uri.replaceFirst("^" + rootURI, "");
 
+    // the backends decode the path without normalizing it, so a ".." would
+    // give access to whatever lies above the served directory
+    if (climbsUp(path))
+      throw new HttpException(404, "Not found");
+
     InputStream in;
 
     OutputStream out = r.getResponse().getOutputStream();
@@ -79,6 +84,18 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
       out.write("Not found".getBytes());
       out.close();
     }
+  }
+
+  /**
+   * Tells whether a path contains a ".." segment. Backslashes count as
+   * separators too, being ones for the file system on Windows.
+   */
+  static boolean climbsUp(String path) {
+    for (String segment : path.split("[/\\\\]")) {
+      if (segment.equals(".."))
+        return true;
+    }
+    return false;
   }
 
   protected abstract InputStream openPath(String p, SPResponse resp) throws IOException;
