@@ -30,4 +30,13 @@ public interface SessionManager0 {
   void setLoginPage(String path);
 
   FlakSession getCurrentSession(Request r);
+
+  /**
+   * Checks that the request contains a cookie that points to a valid session,
+   * i.e. one that has not expired. The default implementation, for managers
+   * whose sessions do not expire, only checks that there is a session.
+   */
+  default boolean isLoggedIn(Request r) {
+    return getCurrentSession(r) != null;
+  }
 }

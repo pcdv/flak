@@ -43,6 +43,11 @@ public class SessionManagerDelegate implements SessionManager0 {
     return sm.getCurrentSession(r);
   }
 
+  @Override
+  public boolean isLoggedIn(Request r) {
+    return sm.isLoggedIn(r);
+  }
+
   public void setDelegate(SessionManager0 sm) {
     this.sm = Objects.requireNonNull(sm);
   }
