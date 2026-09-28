@@ -194,7 +194,9 @@ The token travels in a cookie:
   the token in clear
 
 Behind a proxy that terminates TLS, Flak serves plain HTTP and cannot tell.
-To mark the cookie `Secure` anyway, override `generateSetCookieHeader()`:
+To mark the cookie `Secure` anyway, override `generateSetCookieHeader()`
+(if the app turns out to be served over HTTPS, Flak does not add it a second
+time):
 
 ```java
 DefaultSessionManager sessions = new DefaultSessionManager() {

@@ -99,7 +99,8 @@ public class DefaultSessionManager implements SessionManager {
 
   /**
    * Fills the Set-Cookie header in specified response. The cookie is marked
-   * Secure when the app is served over HTTPS.
+   * Secure when the app is served over HTTPS, unless
+   * {@link #generateSetCookieHeader(String, FlakSession)} already did.
    */
   public void setCookie(App app, FlakSession session, Response response) {
     String path = app.getPath();
@@ -107,9 +108,24 @@ public class DefaultSessionManager implements SessionManager {
       path = "/";
     String header = generateSetCookieHeader(path, session);
     // over HTTPS, a browser must never send the token in clear
-    if ("https".equals(app.getServer().getProtocol()))
+    if ("https".equals(app.getServer().getProtocol())
+        && !hasAttribute(header, "Secure"))
       header += "; Secure";
     response.addHeader("Set-Cookie", header);
+  }
+
+  /**
+   * Tells whether a Set-Cookie header has the given attribute, as a whole and
+   * ignoring case, as RFC 6265 compares attribute names. The name=value pair
+   * leading the header is not an attribute.
+   */
+  private static boolean hasAttribute(String header, String name) {
+    String[] parts = header.split(";");
+    for (int i = 1; i < parts.length; i++) {
+      if (parts[i].trim().equalsIgnoreCase(name))
+        return true;
+    }
+    return false;
   }
 
   /**
