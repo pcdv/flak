@@ -27,8 +27,8 @@
 - **`@WithPermission` and `@WithAnyPermission` work on classes.** They
   could be put there before, but were ignored.
 - **Serving static files is part of the API**, with `App.serveDir()` and
-  `App.serveClasspath()`. `flak-resource` is gone. See
-  [Static resources](static-resources.md).
+  `App.serveClasspath()`. `flak-resource` only remains, deprecated, for
+  2.x code. See [Static resources](static-resources.md).
 - `App.addCustomExtractor()` is part of the public API.
 - `App.addBeforeAllHook()` is part of the public API, along with
   `BeforeHook`, which moved to `flak`. A hook can also be added to some
@@ -55,11 +55,16 @@ from the most to the least likely to affect you.
 | `flak.backend.jdk.RouteDumper` | `flak.util.RouteDumper`, still in `flak-util` |
 | `flak.spi.BeforeHook` | `flak.BeforeHook`, in `flak-api` |
 
+`flak.backend.jdk.FormImpl` is still there, deprecated, as a subclass of
+`flak.spi.FormImpl`, so that code using it builds and runs unchanged.
+
 `flak-util` no longer depends on `flak-backend-jdk`, so `RouteDumper` works
 with any backend.
 
-**`flak-resource` was removed**: static files are served by the app itself.
-Drop the dependency and replace `FlakResourceImpl`:
+**`flak-resource` is deprecated**: static files are served by the app itself.
+Its `FlakResource` and `FlakResourceImpl` remain, calling the methods below,
+so that code built against 2.x runs unchanged. Drop the dependency and
+replace `FlakResourceImpl`:
 
 | 2.x | 3.0 |
 | --- | --- |
@@ -69,6 +74,10 @@ Drop the dependency and replace `FlakResourceImpl`:
 | `servePath(url, path, loader, restricted)` | `app.serveClasspath(url, path, new ResourceOptions().classLoader(loader).restricted())` |
 | `setContentTypeProvider(provider)` | `new ResourceOptions().contentTypes(provider)` |
 | `flak.plugin.resource.ContentTypeProvider`, `DefaultContentTypeProvider` | `flak.ContentTypeProvider`, `flak.DefaultContentTypeProvider`, in `flak-api` |
+
+The deprecated `FlakResourceImpl` keeps no copy of the old
+`ContentTypeProvider`: its `setContentTypeProvider()` takes a
+`flak.ContentTypeProvider`, so a call to it must be recompiled.
 
 `servePath()` served a directory if one existed at that path, and the
 classpath otherwise, so a typo in a directory name silently became a

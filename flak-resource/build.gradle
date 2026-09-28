@@ -1,0 +1,5 @@
+description = "Deprecated: static resources are now served by App.serveDir() and App.serveClasspath()"
+
+dependencies {
+  api project(":flak-api")
+}
