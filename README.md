@@ -1,74 +1,47 @@
 # Flak - A lightweight and modular web framework for Java
 
 [![Release](https://jitpack.io/v/pcdv/flak.svg)](https://jitpack.io/#pcdv/flak)
+[![build](https://github.com/pcdv/flak/actions/workflows/gradle.yml/badge.svg)](https://github.com/pcdv/flak/actions/workflows/gradle.yml)
 
-Flak is a minimal but powerful framework that leverages the HttpServer 
-embedded in the JDK. Its main philosophy is keeping boilerplate to a minimum.
+Flak is a minimal but powerful framework for web applications and REST
+services. Its main philosophy is keeping boilerplate to a minimum. It runs
+either on the HttpServer embedded in the JDK, which costs no dependency at
+all, or on [Netty](https://netty.io/).
 
-It is composed of a generic API, a default implementation and some add-ons. 
-In a minimal setup, the total size of dependencies is around 40KiB. If you 
-need to implement a REST server and handle JSON data, you will have to add
-`jackson-databind` to your dependencies.
+Flak 3.0 and later require **Java 17** or later. If you are stuck on an older
+JDK, the 2.x releases target Java 8.
 
-Flak components    | Description
------------------- | -----------
-`flak-api`         | Public API
-`flak-spi`         | Internal API for service providers
-`flak-backend-jdk` | Binding for the web server included in JDK
-`flak-login`       | Add-on for managing authentication
-`flak-resource`    | Add-on for serving static resources
-`flak-jackson`     | Add-on for conversion to/from JSON using jackson
-`flak-swagger`     | Add-on to dynamically generate OpenAPI specifications
+It is composed of a generic API, two backends and some add-ons. In a minimal
+setup, on top of the JDK backend, the total size of dependencies is around
+60KiB. If you need to implement a REST server and handle JSON data, you will
+have to add `jackson-databind` to your dependencies.
 
-## Table of Contents
-
-<!--ts-->
-* [Flak - A lightweight and modular web framework for Java](#flak---a-lightweight-and-modular-web-framework-for-java)
-   * [Table of Contents](#table-of-contents)
-   * [Getting started](#getting-started)
-      * [Hello World](#hello-world)
-      * [Route handlers](#route-handlers)
-      * [Return values](#return-values)
-      * [Method arguments](#method-arguments)
-         * [Path variables](#path-variables)
-         * [Request argument](#request-argument)
-         * [Query argument](#query-argument)
-         * [Form argument](#form-argument)
-         * [Custom arguments](#custom-arguments)
-      * [Compression](#compression)
-      * [Managing apps](#managing-apps)
-      * [To be continued....](#to-be-continued)
-   * [Why Flak?](#why-flak)
-   * [History](#history)
-      * [Goals of the migration from JFlask](#goals-of-the-migration-from-jflask)
-   * [Build](#build)
-      * [How to publish locally](#how-to-publish-locally)
-
-<!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: pcdv, at: Sun Dec 31 19:04:56     2023 -->
-
-<!--te-->
-<!-- to update TOC:
- gh-md-toc --insert README.md
--->
+Flak components      | Description
+-------------------- | -----------
+`flak-api`           | Public API
+`flak-spi`           | Internal API for service providers
+`flak-backend-jdk`   | Binding for the web server included in the JDK
+`flak-backend-netty` | Binding for [Netty](https://netty.io/), see [Backends](docs/backends.md)
+`flak-login`         | Add-on for managing authentication, see [Authentication](docs/login.md)
+`flak-jackson`       | Add-on for conversion to/from JSON using Jackson, see [JSON](docs/json.md)
+`flak-swagger`       | Add-on to generate OpenAPI specifications, see [OpenAPI](docs/openapi.md)
+`flak-util`          | Misc utilities (e.g. route dumper)
 
 ## Getting started
 
-### Hello World
-
-Here is the obligatory
- [HelloWorld](https://github.com/pcdv/flak/blob/master/flak-examples/src/main/java/flak/examples/HelloWorld.java) application.
-
-Here is the minimal set of dependencies needs to be included in `build.gradle`.
+Add the API and a backend to `build.gradle` (the badge above shows the latest
+released version):
 
 ```groovy
 repositories {
-  maven { url "https://jitpack.io" }
+  maven { url = "https://jitpack.io" }
 }
 
 dependencies {
-  compile "com.github.pcdv.flak:flak-api:2.7.0"
-  runtime "com.github.pcdv.flak:flak-backend-jdk:2.7.0"
+  implementation "com.github.pcdv.flak:flak-api:3.0"
+
+  // the backend, see Backends for the netty alternative
+  runtimeOnly "com.github.pcdv.flak:flak-backend-jdk:3.0"
 }
 ```
 
@@ -90,8 +63,9 @@ public class HelloWorld {
 }
 ```
 
-Or if you like it 
-[compact](https://github.com/pcdv/flak/blob/master/flak-examples/src/main/java/flak/examples/HelloWorldCompact.java):
+Or if you like it
+[compact](flak-examples/src/main/java/flak/examples/HelloWorldCompact.java):
+
 ```java
 public class HelloWorldCompact {
   public static void main(String[] args) throws Exception {
@@ -105,206 +79,108 @@ public class HelloWorldCompact {
 }
 ```
 
-### Route handlers
-
-A route handler is a public method annotated with [@Route](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/annotations/Route.java).
-As in Python Flask, the route's argument specifies the path to which the
-handler must be bound (relative to the root path of the application).
-
-It is associated with only one HTTP method which is GET by default. To
-associate it with another method, just add the @Post, @Put, @Delete or any
-other annotation.
-
-Route handlers can be defined in any class. Scan an instance of the
-class with
-[App](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/App.java).scan()
-so all handlers can be discovered.
-
-### Return values
-
-Route handlers can return the following basic types:
- - `String` : directly returned in response
- - `byte[]` : directly returned in response
- - `InputStream` : piped into response
- - `void` : returns an empty document
-
-You can return any other type provided an [OutputFormatter](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/OutputFormatter.java)
-is specified. Use the [@OutputFormat](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/annotations/OutputFormat.java)
-annotation to specify which formatter to use.
-
-Note that the formatter is referenced by name and needs to have been registered
-before with `App.addOutputFormatter()`.
-
-If what you need is to convert the returned object to JSON, you can simply
-use the `Jackson` plugin and add the [@JSON](https://github.com/pcdv/flak/blob/master/flak-jackson/src/main/java/flak/jackson/JSON.java)
-annotation.
-
-### Method arguments
-
-Route handlers can accept arguments. Like with [Flask](http://flask.pocoo.org/docs/1.0/quickstart/#routing),
-arguments can be extracted from the request's path. But there is more.
-
-#### Path variables
-
-If the path contains variable (e.g. `/api/:arg1/:arg2`), they are
-automatically split, converted and passed as method arguments. The route handler
-must have the same number of `int` or `String` arguments. For example:
+A slightly bigger taste, with a path variable, a query parameter and JSON:
 
 ```java
-  @Route("/db/hello/:name")
-  public String hello(String name) {
-    return "Hello " + name;
-  }
+@Route("/api/users/:id/orders")
+@JSON
+public List<Order> orders(String id, @QueryParam(value = "limit", defaultValue = "20") int limit) {
+  return store.orders(id, limit);
+}
+
+@Route("/api/users/:id/orders")
+@Post
+@JSON
+public Order create(String id, Response r, Order order) {
+  r.setStatus(201);
+  return store.add(id, order);
+}
 ```
 
-#### Request argument
+## Features
 
-Each HTTP call is wrapped in a [Request](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/Request.java).
-You can access the request by simply adding a Request argument in your method,
-e.g.
+The [documentation](docs/README.md) covers each of them in detail.
 
-```java
-  @Route("/api/stuff")
-  public String getStuff(Request req) {
-    return "You submitted param1=" + req.getQuery().get("param1");
-  }
-```
+- **[Routing](docs/routing.md)**: `@Route` on any public method, one
+  annotation per HTTP method (`@Post`, `@Put`, `@Patch`, `@Delete`, `@Head`,
+  `@Options`), path variables (`/users/:id`) and splats (`/files/*path`),
+  prefixes, and the routes of an app listed at runtime
+- **[Handler arguments](docs/arguments.md)**: path variables, typed
+  `@QueryParam` with defaults, `Query`, `Form`, `Request`, and arguments of
+  your own types built by custom extractors
+- **[Responses](docs/responses.md)**: return a `String`, bytes, a stream or
+  any object through a formatter, set the status and headers, redirect,
+  stream chunked output or Server-Sent Events
+- **[Request bodies](docs/request-bodies.md)**: streamed to the handler,
+  with a size limit per app or per handler
+- **[Errors and hooks](docs/errors-and-hooks.md)**: throw an
+  `HttpException` to answer with a status, error and success handlers, a
+  handler for unknown URLs, hooks before every request
+- **[Compression](docs/compression.md)**: gzip, per handler or class
+- **[Several apps on one server](docs/apps-and-servers.md)**, each under
+  its own path, **HTTPS**, bind address, thread pool
+- **[JSON](docs/json.md)**: `@JSON` converts arguments and return values with
+  Jackson
+- **[Authentication](docs/login.md)**: sessions, login page,
+  `@LoginRequired`, permissions with `@WithPermission`, custom
+  authentication schemes
+- **[Static resources](docs/static-resources.md)**: `app.serveDir()` and
+  `app.serveClasspath()` serve files, optionally restricted to logged-in
+  users
+- **[OpenAPI](docs/openapi.md)**: generate a specification from the handlers
+- **[Plugins](docs/plugins.md)**: installed automatically or listed
+  explicitly, and easy to write
+- **[Two backends](docs/backends.md)**: the JDK's HttpServer or Netty, with
+  the same code. Flak can also plug into a Netty server you own, next to
+  websockets.
 
-#### Query argument
+## New in 3.0
 
-If you only need to access the query string, the above example can be
-simplified to:
-
-```java
-  @Route("/api/stuff")
-  public String getStuff(Query q) {
-    return "You submitted param1=" + q.get("param1");
-  }
-```
-
-The query corresponds to arguments that are present in request URL, after '?',
-e.g. `/api/stuff?param1=42`
-
-Note that from version 2.7.0, you can also do:
-
-```java
-  @Route("/api/stuff")
-  public String getStuff(@QueryParam("param1") String p1) {
-    return "You submitted param1=" + p1;
-  }
-```
-
-One advantage of this style is that the OpenAPI generator can automatically
-take into account the parameter without additional boilerplate.
-
-#### Form argument
-
-Similar to the example above, if you are in a POST route handler and need to
-access arguments in `application/x-www-form-urlencoded` format, you can use
-a [Form](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/Form.java)
-argument.
-
-See the following [example](https://github.com/pcdv/flak/blob/master/flak-tests/src/test/java/flask/test/FormTest.java).
-
-#### Custom arguments
-
-You can accept other argument types if you:
- - associate the type with an extractor using method
- AbstractApp.addCustomExtractor() (this is not in official API yet)
- - specify an input format with the @InputFormat annotation (which requires
- prior declaration of an InputParser with App.addInputParser().
- - a common case is to decode an object serialized as JSON in the body
- of the request. You could do the following:
- 
-```java
-  @Route("/api/jsonMap")
-  @Post
-  @JSON
-  public Map postMap(Map map) {
-    map.put("status", "ok");
-    return map;
-  }
-```
- 
-### Compression
-
-Gzip compression can be enabled for a given endpoint or all endpoints of a 
-class by using the `@Compress` annotation. Alternatively, it can be enabled
-using method `Response.setCompressionAllowed(true)`.
-
-Files served with `FlakResourceImpl` will be automatically compressed 
-according to their content type and size.
-
-It is possible to tune compression behavior:
- * file size threshold (using system property `flak.compressThreshold`)
- * eligible content types (using a custom `ContentTypeProvider`)
-
-### Managing apps
-
-The example above allocates a web server for a single application. However,
-it is possible to host several Flak apps on a single server, for example
-one located at path `/app1` and another one at `/app2`.
-
-The idea is to create a [FlakFactory](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/AppFactory.java)
-then call `createApp(String)` with two separate paths. Then you can add your
-route handlers and start them.
-
-### To be continued....
-
-Other features that still need to be documented (until more documentation is
-available, you can find examples in the
-[junits](https://github.com/pcdv/flak/tree/master/flak-tests/src/test/java/flask/test)):
- * easy parsing of path arguments (e.g. `/api/todo/:id` or `/api/upload/*path`)
- * error handlers
- * HTTP redirection
- * pluggable user authentication
- * direct serving of static resources from a directory or jar
- * HTTPS support (experimental)
- * ...
+Java 17, a complete Netty backend, streamed request bodies with size limits,
+route handlers that can be configured at runtime, typed query parameters,
+and explicit plugin lists. A few behaviours changed along the way, e.g. how
+`+` is decoded in query strings, and which of 401 and 403 flak-login sends.
+[Migrating to 3.0](docs/migration-3.0.md) lists everything, with what to do
+about it.
 
 ## Why Flak?
 
 I'm a big fan of lightweight and simple. I've always liked the simplicity
 of Flask applications and missed an equivalent solution for Java. Most existing
-frameworks were very heavy in terms of dependencies 
-(e.g. [Play](https://www.playframework.com/), 
-[Spring Boot](https://projects.spring.io/spring-boot/), etc). 
-[Spark](http://sparkjava.com/) was a better fit but it brings ~2.5MiB of
+frameworks were very heavy in terms of dependencies
+(e.g. [Play](https://www.playframework.com/),
+[Spring Boot](https://spring.io/projects/spring-boot/), etc).
+[Spark](https://sparkjava.com/) was a better fit but it brings ~2.5MiB of
 dependencies.
 
 The JDK includes a [HTTP server](
-http://docs.oracle.com/javase/7/docs/jre/api/net/httpserver/spec/com/sun/net/httpserver/package-summary.html
+https://docs.oracle.com/en/java/javase/17/docs/api/jdk.httpserver/com/sun/net/httpserver/package-summary.html
 )
-that is perfectly suited for serving small applications but its API is rather 
-painful. Flak allows to leverage it with a friendly API and in the future will
-support other back-ends.
+that is perfectly suited for serving small applications but its API is rather
+painful. Flak allows to leverage it with a friendly API, and the same
+application can run on Netty instead.
 
-
-The API initially shared a lot of similarities with [Flask](http://flask.pocoo.org/):
- * route handlers are methods with annotations like `@Route`, `@Post`, 
+The API initially shared a lot of similarities with [Flask](https://flask.palletsprojects.com/):
+ * route handlers are methods with annotations like `@Route`, `@Post`,
  `@LoginRequired` etc.
- * the [request](https://github.com/pcdv/flak/blob/master/flak-api/src/main/java/flak/Request.java)
+ * the [request](flak-api/src/main/java/flak/Request.java)
  can be accessed through a ThreadLocal
- * user authentication is similar to [flask-login](https://flask-login.readthedocs.io/en/latest/) 
+ * user authentication is similar to [flask-login](https://flask-login.readthedocs.io/en/latest/)
 
 But now the style differs quite a bit since objects can be automatically
 passed in method arguments.
 
-
-## History
-
-Flak is a refactored fork of [JFlask](https://github.com/pcdv/jflask).
-
-### Goals of the migration from JFlask
- * have a clean API, well separated from implementation
- * provide several back-ends (only one is available at this time: 
- [flak-backend-jdk](https://github.com/pcdv/flak/tree/master/flak-backend-jdk) but it will
- now be possible to provide backends for [Netty](https://netty.io/),
- [Jetty](https://www.eclipse.org/jetty/), etc.)
- * provide SSL support
- * optional plugins for user management, JSON serialization, CSRF protection...
-
 ## Build
+
+Building Flak requires a JDK 17 or later. Everything else, including the
+Gradle distribution itself, is downloaded by the wrapper:
+
+```
+./gradlew build
+```
+
+The test suite runs against both backends: `./gradlew :flak-tests:test` for
+the JDK one, `./gradlew :flak-tests:testNetty` for Netty.
 
 ### How to publish locally
 

@@ -1,3 +1,10 @@
-# EXPERIMENTAL: Netty backend for Flak
+# Netty backend for Flak
 
-WIP / broken, do not use
+An implementation of the Flak SPI on top of [Netty](https://netty.io/), as an
+alternative to `flak-backend-jdk`. The whole Flak test suite runs against it
+(`./gradlew :flak-tests:testNetty`).
+
+Flak can also serve its routes from a Netty server the application owns,
+next to websockets on the same port.
+
+See [Backends](../docs/backends.md) in the documentation.
