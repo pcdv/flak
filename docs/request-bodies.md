@@ -59,3 +59,20 @@ app.getHandler("POST", "/api/import").setMaxBodySize(settings.getMaxUpload());
 `getHandler()` fails if no handler is bound to the method and route, so a typo
 in a configured route is reported rather than ignored. `app.getHandlers()`
 returns all of them, to configure them in bulk.
+
+### Escape hatch
+
+When legitimate clients get 413 in production and the application has no
+setting of its own for the limit, start the JVM with the system property
+`flak.maxBodySize`:
+
+```
+-Dflak.maxBodySize=2g    # every limit below 2GiB becomes 2GiB
+-Dflak.maxBodySize=-1    # no limit at all
+```
+
+It raises every limit below it, whether it comes from the app, an annotation
+or a handler, and never lowers one. The value is a number of bytes,
+optionally followed by `k`, `m` or `g` (powers of 1024). It is read on every
+request, so it can also be changed in a running JVM. An invalid value is
+ignored, with a message on the standard error.

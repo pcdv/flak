@@ -107,6 +107,10 @@ Use `App.setMaxBodySize()` to change the default for a whole app. Look for
 handlers that read `getInputStream()`: uploads of files, archives or
 database dumps are the usual suspects.
 
+If a limit turns out too low in production, `-Dflak.maxBodySize=2g` (or `-1`)
+raises every limit of the JVM without a rebuild, see
+[the escape hatch](request-bodies.md#escape-hatch).
+
 **A request body can only be read once.** This was already true of the JDK
 backend; the Netty one used to allow a second read.
 

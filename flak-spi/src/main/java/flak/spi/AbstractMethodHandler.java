@@ -279,7 +279,7 @@ public abstract class AbstractMethodHandler
 
   public Object execute(SPRequest req) throws Exception {
     req.setHandler(javaMethod);
-    req.setMaxBodySize(getMaxBodySize());
+    req.setMaxBodySize(BodyLimit.apply(getMaxBodySize()));
 
     for (BeforeHook hook : beforeHooks) {
       hook.execute(req);

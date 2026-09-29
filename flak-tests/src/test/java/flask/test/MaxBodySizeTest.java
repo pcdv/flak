@@ -8,6 +8,7 @@ import flak.RouteHandler;
 import flak.annotations.MaxBodySize;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.spi.BodyLimit;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -128,5 +129,62 @@ public class MaxBodySizeTest extends AbstractAppTest {
                     .map(RouteHandler::getRoute)
                     .sorted()
                     .collect(Collectors.joining(", ")));
+  }
+
+  /**
+   * The escape hatch, for when legitimate clients get 413 in production and
+   * the application offers no setting: it raises every limit below it.
+   */
+  @Test
+  public void systemPropertyRaisesTheLimits() throws Exception {
+    withProperty("128k", () -> {
+      assertEquals("100000", client.post("/capped", body(100_000)));
+      // an annotation too, and a limit set at runtime
+      assertEquals("100000", client.post("/generous", body(100_000)));
+      app.getHandler("POST", "/generous").setMaxBodySize(100);
+      assertEquals("100000", client.post("/generous", body(100_000)));
+      TestUtil.assertFails(() -> client.post("/capped", body(128 * 1024 + 1)), "413");
+    });
+  }
+
+  @Test
+  public void systemPropertyNeverLowersALimit() throws Exception {
+    withProperty("10", () -> {
+      assertEquals("1024", client.post("/capped", body(1024)));
+      assertEquals("1048576", client.post("/unlimited", body(1024 * 1024)));
+    });
+  }
+
+  @Test
+  public void systemPropertyCanRemoveTheLimits() throws Exception {
+    withProperty("-1", () -> assertEquals("1048576", client.post("/capped", body(1024 * 1024))));
+  }
+
+  @Test
+  public void invalidSystemPropertyIsIgnored() throws Exception {
+    withProperty("lots", () -> TestUtil.assertFails(() -> client.post("/capped", body(1025)), "413"));
+  }
+
+  @Test
+  public void parseSizes() {
+    assertEquals(1500, BodyLimit.parse("1500"));
+    assertEquals(64 * 1024, BodyLimit.parse("64k"));
+    assertEquals(64 * 1024, BodyLimit.parse("64KB"));
+    assertEquals(2L << 30, BodyLimit.parse(" 2 g "));
+    assertEquals(-1, BodyLimit.parse("-1"));
+  }
+
+  private interface Body {
+    void run() throws Exception;
+  }
+
+  private static void withProperty(String value, Body body) throws Exception {
+    System.setProperty(BodyLimit.PROPERTY, value);
+    try {
+      body.run();
+    }
+    finally {
+      System.clearProperty(BodyLimit.PROPERTY);
+    }
   }
 }
