@@ -127,6 +127,11 @@ space instead. Such clients must encode their values:
 - in JavaScript, with `encodeURIComponent()`, not `encodeURI()`, which leaves
   `+`, `&` and `=` as they are
 
+A handler whose existing clients cannot be fixed in time can keep its `+` as
+they are with `@KeepPlus`, on the method or its class. It is a concession to
+those clients, not a default: `%2B` and `%20` are still decoded, and the body
+of a form is not affected.
+
 **An encoded `&` or `=` stays inside its value.** The query string used to be
 decoded before being split, so `?url=%2Fa%3Fx%3D1%26y%3D2` gave `url=/a?x=1`
 plus a stray `y=2`. It now gives `url=/a?x=1&y=2`.

@@ -3,7 +3,9 @@ package flak.spi;
 import flak.Form;
 import flak.HttpException;
 import flak.Query;
+import flak.annotations.KeepPlus;
 
+import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
@@ -32,6 +34,20 @@ public class FormImpl implements Form, Query {
    * split: decoded before, an encoded '&amp;' or '=' in a value would split it
    */
   public FormImpl(String data, boolean urlDecode) {
+    this(data, urlDecode, false);
+  }
+
+  /**
+   * Parses a query string for specified handler, which may want to keep its
+   * '+' as they are, see {@link KeepPlus}.
+   *
+   * @param handler the method handling the request, null if not known yet
+   */
+  public static FormImpl query(String queryString, Method handler) {
+    return new FormImpl(queryString, true, FlakAnnotations.keepsPlus(handler));
+  }
+
+  private FormImpl(String data, boolean urlDecode, boolean keepPlus) {
     if (data != null)
       for (String tok : data.split("&")) {
         int pos = tok.indexOf('=');
@@ -39,8 +55,8 @@ public class FormImpl implements Form, Query {
           String key = tok.substring(0, pos);
           String value = tok.substring(pos + 1);
           if (urlDecode) {
-            key = decode(key);
-            value = decode(value);
+            key = decode(key, keepPlus);
+            value = decode(value, keepPlus);
           }
           this.data.put(key, value);
           this.params.add(new AbstractMap.SimpleEntry<>(key, value));
@@ -49,10 +65,13 @@ public class FormImpl implements Form, Query {
   }
 
   /**
-   * Decodes as HTML forms encode: '+' is a space, "%2B" a '+'.
+   * Decodes as HTML forms encode: '+' is a space, "%2B" a '+'. Unless keepPlus
+   * is set, in which case a '+' is taken as it is.
    */
-  private static String decode(String s) {
+  private static String decode(String s, boolean keepPlus) {
     try {
+      if (keepPlus)
+        s = s.replace("+", "%2B");
       return URLDecoder.decode(s, StandardCharsets.UTF_8);
     }
     catch (IllegalArgumentException e) {

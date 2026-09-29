@@ -12,6 +12,7 @@ import flak.annotations.Compress;
 import flak.annotations.Delete;
 import flak.annotations.Head;
 import flak.annotations.InputFormat;
+import flak.annotations.KeepPlus;
 import flak.annotations.MaxBodySize;
 import flak.annotations.Options;
 import flak.annotations.OutputFormat;
@@ -53,6 +54,18 @@ public final class FlakAnnotations {
    */
   public static HandlerSpec describe(String route, Method m) {
     return read(null, route, m, FlakAnnotations::isProvidedByFlak);
+  }
+
+  /**
+   * Whether the query string of specified handler keeps its '+', see
+   * {@link KeepPlus}.
+   *
+   * @param m the handler, null if not known yet, e.g. in a before-all hook
+   */
+  static boolean keepsPlus(Method m) {
+    return m != null
+      && (m.isAnnotationPresent(KeepPlus.class)
+            || m.getDeclaringClass().isAnnotationPresent(KeepPlus.class));
   }
 
   private static boolean isProvidedByFlak(Class<?> type) {

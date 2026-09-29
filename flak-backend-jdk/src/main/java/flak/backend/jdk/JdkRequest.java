@@ -121,7 +121,7 @@ public class JdkRequest implements SPRequest, SPResponse {
 
   @Override
   public Query getQuery() {
-    return new FormImpl(getQueryString(), true);
+    return FormImpl.query(getQueryString(), handler);
   }
 
   @Override

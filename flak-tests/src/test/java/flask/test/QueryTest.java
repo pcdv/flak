@@ -6,7 +6,9 @@ import java.util.Arrays;
 import flak.Form;
 import flak.Query;
 import flak.Request;
+import flak.annotations.KeepPlus;
 import flak.annotations.Post;
+import flak.annotations.QueryParam;
 import flak.annotations.Route;
 import org.junit.Test;
 
@@ -74,6 +76,33 @@ public class QueryTest extends AbstractAppTest {
   public void testEncodedSeparators() throws Exception {
     assertEquals("[url=/data?x=1&y=2]", client.get("/showParams?url=%2Fdata%3Fx%3D1%26y%3D2"));
     assertEquals("[a b=c&d, é=ü]", client.get("/showParams?a+b=c%26d&%C3%A9=%C3%BC"));
+  }
+
+  @Route("/keepPlus")
+  @KeepPlus
+  public String keepPlus(@QueryParam("maturity") String maturity, Query q) {
+    return maturity + " " + q.parameters();
+  }
+
+  @Route("/keepPlus/form")
+  @Post
+  @KeepPlus
+  public String keepPlusForm(Form f) {
+    return f.parameters().toString();
+  }
+
+  /**
+   * For clients that send a '+' without encoding it, as flak 2 allowed.
+   */
+  @Test
+  public void testKeepPlus() throws Exception {
+    assertEquals("2024-02-01T00:00+02:00 [maturity=2024-02-01T00:00+02:00, a=x y]",
+                 client.get("/keepPlus?maturity=2024-02-01T00:00+02:00&a=x%20y"));
+    assertEquals("+ [maturity=+]", client.get("/keepPlus?maturity=%2B"));
+    // only the handlers that ask for it
+    assertEquals("[a=x y]", client.get("/showParams?a=x+y"));
+    // the body of a form is always sent encoded
+    assertEquals("[a=x y]", client.post("/keepPlus/form", "a=x+y"));
   }
 
   @Test
