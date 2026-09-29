@@ -1,5 +1,6 @@
 package flak.spi;
 
+import flak.Form;
 import flak.InputParser;
 import flak.OutputFormatter;
 import flak.Query;
@@ -44,12 +45,18 @@ public final class FlakAnnotations {
   /**
    * Describes a handler method without an app, e.g. to document it: its
    * formatter and parser are unknown, and so are custom extractors, so that
-   * a parameter which one of them provides is taken for the body.
+   * a parameter which one of them provides is taken for the body. Except the
+   * types of flak itself, e.g. the FlakUser that flak-login provides: apart
+   * from a Form, they are never the body.
    *
    * @param route the route, e.g. the value of its @Route
    */
   public static HandlerSpec describe(String route, Method m) {
-    return read(null, route, m, type -> false);
+    return read(null, route, m, FlakAnnotations::isProvidedByFlak);
+  }
+
+  private static boolean isProvidedByFlak(Class<?> type) {
+    return type != Form.class && type.getName().startsWith("flak.");
   }
 
   private static HandlerSpec read(AbstractApp app,

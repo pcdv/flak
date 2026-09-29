@@ -8,6 +8,8 @@ import flak.annotations.Put;
 import flak.annotations.QueryParam;
 import flak.annotations.Route;
 import flak.jackson.JSON;
+import flak.login.FlakUser;
+import flak.login.SessionManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -151,6 +153,15 @@ public class SwaggerTest extends AbstractAppTest {
     @Route("/tokens/:id/check")
     public void check(Token token, int id) {
     }
+    /**
+     * Provided by flak-login, which scan(Class) does not know either, but a
+     * type of flak is never the body.
+     */
+    @Route("/tokens/:id/owner")
+    @JSON
+    public String owner(int id, FlakUser user, SessionManager sessions) {
+      return null;
+    }
   }
 
   /**
@@ -164,7 +175,7 @@ public class SwaggerTest extends AbstractAppTest {
     gen.scan(TokenHandler.class);
     OpenAPI api = gen.getAPI();
 
-    assertEquals("[/files/{path}, /items/{id}, /tokens/{id}, /tokens/{id}/check]",
+    assertEquals("[/files/{path}, /items/{id}, /tokens/{id}, /tokens/{id}/check, /tokens/{id}/owner]",
                  new TreeSet<>(api.getPaths().keySet()).toString());
 
     io.swagger.v3.oas.models.Operation update = api.getPaths().get("/items/{id}").getPut();
@@ -179,6 +190,9 @@ public class SwaggerTest extends AbstractAppTest {
 
     // no JSON, so what could be a body must come from a custom extractor
     assertNull(api.getPaths().get("/tokens/{id}/check").getPost().getRequestBody());
+
+    assertNull(api.getPaths().get("/tokens/{id}/owner").getGet().getRequestBody());
+    assertNull(api.getComponents().getSchemas().get("FlakUser"));
   }
 
   @Test

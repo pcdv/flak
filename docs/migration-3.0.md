@@ -251,7 +251,9 @@ which changes what it generates:
   parameter, and for any HTTP method: the parameter with `@JSON`, or else the
   last one that could be a body. It used to be described only for POST, PUT,
   PATCH and DELETE handlers with `@JSON` on the method, and never for a type
-  of `java.*`, e.g. a `Map`, which now gets an untyped body.
+  of `java.*`, e.g. a `Map`, which now gets an untyped body. A parameter of a type
+  of flak, e.g. the `FlakUser` or `SessionManager` that flak-login provides,
+  is never taken for the body, apart from a `Form`.
 - **Path variables have a type**, `string` or `integer`, and a splat is a
   path variable too: `/files/*path` becomes `/files/{path}`.
 - **Query parameters without a description** no longer get an empty one.
