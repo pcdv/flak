@@ -52,6 +52,8 @@ public abstract class AbstractApp implements App {
 
   private long maxBodySize = DEFAULT_MAX_BODY_SIZE;
 
+  private volatile boolean keepPlus;
+
   public AbstractApp(String rootUrl) {
     this.rootUrl = rootUrl;
   }
@@ -315,6 +317,16 @@ public abstract class AbstractApp implements App {
   @Override
   public long getMaxBodySize() {
     return maxBodySize;
+  }
+
+  @Override
+  public void setKeepPlus(boolean keepPlus) {
+    this.keepPlus = keepPlus;
+  }
+
+  @Override
+  public boolean isKeepPlus() {
+    return keepPlus;
   }
 
   public void addPlugin(FlakPlugin plugin) {

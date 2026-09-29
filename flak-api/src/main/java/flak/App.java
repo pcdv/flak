@@ -168,6 +168,17 @@ public interface App {
   long getMaxBodySize();
 
   /**
+   * Keeps the '+' of the query strings of all the handlers of this app as they
+   * are, instead of decoding them as spaces, like
+   * {@link flak.annotations.KeepPlus} does for one handler. An escape hatch for
+   * when clients sending a '+' unencoded turn up on a handler nobody expected:
+   * prefer the annotation, on the handlers that need it.
+   */
+  void setKeepPlus(boolean keepPlus);
+
+  boolean isKeepPlus();
+
+  /**
    * All the route handlers scanned by this app, in no particular order.
    * Useful to introspect an API, or to configure the handlers in bulk.
    */

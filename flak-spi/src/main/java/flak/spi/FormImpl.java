@@ -1,5 +1,6 @@
 package flak.spi;
 
+import flak.App;
 import flak.Form;
 import flak.HttpException;
 import flak.Query;
@@ -39,12 +40,14 @@ public class FormImpl implements Form, Query {
 
   /**
    * Parses a query string for specified handler, which may want to keep its
-   * '+' as they are, see {@link KeepPlus}.
+   * '+' as they are, see {@link KeepPlus} and {@link App#setKeepPlus}.
    *
    * @param handler the method handling the request, null if not known yet
    */
-  public static FormImpl query(String queryString, Method handler) {
-    return new FormImpl(queryString, true, FlakAnnotations.keepsPlus(handler));
+  public static FormImpl query(String queryString, App app, Method handler) {
+    return new FormImpl(queryString,
+                        true,
+                        app.isKeepPlus() || FlakAnnotations.keepsPlus(handler));
   }
 
   private FormImpl(String data, boolean urlDecode, boolean keepPlus) {

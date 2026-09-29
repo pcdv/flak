@@ -171,7 +171,7 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   @Override
   public Query getQuery() {
-    return FormImpl.query(queryString, handler);
+    return FormImpl.query(queryString, app, handler);
   }
 
   @Override

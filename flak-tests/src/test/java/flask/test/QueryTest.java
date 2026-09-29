@@ -105,6 +105,24 @@ public class QueryTest extends AbstractAppTest {
     assertEquals("[a=x y]", client.post("/keepPlus/form", "a=x+y"));
   }
 
+  /**
+   * The escape hatch, for clients sending a '+' unencoded to a handler nobody
+   * expected.
+   */
+  @Test
+  public void testKeepPlusForTheWholeApp() throws Exception {
+    app.setKeepPlus(true);
+    try {
+      assertEquals("[a=x+y, b=x y]", client.get("/showParams?a=x+y&b=x%20y"));
+      // a form is always sent encoded
+      assertEquals("[a=x y] []", client.post("/form", "a=x+y"));
+    }
+    finally {
+      app.setKeepPlus(false);
+    }
+    assertEquals("[a=x y]", client.get("/showParams?a=x+y"));
+  }
+
   @Test
   public void testQueryStringIsRaw() throws Exception {
     assertEquals("a=x+y&b=%26", client.get("/queryString?a=x+y&b=%26"));
