@@ -419,9 +419,10 @@ public abstract class AbstractApp implements App {
         t = ((InvocationTargetException) t).getTargetException();
       }
 
-      if (t instanceof HttpException) {
-        resp.setStatus(((HttpException) t).getResponseCode());
-        resp.getOutputStream().write(t.getMessage().getBytes(StandardCharsets.UTF_8));
+      HttpException http = httpCause(t);
+      if (http != null) {
+        resp.setStatus(http.getResponseCode());
+        resp.getOutputStream().write(http.getMessage().getBytes(StandardCharsets.UTF_8));
         resp.addHeader("Content-Type", "text/plain");
         return;
       }
@@ -443,6 +444,18 @@ public abstract class AbstractApp implements App {
             .write("Internal Server Error".getBytes(StandardCharsets.UTF_8));
       }
     }
+  }
+
+  /**
+   * The HttpException behind a failure, even wrapped by a library the handler
+   * went through: Jackson wraps the 413 of a body found too big while it
+   * parses it, which happens when the client sends no Content-Length.
+   */
+  private static HttpException httpCause(Throwable t) {
+    for (Throwable c = t; c != null; c = c.getCause())
+      if (c instanceof HttpException)
+        return (HttpException) c;
+    return null;
   }
 
   /**

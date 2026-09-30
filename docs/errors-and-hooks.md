@@ -32,7 +32,8 @@ public String item(String id) {
 
 The client receives that status, with the message as a `text/plain` body. An
 `HttpException` is a deliberate answer rather than a failure, so it is not
-reported to the error handlers.
+reported to the error handlers. It still counts when another exception wraps
+it, e.g. a JSON parser's.
 
 Flak itself answers with:
 

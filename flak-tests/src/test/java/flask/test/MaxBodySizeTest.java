@@ -1,13 +1,20 @@
 package flask.test;
 
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import flak.Request;
 import flak.RouteHandler;
+import flak.annotations.InputFormat;
 import flak.annotations.MaxBodySize;
 import flak.annotations.Post;
 import flak.annotations.Route;
+import flak.jackson.JsonInputMapper;
 import flak.spi.BodyLimit;
 import org.junit.Test;
 
@@ -22,6 +29,7 @@ public class MaxBodySizeTest extends AbstractAppTest {
   @Override
   protected void preScan() {
     app.setMaxBodySize(1024);
+    app.addInputParser("JSON", new JsonInputMapper<>(id -> new ObjectMapper()));
   }
 
   private static String drain(Request r) throws Exception {
@@ -51,6 +59,22 @@ public class MaxBodySizeTest extends AbstractAppTest {
   @MaxBodySize(MaxBodySize.UNLIMITED)
   public String unlimited(Request r) throws Exception {
     return drain(r);
+  }
+
+  public static class Pojo {
+    public String name;
+  }
+
+  /**
+   * Big enough for the parser to be well into the object when the limit is
+   * crossed, rather than at its first read.
+   */
+  @Route("/json")
+  @Post
+  @InputFormat("JSON")
+  @MaxBodySize(16 * 1024)
+  public String json(Pojo p) {
+    return String.valueOf(p.name.length());
   }
 
   private String body(int size) {
@@ -115,6 +139,29 @@ public class MaxBodySizeTest extends AbstractAppTest {
     TestUtil.assertFails(() -> client.post("/generous", body(101)), "413");
   }
 
+  /**
+   * Without a Content-Length, the body is found too big only while it is
+   * read. Jackson then wraps the 413, which must not turn into a 500.
+   */
+  @Test
+  public void chunkedBodyOverTheLimitIsRejectedWhileParsed() throws Exception {
+    // what remains unread stays under the 64KiB the JDK server drains by
+    // default before reusing the connection: more and it closes it, which may
+    // reset the client
+    assertEquals(413, postChunked("/json", "{\"name\":\"" + body(32 * 1024) + "\"}"));
+  }
+
+  private int postChunked(String path, String body) throws Exception {
+    HttpURLConnection con = (HttpURLConnection) new URL(app.getRootUrl() + path).openConnection();
+    con.setRequestMethod("POST");
+    con.setDoOutput(true);
+    con.setChunkedStreamingMode(4096);
+    try (OutputStream out = con.getOutputStream()) {
+      out.write(body.getBytes(StandardCharsets.UTF_8));
+    }
+    return con.getResponseCode();
+  }
+
   @Test
   public void unknownRouteIsReported() {
     TestUtil.assertFails(() -> app.getHandler("POST", "/nope"),
@@ -123,7 +170,7 @@ public class MaxBodySizeTest extends AbstractAppTest {
 
   @Test
   public void handlersCanBeListed() {
-    assertEquals("/capped, /generous, /unlimited",
+    assertEquals("/capped, /generous, /json, /unlimited",
                  app.getHandlers()
                     .filter(h -> h.getHttpMethod().equals("POST"))
                     .map(RouteHandler::getRoute)
