@@ -21,6 +21,11 @@ tasks.withType(Test).configureEach {
 
 test {
   systemProperty "backend", "jdk"
+  // HttpServer reads up to 64KiB of the body a handler left unread, then
+  // closes the connection, which may reset the client before it reads the
+  // response: MaxBodySizeTest refuses bigger bodies than that without
+  // reading them, and sometimes got "Connection reset" instead of a 413
+  systemProperty "sun.net.httpserver.drainAmount", String.valueOf(1024 * 1024)
 }
 
 def testNetty = tasks.register("testNetty", Test) {
