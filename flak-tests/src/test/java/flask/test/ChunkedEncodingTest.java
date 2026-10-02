@@ -38,12 +38,17 @@ public class ChunkedEncodingTest extends AbstractAppTest {
   @Test
   public void testIt() throws Exception {
     LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
-    new Thread(() -> readInto(queue)).start();
+    Thread reader = new Thread(() -> readInto(queue));
+    reader.start();
     toSend.put("Hello\n");
     Assert.assertEquals("Hello", queue.poll(1, TimeUnit.SECONDS));
     toSend.put("world\n");
     Assert.assertEquals("world", queue.poll(1, TimeUnit.SECONDS));
     toSend.put("END");
+    // let the reader see the end of the response, or the zombie check may
+    // find it still running
+    reader.join(5000);
+    Assert.assertFalse("reader still running", reader.isAlive());
   }
 
   private void readInto(LinkedBlockingQueue<String> queue) {
