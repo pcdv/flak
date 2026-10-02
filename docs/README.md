@@ -26,6 +26,8 @@ app. These pages cover each feature in detail.
 - [JSON](json.md): `flak-jackson`
 - [Authentication](login.md): `flak-login`, sessions and permissions
 - [OpenAPI](openapi.md): `flak-swagger`, generating a specification
+- [WebSockets](websocket.md): `flak-websocket`, websockets on the JDK
+  backend
 
 **Running**
 

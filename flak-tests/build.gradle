@@ -8,6 +8,7 @@ dependencies {
   implementation project(":flak-backend-netty")
   implementation project(":flak-util")
   implementation project(":flak-swagger")
+  implementation project(":flak-websocket")
 }
 
 // the suite must pass against every backend: one Test task each, reports and
@@ -26,6 +27,9 @@ test {
   // response: MaxBodySizeTest refuses bigger bodies than that without
   // reading them, and sometimes got "Connection reset" instead of a 413
   systemProperty "sun.net.httpserver.drainAmount", String.valueOf(1024 * 1024)
+  // what the docs of flak-websocket recommend. Its own tests run without it,
+  // which covers the fallback
+  jvmArgs "--add-opens", "jdk.httpserver/sun.net.httpserver=ALL-UNNAMED"
 }
 
 def testNetty = tasks.register("testNetty", Test) {

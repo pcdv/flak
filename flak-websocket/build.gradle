@@ -1,0 +1,7 @@
+description = "WebSockets for the JDK backend, served on the connections of its HttpServer"
+
+dependencies {
+  implementation project(":flak-api")
+  implementation project(":flak-spi")
+  implementation project(":flak-backend-jdk")
+}

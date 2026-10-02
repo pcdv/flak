@@ -25,6 +25,7 @@ Flak components      | Description
 `flak-login`         | Add-on for managing authentication, see [Authentication](docs/login.md)
 `flak-jackson`       | Add-on for conversion to/from JSON using Jackson, see [JSON](docs/json.md)
 `flak-swagger`       | Add-on to generate OpenAPI specifications, see [OpenAPI](docs/openapi.md)
+`flak-websocket`     | Add-on for websockets with the JDK backend, see [WebSockets](docs/websocket.md)
 `flak-util`          | Misc utilities (e.g. route dumper)
 
 ## Getting started

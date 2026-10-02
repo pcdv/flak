@@ -5,7 +5,7 @@ are available, and the same test suite runs against both:
 
 | Backend | Extra dependencies | Description |
 | ------- | ------------------ | ----------- |
-| `flak-backend-jdk` | none | The [HttpServer](https://docs.oracle.com/en/java/javase/17/docs/api/jdk.httpserver/com/sun/net/httpserver/package-summary.html) included in the JDK. The default choice, and the lightest by far. |
+| `flak-backend-jdk` | none | The [HttpServer](https://docs.oracle.com/en/java/javase/17/docs/api/jdk.httpserver/com/sun/net/httpserver/package-summary.html) included in the JDK. The default choice, and the lightest by far. Websockets with the [flak-websocket](websocket.md) add-on. |
 | `flak-backend-netty` | ~3.4MiB | [Netty](https://netty.io/), useful if it is already part of your stack, or to share a port with websockets. |
 
 ## Choosing a backend
