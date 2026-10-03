@@ -7,7 +7,7 @@ automatically, as Flak binds them. The rest can be added with
 [Swagger annotations](https://github.com/swagger-api/swagger-core/wiki/Swagger-2.X---Annotations).
 
 ```groovy
-implementation "com.github.pcdv.flak:flak-swagger:3.0"
+implementation "com.github.pcdv.flak:flak-swagger:3.0.0"
 ```
 
 ## Generating a specification

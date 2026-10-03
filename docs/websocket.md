@@ -11,11 +11,14 @@ way to take over a connection. This add-on gets around that with reflection
 internals of the JDK. With the Netty backend, use Netty's own websocket
 handlers instead, see [Backends](backends.md#plugging-flak-into-a-netty-server-you-own).
 
+**This add-on is experimental.** Its API may still change in a minor
+release, as it gets used in real applications.
+
 ```groovy
 dependencies {
-  implementation "com.github.pcdv.flak:flak-api:3.0"
-  implementation "com.github.pcdv.flak:flak-websocket:3.0"
-  implementation "com.github.pcdv.flak:flak-backend-jdk:3.0"
+  implementation "com.github.pcdv.flak:flak-api:3.0.0"
+  implementation "com.github.pcdv.flak:flak-websocket:3.0.0"
+  implementation "com.github.pcdv.flak:flak-backend-jdk:3.0.0"
 }
 ```
 

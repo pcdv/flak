@@ -36,6 +36,8 @@
   [Errors and hooks](errors-and-hooks.md).
 - Flak can serve its routes from a Netty server the application owns,
   leaving it free to serve websockets on the same port.
+- **Websockets on the JDK backend**, with the experimental `flak-websocket`
+  add-on. See [WebSockets](websocket.md).
 
 ## Migrating from 2.x
 

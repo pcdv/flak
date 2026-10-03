@@ -25,7 +25,7 @@ Flak components      | Description
 `flak-login`         | Add-on for managing authentication, see [Authentication](docs/login.md)
 `flak-jackson`       | Add-on for conversion to/from JSON using Jackson, see [JSON](docs/json.md)
 `flak-swagger`       | Add-on to generate OpenAPI specifications, see [OpenAPI](docs/openapi.md)
-`flak-websocket`     | Add-on for websockets with the JDK backend, see [WebSockets](docs/websocket.md)
+`flak-websocket`     | Experimental add-on for websockets with the JDK backend, see [WebSockets](docs/websocket.md)
 `flak-util`          | Misc utilities (e.g. route dumper)
 
 ## Getting started
@@ -39,10 +39,10 @@ repositories {
 }
 
 dependencies {
-  implementation "com.github.pcdv.flak:flak-api:3.0"
+  implementation "com.github.pcdv.flak:flak-api:3.0.0"
 
   // the backend, see Backends for the netty alternative
-  runtimeOnly "com.github.pcdv.flak:flak-backend-jdk:3.0"
+  runtimeOnly "com.github.pcdv.flak:flak-backend-jdk:3.0.0"
 }
 ```
 
@@ -139,8 +139,9 @@ The [documentation](docs/README.md) covers each of them in detail.
 
 Java 17, a complete Netty backend, streamed request bodies with size limits,
 route handlers that can be configured at runtime, typed query parameters,
-and explicit plugin lists. A few behaviours changed along the way, e.g. how
-`+` is decoded in query strings, and which of 401 and 403 flak-login sends.
+explicit plugin lists, and experimental websockets on the JDK backend. A few
+behaviours changed along the way, e.g. how `+` is decoded in query strings,
+and which of 401 and 403 flak-login sends.
 [Migrating to 3.0](docs/migration-3.0.md) lists everything, with what to do
 about it.
 
