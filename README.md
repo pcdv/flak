@@ -107,8 +107,9 @@ The [documentation](docs/README.md) covers each of them in detail.
   `@Options`), path variables (`/users/:id`) and splats (`/files/*path`),
   prefixes, and the routes of an app listed at runtime
 - **[Handler arguments](docs/arguments.md)**: path variables, typed
-  `@QueryParam` with defaults, `Query`, `Form`, `Request`, and arguments of
-  your own types built by custom extractors
+  `@QueryParam` with defaults, objects built from the whole query string
+  with `@QueryParams`, `Query`, `Form`, `Request`, and arguments of your own
+  types built by custom extractors
 - **[Responses](docs/responses.md)**: return a `String`, bytes, a stream or
   any object through a formatter, set the status and headers, redirect,
   stream chunked output or Server-Sent Events
@@ -128,6 +129,9 @@ The [documentation](docs/README.md) covers each of them in detail.
 - **[Static resources](docs/static-resources.md)**: `app.serveDir()` and
   `app.serveClasspath()` serve files, optionally restricted to logged-in
   users
+- **[WebSockets](docs/websocket.md)**, experimental: served on the routes
+  of an app with the JDK backend, so that hooks and login apply to them, and
+  dropped when the client is lost
 - **[OpenAPI](docs/openapi.md)**: generate a specification from the handlers
 - **[Plugins](docs/plugins.md)**: installed automatically or listed
   explicitly, and easy to write
