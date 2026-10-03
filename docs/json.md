@@ -5,7 +5,7 @@ with [Jackson](https://github.com/FasterXML/jackson-databind). It is a
 [plugin](plugins.md): adding the dependency is enough.
 
 ```groovy
-implementation "com.github.pcdv.flak:flak-jackson:3.1.1"
+implementation "com.github.pcdv.flak:flak-jackson:3.2.0"
 ```
 
 ## @JSON

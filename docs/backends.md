@@ -16,8 +16,8 @@ Application code is unchanged:
 
 ```groovy
 dependencies {
-  implementation "com.github.pcdv.flak:flak-api:3.1.1"
-  runtimeOnly "com.github.pcdv.flak:flak-backend-netty:3.1.1"
+  implementation "com.github.pcdv.flak:flak-api:3.2.0"
+  runtimeOnly "com.github.pcdv.flak:flak-backend-netty:3.2.0"
 }
 ```
 

@@ -7,7 +7,7 @@ checks them, while the application decides who its users are and how they
 log in. It is a [plugin](plugins.md): adding the dependency installs it.
 
 ```groovy
-implementation "com.github.pcdv.flak:flak-login:3.1.1"
+implementation "com.github.pcdv.flak:flak-login:3.2.0"
 ```
 
 ## Overview
