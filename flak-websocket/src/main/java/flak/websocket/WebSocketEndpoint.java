@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -77,9 +78,9 @@ public abstract class WebSocketEndpoint {
   private volatile List<String> protocols = List.of();
 
   /**
-   * In seconds. Guarded by connections, like the watchdog.
+   * Guarded by connections, like the watchdog.
    */
-  private int connectionLostTimeout = DEFAULT_CONNECTION_LOST_TIMEOUT;
+  private Duration connectionLostTimeout = Duration.ofSeconds(DEFAULT_CONNECTION_LOST_TIMEOUT);
 
   /**
    * Runs while websockets are open, so that an endpoint without any costs no
@@ -294,19 +295,34 @@ public abstract class WebSocketEndpoint {
    * operating system gives up on the connection, which may take hours.
    *
    * @param seconds the timeout, 0 to disable the watchdog
+   * @see #setConnectionLostTimeout(Duration)
    */
   public void setConnectionLostTimeout(int seconds) {
+    setConnectionLostTimeout(Duration.ofSeconds(seconds));
+  }
+
+  /**
+   * Same as {@link #setConnectionLostTimeout(int)}, with a finer precision
+   * than the second, e.g. for tests.
+   *
+   * @param timeout the timeout, zero to disable the watchdog
+   * @since 3.1.0
+   */
+  public void setConnectionLostTimeout(Duration timeout) {
     synchronized (connections) {
-      connectionLostTimeout = seconds;
+      connectionLostTimeout = timeout;
       stopWatchdog();
       if (!connections.isEmpty())
         startWatchdog();
     }
   }
 
+  /**
+   * The timeout in whole seconds, rounded down, as in Java-WebSocket.
+   */
   public int getConnectionLostTimeout() {
     synchronized (connections) {
-      return connectionLostTimeout;
+      return (int) connectionLostTimeout.toSeconds();
     }
   }
 
@@ -331,10 +347,10 @@ public abstract class WebSocketEndpoint {
    * the check that drops that client, and unblocks the ping.
    */
   private void startWatchdog() {
-    if (connectionLostTimeout <= 0)
+    if (connectionLostTimeout.isZero() || connectionLostTimeout.isNegative())
       return;
 
-    long timeout = TimeUnit.SECONDS.toNanos(connectionLostTimeout);
+    long timeout = connectionLostTimeout.toNanos();
     watchdog = new ScheduledThreadPoolExecutor(2, r -> {
       Thread t = new Thread(r, "websocket-watchdog");
       t.setDaemon(true);

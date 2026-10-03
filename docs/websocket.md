@@ -118,7 +118,8 @@ does. With the default timeout of 60 seconds:
 
 A dropped websocket is closed with `CloseFrame.ABNORMAL_CLOSE` (1006), and a
 reason starting with "Connection lost". Change the timeout with
-`setConnectionLostTimeout(seconds)`, or disable the watchdog with 0. It runs
+`setConnectionLostTimeout(seconds)`, or `setConnectionLostTimeout(Duration)`
+(since 3.1.0) for a finer precision, or disable the watchdog with 0. It runs
 on two threads of its own, only while the endpoint has open websockets.
 
 ## Subprotocols

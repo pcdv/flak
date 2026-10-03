@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionStage;
@@ -44,6 +45,13 @@ import static org.junit.Assert.assertTrue;
  * what the former would not send.
  */
 public class WebSocketTest {
+
+  /**
+   * The connection-lost timeout of the tests that wait for the watchdog:
+   * short, so that they do not wait for seconds, but long enough for an idle
+   * client to answer the pings on a busy machine.
+   */
+  private static final Duration TIMEOUT = Duration.ofMillis(300);
 
   /**
    * The HttpClient of JDK 17 cannot be closed: its threads linger until it is
@@ -301,11 +309,11 @@ public class WebSocketTest {
 
   @Test
   public void keepsAnIdleClientThatAnswersPings() throws Exception {
-    endpoint.setConnectionLostTimeout(1);
+    endpoint.setConnectionLostTimeout(TIMEOUT);
     Client c = connect("/echo");
     endpoint.skip("open");
     // the client of the JDK answers pings on its own
-    Thread.sleep(3500);
+    Thread.sleep(TIMEOUT.multipliedBy(7).dividedBy(2).toMillis());
     c.ws.sendText("still there", true);
     assertEquals("still there", c.next());
     assertEquals(null, endpoint.events.poll());
@@ -313,7 +321,7 @@ public class WebSocketTest {
 
   @Test
   public void dropsAClientThatDoesNotAnswerPings() throws Exception {
-    endpoint.setConnectionLostTimeout(1);
+    endpoint.setConnectionLostTimeout(TIMEOUT);
     try (RawWebSocketClient c = rawClient()) {
       c.handshake("/echo", "13");
       endpoint.skip("open");
@@ -329,7 +337,7 @@ public class WebSocketTest {
    */
   @Test(timeout = 20_000)
   public void dropsAClientThatStopsReading() throws Exception {
-    endpoint.setConnectionLostTimeout(1);
+    endpoint.setConnectionLostTimeout(TIMEOUT);
     try (RawWebSocketClient c = rawClient()) {
       c.handshake("/echo", "13");
       endpoint.skip("open");
@@ -339,7 +347,7 @@ public class WebSocketTest {
         try {
           while (true) {
             c.send(1, "quiet:", true);
-            Thread.sleep(100);
+            Thread.sleep(20);
           }
         }
         catch (Exception e) {
