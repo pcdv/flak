@@ -38,7 +38,14 @@ public class WebSocketSSLTest {
 
   private final BlockingQueue<String> closed = new LinkedBlockingQueue<>();
 
+  private final BlockingQueue<WebSocket> opened = new LinkedBlockingQueue<>();
+
   private final WebSocketEndpoint echo = new WebSocketEndpoint() {
+    @Override
+    public void onOpen(WebSocket conn, Request handshake) {
+      opened.add(conn);
+    }
+
     @Override
     public void onMessage(WebSocket conn, String message) {
       if (!message.equals("quiet"))
@@ -117,7 +124,9 @@ public class WebSocketSSLTest {
       talker.start();
 
       try {
-        WebSocket ws = echo.getConnections().iterator().next();
+        // the client reads the handshake before the endpoint lists the
+        // websocket, which it does by the time it is opened
+        WebSocket ws = opened.poll(5, TimeUnit.SECONDS);
         byte[] big = new byte[1 << 20];
         for (int i = 0; i < 500; i++)
           ws.send(big);
