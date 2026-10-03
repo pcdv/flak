@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import flak.App;
 import flak.Form;
+import flak.InputParser;
 import flak.RouteHandler;
 import flak.RouteParameter;
 import flak.annotations.Route;
@@ -17,6 +18,8 @@ import flak.jackson.JSON;
 import flak.jackson.JsonInputMapper;
 import flak.jackson.JsonInputReader;
 import flak.jackson.JsonOutputFormatter;
+import flak.jackson.JsonQueryReader;
+import flak.spi.AbstractMethodHandler;
 import flak.spi.FlakAnnotations;
 import flak.spi.HandlerSpec;
 import flak.spi.util.IO;
@@ -120,13 +123,16 @@ public class OpenApiGenerator {
    * @param parameters what the parameters of the method are bound to
    * @param readsJson  whether the body is read as JSON
    * @param writesJson whether the response is written as JSON
+   * @param mapper     the mapper flak-jackson binds the @QueryParams and
+   *                   @FormParams objects with, null if unknown
    */
   private record Endpoint(String path,
                           String httpMethod,
                           Method method,
                           List<RouteParameter> parameters,
                           boolean readsJson,
-                          boolean writesJson) {
+                          boolean writesJson,
+                          ObjectMapper mapper) {
   }
 
   /**
@@ -190,7 +196,24 @@ public class OpenApiGenerator {
                         h.getParameters(),
                         h.getInputParser() instanceof JsonInputReader
                           || h.getInputParser() instanceof JsonInputMapper,
-                        h.getOutputFormatter() instanceof JsonOutputFormatter);
+                        h.getOutputFormatter() instanceof JsonOutputFormatter,
+                        bindingMapper(h));
+  }
+
+  /**
+   * The mapper of the handler, e.g. the one its @JSON("id") names, so that
+   * the properties of its @QueryParams and @FormParams objects are named and
+   * described as they are bound, e.g. after annotations of the application.
+   */
+  private static ObjectMapper bindingMapper(RouteHandler h) {
+    if (!(h instanceof AbstractMethodHandler))
+      return null;
+    AbstractMethodHandler handler = (AbstractMethodHandler) h;
+    // both are read with the same mapper
+    InputParser<?> parser = handler.getQueryObjectParser() != null
+      ? handler.getQueryObjectParser()
+      : handler.getFormObjectParser();
+    return parser instanceof JsonQueryReader ? ((JsonQueryReader) parser).getMapper() : null;
   }
 
   /**
@@ -222,7 +245,7 @@ public class OpenApiGenerator {
     if (body != null)
       params.add(body);
 
-    return new Endpoint(spec.route(), spec.httpMethod(), m, params, readsJson, writesJson);
+    return new Endpoint(spec.route(), spec.httpMethod(), m, params, readsJson, writesJson, null);
   }
 
   private void addTags(Optional<Set<io.swagger.v3.oas.models.tags.Tag>> tags) {
@@ -318,7 +341,7 @@ public class OpenApiGenerator {
                            .orElse(null);
 
     if (body != null && body.kind() == RouteParameter.Kind.FORM_OBJECT)
-      return formRequestBody(formSchema(body.type()));
+      return formRequestBody(formSchema(body.type(), e));
 
     if (body == null)
       return null;
@@ -435,7 +458,7 @@ public class OpenApiGenerator {
                                       p, ann));
       }
       else if (p.kind() == RouteParameter.Kind.QUERY_OBJECT)
-        queryObjectParameters(p.type()).forEach(op::addParametersItem);
+        queryObjectParameters(p.type(), e).forEach(op::addParametersItem);
       // e.g. a header read from the Request: the annotation says it all
       else if (ann != null && p.kind() != RouteParameter.Kind.PATH)
         op.addParametersItem(annotate(null, null, ann));
@@ -466,10 +489,13 @@ public class OpenApiGenerator {
    * from, or the fields of the form of one annotated with @FormParams: the
    * properties Jackson binds, as flak-jackson does, with their description,
    * e.g. from @JsonPropertyDescription, and the value they are initialized
-   * with as default.
+   * with as default. They are introspected with the mapper the handler binds
+   * them with, when the app tells it, or else the mapper of the generator.
    */
-  private List<Parameter> queryObjectParameters(Class<?> type) {
-    ObjectMapper mapper = objectMapper == null ? DEFAULT_MAPPER : objectMapper;
+  private List<Parameter> queryObjectParameters(Class<?> type, Endpoint e) {
+    ObjectMapper mapper = e.mapper() != null ? e.mapper()
+                          : objectMapper != null ? objectMapper
+                          : DEFAULT_MAPPER;
     DeserializationConfig config = mapper.getDeserializationConfig();
     BeanDescription desc = config.introspect(config.constructType(type));
     Object instance = newInstance(type);
@@ -503,9 +529,9 @@ public class OpenApiGenerator {
    * The fields of the form an object annotated with @FormParams is built
    * from, as the properties of an object.
    */
-  private Schema<?> formSchema(Class<?> type) {
+  private Schema<?> formSchema(Class<?> type, Endpoint e) {
     ObjectSchema res = new ObjectSchema();
-    for (Parameter p : queryObjectParameters(type)) {
+    for (Parameter p : queryObjectParameters(type, e)) {
       Schema<?> schema = p.getSchema();
       if (p.getDescription() != null)
         schema.setDescription(p.getDescription());

@@ -4,7 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyName;
+import com.fasterxml.jackson.databind.introspect.Annotated;
+import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.github.pcdv.flak.swagger.OpenApiGenerator;
+import flak.App;
+import flak.AppFactory;
 import flak.annotations.Head;
 import flak.Form;
 import flak.annotations.FormParams;
@@ -14,6 +20,7 @@ import flak.annotations.QueryParam;
 import flak.annotations.QueryParams;
 import flak.annotations.Route;
 import flak.jackson.JSON;
+import flak.jackson.JacksonPlugin;
 import flak.login.FlakUser;
 import flak.login.SessionManager;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +34,10 @@ import io.swagger.v3.oas.models.media.ArraySchema;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -421,6 +432,88 @@ public class SwaggerTest extends AbstractAppTest {
     assertEquals("Where to write", email.getDescription());
     assertEquals(18, ((Number) schema.getProperties().get("age").getDefault()).intValue());
     assertEquals("array", schema.getProperties().get("topic").getType());
+  }
+
+  /**
+   * Annotations of the application, unknown to Flak and Jackson, like those
+   * that name and describe the options of psrv's CLI.
+   */
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Opt {
+    String name();
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Help {
+    String value();
+  }
+
+  public static class Deploy {
+    @Opt(name = "proc")
+    @Help("The process to deploy")
+    public String processId;
+  }
+
+  public static class AppAnnotations extends JacksonAnnotationIntrospector {
+    @Override
+    public PropertyName findNameForDeserialization(Annotated a) {
+      Opt opt = a.getAnnotation(Opt.class);
+      return opt != null ? PropertyName.construct(opt.name())
+                         : super.findNameForDeserialization(a);
+    }
+
+    @Override
+    public String findPropertyDescription(Annotated a) {
+      Help help = a.getAnnotation(Help.class);
+      return help != null ? help.value() : super.findPropertyDescription(a);
+    }
+  }
+
+  public static class DeployHandler {
+    @Route("/deploy")
+    @JSON("APP")
+    public void deploy(@QueryParams Deploy deploy) {
+    }
+
+    @Route("/deploy")
+    @Post
+    @JSON("APP")
+    public void deployForm(@FormParams Deploy deploy) {
+    }
+  }
+
+  /**
+   * The properties are named and described by the mapper that binds them,
+   * that of the handler, without telling the generator.
+   */
+  @Test
+  public void testMapperOfHandler() {
+    AppFactory factory = TestUtil.getFactory();
+    factory.setLocalAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+    App other = factory.createApp();
+    try {
+      ObjectMapper mapper = new ObjectMapper();
+      mapper.setAnnotationIntrospector(new AppAnnotations());
+      JacksonPlugin.get(other).registerMapper("APP", mapper);
+      other.scan(new DeployHandler());
+
+      OpenApiGenerator gen = new OpenApiGenerator();
+      gen.scan(other);
+      PathItem deploy = gen.getAPI().getPaths().get("/deploy");
+
+      io.swagger.v3.oas.models.parameters.Parameter proc = deploy.getGet().getParameters().get(0);
+      assertEquals("proc", proc.getName());
+      assertEquals("The process to deploy", proc.getDescription());
+
+      io.swagger.v3.oas.models.media.Schema<?> form
+        = deploy.getPost().getRequestBody().getContent()
+                .get("application/x-www-form-urlencoded").getSchema();
+      assertEquals("[proc]", String.valueOf(form.getProperties().keySet()));
+      assertEquals("The process to deploy", form.getProperties().get("proc").getDescription());
+    }
+    finally {
+      other.stop();
+    }
   }
 
   @Test

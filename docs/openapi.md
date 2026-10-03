@@ -76,7 +76,9 @@ For each route handler, static resources excepted:
     object, as Jackson binds it, with its type, the value it is initialized
     with as default, its description, e.g. from `@JsonPropertyDescription`,
     and whether it is required, e.g. with `@JsonProperty(required = true)`
-    (since 3.1.0)
+    (since 3.1.0). Jackson introspects it with the mapper the handler binds
+    it with, e.g. the one of its `@JSON("id")`, when `scan(App)` describes
+    it (since 3.2.1), and with the mapper of the generator otherwise.
   - those declared with `@Parameter` on the method, which take precedence
     over a path variable of the same name
 

@@ -149,8 +149,8 @@ application can teach it its own annotations, rather than adding Jackson's
 to its classes, with an `AnnotationIntrospector`:
 
 ```java
-// names the properties after an annotation of the application, e.g. the one
-// that also names the options of its command line
+// names and describes the properties after annotations of the application,
+// e.g. those that also name and document the options of its command line
 public class OptIntrospector extends JacksonAnnotationIntrospector {
   @Override
   public PropertyName findNameForDeserialization(Annotated a) {
@@ -158,12 +158,21 @@ public class OptIntrospector extends JacksonAnnotationIntrospector {
     return opt != null ? PropertyName.construct(opt.name())
                        : super.findNameForDeserialization(a);
   }
+
+  @Override
+  public String findPropertyDescription(Annotated a) {
+    Help help = a.getAnnotation(Help.class);
+    return help != null ? help.value() : super.findPropertyDescription(a);
+  }
 }
 ```
 
 The [OpenAPI generator](openapi.md) lists each property as a query
 parameter, with its type, its initial value as default, whether it is
-required and its description, e.g. from `@JsonPropertyDescription`.
+required and its description, e.g. from `@JsonPropertyDescription`, or
+from `@Help` with the introspector above. Since 3.2.1, it introspects them
+with the mapper of the handler when it describes an app, so that they are
+documented as they are bound.
 
 ## Forms
 

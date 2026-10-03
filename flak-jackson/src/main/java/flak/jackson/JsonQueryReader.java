@@ -42,6 +42,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JsonQueryReader implements InputParser<Object> {
 
+  private final ObjectMapper mapper;
+
   private final ObjectReader reader;
 
   /**
@@ -62,6 +64,7 @@ public class JsonQueryReader implements InputParser<Object> {
    *               ignored and a single value fills a collection
    */
   public JsonQueryReader(ObjectMapper mapper) {
+    this.mapper = mapper;
     this.reader = mapper.reader()
                         .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                         .with(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
@@ -99,6 +102,16 @@ public class JsonQueryReader implements InputParser<Object> {
     catch (MismatchedInputException | ValueInstantiationException e) {
       throw new HttpException(400, message(e, node));
     }
+  }
+
+  /**
+   * The mapper whose settings bind the properties, e.g. so that the OpenAPI
+   * generator names and describes them as they are bound.
+   *
+   * @since 3.2.1
+   */
+  public ObjectMapper getMapper() {
+    return mapper;
   }
 
   /**
