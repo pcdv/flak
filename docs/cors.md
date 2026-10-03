@@ -11,7 +11,7 @@ served by the app itself, or from the same origin through a reverse proxy,
 needs none of this.
 
 ```groovy
-implementation "com.github.pcdv.flak:flak-util:3.2.0"
+implementation "com.github.pcdv.flak:flak-util:3.2.1"
 ```
 
 `Cors` is a [hook that runs before every request](errors-and-hooks.md#hooks-before-every-request):

@@ -16,9 +16,9 @@ release, as it gets used in real applications.
 
 ```groovy
 dependencies {
-  implementation "com.github.pcdv.flak:flak-api:3.2.0"
-  implementation "com.github.pcdv.flak:flak-websocket:3.2.0"
-  implementation "com.github.pcdv.flak:flak-backend-jdk:3.2.0"
+  implementation "com.github.pcdv.flak:flak-api:3.2.1"
+  implementation "com.github.pcdv.flak:flak-websocket:3.2.1"
+  implementation "com.github.pcdv.flak:flak-backend-jdk:3.2.1"
 }
 ```
 
