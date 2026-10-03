@@ -81,6 +81,14 @@ final class Connection implements WebSocket {
   private volatile long lastReceived = System.nanoTime();
 
   /**
+   * When the thread reading the frames of the client started waiting for
+   * them, or 0 while it does anything else, e.g. runs a callback: in the
+   * meantime, whatever the client sends waits in the socket, and its silence
+   * means nothing.
+   */
+  private volatile long waitingSince;
+
+  /**
    * When the slice of frame being written started to be, or 0 when nothing is
    * being written.
    */
@@ -455,16 +463,17 @@ final class Connection implements WebSocket {
 
   /**
    * Drops the connection if it looks dead: a write stuck for longer than
-   * specified timeout, i.e. a client that stopped reading, or nothing received
+   * specified timeout, i.e. a client that stopped reading, or a read waiting
    * for one and a half times the timeout, despite the pings of
    * {@link #pingIfIdle(long)}. Called by the watchdog of the endpoint.
    */
   void checkAlive(long timeout) {
     long now = System.nanoTime();
     long started = writeStarted;
+    long waiting = waitingSince;
     if (started != 0 && now - started > timeout)
       abort("Connection lost: the client stopped reading");
-    else if (now - lastReceived > timeout + timeout / 2)
+    else if (waiting != 0 && now - waiting > timeout + timeout / 2)
       abort("Connection lost: no answer to pings");
   }
 
@@ -596,7 +605,8 @@ final class Connection implements WebSocket {
   }
 
   /**
-   * Notes when the client last sent anything, however little.
+   * Notes when the client last sent anything, however little, and how long
+   * we have been waiting for it to.
    */
   private final class Progress extends FilterInputStream {
     Progress(InputStream in) {
@@ -605,16 +615,29 @@ final class Connection implements WebSocket {
 
     @Override
     public int read() throws IOException {
-      int b = super.read();
-      lastReceived = System.nanoTime();
-      return b;
+      waitingSince = System.nanoTime();
+      try {
+        return super.read();
+      }
+      finally {
+        received();
+      }
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-      int n = super.read(b, off, len);
+      waitingSince = System.nanoTime();
+      try {
+        return super.read(b, off, len);
+      }
+      finally {
+        received();
+      }
+    }
+
+    private void received() {
+      waitingSince = 0;
       lastReceived = System.nanoTime();
-      return n;
     }
   }
 

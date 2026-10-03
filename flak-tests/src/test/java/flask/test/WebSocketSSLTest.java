@@ -104,9 +104,10 @@ public class WebSocketSSLTest {
    */
   @Test(timeout = 20_000)
   public void dropsAClientThatStopsReading() throws Exception {
-    // not the 300ms of WebSocketTest: with it, a slow CI runner once dropped
-    // the client as silent rather than as not reading, presumably because the
-    // server, busy encrypting the first megabytes, did not read its chatter
+    // not the 300ms of WebSocketTest, which a slow CI runner once exceeded:
+    // the websocket was dropped before the sends were stuck. A stuck send
+    // does not keep the server from reading over TLS, SSLStreams locking
+    // reads and writes separately, so presumably the runner stalled
     echo.setConnectionLostTimeout(1);
     try (RawWebSocketClient c = connect()) {
       c.handshake("/echo", "13");

@@ -112,7 +112,9 @@ does. With the default timeout of 60 seconds:
 
 - a websocket from which nothing has arrived for 30 seconds is pinged.
   Browsers and client libraries answer pings on their own.
-- a websocket that has still sent nothing after 90 seconds is dropped.
+- a websocket that has still sent nothing after 90 seconds is dropped. Time
+  spent in its callbacks does not count: what the client sends meanwhile
+  waits in the socket (since 3.1.1).
 - so is one that has taken none of what it is sent for 60 seconds: the send
   stuck on it throws `UncheckedIOException`, and the broadcast moves on.
 

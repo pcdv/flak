@@ -319,6 +319,22 @@ public class WebSocketTest {
     assertEquals(null, endpoint.events.poll());
   }
 
+  /**
+   * While a callback runs, nothing reads the frames of the client: its
+   * answers to pings wait in the socket, and must not be taken for silence.
+   */
+  @Test
+  public void keepsAClientWhileACallbackIsSlow() throws Exception {
+    endpoint.setConnectionLostTimeout(TIMEOUT);
+    Client c = connect("/echo");
+    endpoint.skip("open");
+    c.ws.sendText("sleep:" + TIMEOUT.multipliedBy(7).dividedBy(2).toMillis(), true);
+    assertEquals("slept", c.next());
+    c.ws.sendText("still there", true);
+    assertEquals("still there", c.next());
+    assertEquals(null, endpoint.events.poll());
+  }
+
   @Test
   public void dropsAClientThatDoesNotAnswerPings() throws Exception {
     endpoint.setConnectionLostTimeout(TIMEOUT);
@@ -442,6 +458,15 @@ public class WebSocketTest {
         conn.send(String.valueOf(conn.getProtocol()));
       else if (message.startsWith("quiet:"))
         return;
+      else if (message.startsWith("sleep:")) {
+        try {
+          Thread.sleep(Long.parseLong(message.substring(6)));
+        }
+        catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+        conn.send("slept");
+      }
       else
         conn.send(message);
     }
