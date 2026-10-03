@@ -8,7 +8,6 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import flak.App;
 import flak.Form;
@@ -20,6 +19,7 @@ import flak.Response;
 import flak.spi.SPRequest;
 import flak.spi.SPResponse;
 import flak.spi.util.BufferedOutputStream;
+import flak.spi.util.Cookies;
 import flak.annotations.MaxBodySize;
 import flak.HttpException;
 import flak.spi.util.IO;
@@ -42,6 +42,7 @@ public class JdkRequest implements SPRequest, SPResponse {
   private OutputStream outputStream;
 
   private Form form;
+  private Cookies cookies;
   /**
    * The limit that applies to this request, set by the handler serving it.
    * Negative means no limit.
@@ -159,21 +160,11 @@ public class JdkRequest implements SPRequest, SPResponse {
 
   @Override
   public String getCookie(String name) {
-    Headers headers = exchange.getRequestHeaders();
-    if (headers != null) {
-      List<String> cookies = headers.get("Cookie");
-      if (cookies != null) {
-        for (String cookieString : cookies) {
-          String[] tokens = cookieString.split("\\s*;\\s*");
-          for (String token : tokens) {
-            if (token.startsWith(name) && token.charAt(name.length()) == '=') {
-              return token.substring(name.length() + 1);
-            }
-          }
-        }
-      }
+    if (cookies == null) {
+      List<String> values = exchange.getRequestHeaders().get("Cookie");
+      cookies = new Cookies(values == null ? List.of() : values);
     }
-    return null;
+    return cookies.get(name);
   }
 
   private String readData() throws IOException {

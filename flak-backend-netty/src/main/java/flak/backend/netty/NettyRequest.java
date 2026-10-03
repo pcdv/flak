@@ -10,6 +10,7 @@ import flak.spi.FormImpl;
 import flak.spi.SPRequest;
 import flak.spi.SPResponse;
 import flak.spi.util.BufferedOutputStream;
+import flak.spi.util.Cookies;
 import flak.spi.util.IO;
 import flak.spi.util.LimitedInputStream;
 import flak.spi.util.Log;
@@ -30,8 +31,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,8 +40,6 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * A request and the response being built for it. Like JdkRequest, both sides
@@ -85,6 +82,7 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   private Method handler;
   private Form form;
+  private Cookies cookies;
   /**
    * The limit that applies to this request, set by the handler serving it.
    * Negative means no limit.
@@ -226,20 +224,9 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   @Override
   public String getCookie(String name) {
-    // FIXME: crude, approximate implementation, not cached
-    Set<Cookie> cookies;
-    String value = req.headers().get(HttpHeaderNames.COOKIE);
-    if (value == null) {
-      cookies = Collections.emptySet();
-    }
-    else {
-      cookies = ServerCookieDecoder.STRICT.decode(value);
-    }
-    return cookies.stream()
-                  .filter(c -> c.name().equals(name))
-                  .map(Cookie::value)
-                  .findAny()
-                  .orElse(null);
+    if (cookies == null)
+      cookies = new Cookies(req.headers().getAll(HttpHeaderNames.COOKIE));
+    return cookies.get(name);
   }
 
   @Override
