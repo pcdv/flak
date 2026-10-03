@@ -87,7 +87,9 @@ For each route handler, static resources excepted:
   with `@QueryParam(value = "id", description = "...")`.
 - **the request body**: what `@RequestBody` declares, or else the schema of
   the parameter [parsed from the body](arguments.md#objects-parsed-from-the-body),
-  as `application/json` when it is read as JSON. A `Form` is not described.
+  as `application/json` when it is read as JSON. A `Form` is described as
+  `application/x-www-form-urlencoded` with string fields, which `@RequestBody`
+  can list (since 3.1.2).
 - **the response**: a 200 with the schema of the return type, as
   `application/json` with `@JSON`, and no content for a `void` handler.
   `@ApiResponse` annotations replace it, for instance to document several

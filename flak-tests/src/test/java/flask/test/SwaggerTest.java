@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pcdv.flak.swagger.OpenApiGenerator;
 import flak.annotations.Head;
+import flak.Form;
 import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.QueryParam;
@@ -360,6 +361,29 @@ public class SwaggerTest extends AbstractAppTest {
 
     // no body
     assertNull(search.getGet().getRequestBody());
+  }
+
+  public static class FormHandler {
+    @Route("/login")
+    @Post
+    public void login(Form form) {
+    }
+  }
+
+  @Test
+  public void testForm() {
+    OpenApiGenerator gen = new OpenApiGenerator();
+    gen.scan(FormHandler.class);
+    io.swagger.v3.oas.models.parameters.RequestBody body
+      = gen.getAPI().getPaths().get("/login").getPost().getRequestBody();
+
+    assertEquals("[application/x-www-form-urlencoded]",
+                 String.valueOf(body.getContent().keySet()));
+    io.swagger.v3.oas.models.media.Schema<?> schema
+      = body.getContent().get("application/x-www-form-urlencoded").getSchema();
+    assertEquals("object", schema.getType());
+    assertEquals("string",
+                 ((io.swagger.v3.oas.models.media.Schema<?>) schema.getAdditionalProperties()).getType());
   }
 
   @Test

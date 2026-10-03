@@ -39,6 +39,7 @@ import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.NumberSchema;
+import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
@@ -205,14 +206,17 @@ public class OpenApiGenerator {
                                           .anyMatch(p -> p.javaParameter().isAnnotationPresent(JSON.class));
 
     // a body can only be told from what a custom extractor provides by the
-    // app, so only that of a JSON handler is kept, and if it has several
-    // candidates, the one with @JSON, or else the last one
+    // app, so only a Form or that of a JSON handler is kept, and if it has
+    // several candidates, the one with @JSON, or else the last one
     List<RouteParameter> params = new ArrayList<>();
     RouteParameter body = null;
     for (RouteParameter p : spec.parameters()) {
       if (p.kind() != RouteParameter.Kind.BODY)
         params.add(p);
-      else if (readsJson && (body == null || !body.javaParameter().isAnnotationPresent(JSON.class)))
+      else if (p.type() == Form.class)
+        body = p;
+      else if (readsJson && (body == null || (body.type() != Form.class
+                                              && !body.javaParameter().isAnnotationPresent(JSON.class))))
         body = p;
     }
     if (body != null)
@@ -312,9 +316,15 @@ public class OpenApiGenerator {
                            .findFirst()
                            .orElse(null);
 
-    // NB: forms are not described
-    if (body == null || body.type() == Form.class)
+    if (body == null)
       return null;
+
+    // its fields are read by name, so that only their type is known
+    if (body.type() == Form.class)
+      return new RequestBody().content(
+        new Content().addMediaType("application/x-www-form-urlencoded",
+                                   new MediaType().schema(
+                                     new ObjectSchema().additionalProperties(new StringSchema()))));
 
     Class<?> type = body.type();
     Schema<?> schema = new Schema<>();
