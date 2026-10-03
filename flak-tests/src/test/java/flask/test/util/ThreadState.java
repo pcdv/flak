@@ -177,7 +177,7 @@ public class ThreadState {
 
     String diff = diff(new ThreadState());
     while (!diff.isEmpty() && System.currentTimeMillis() < stop) {
-      Thread.sleep(100);
+      Thread.sleep(5);
       diff = diff(new ThreadState());
     }
 
