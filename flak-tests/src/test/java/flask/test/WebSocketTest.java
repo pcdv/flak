@@ -104,14 +104,14 @@ public class WebSocketTest {
   public void echoesText() throws Exception {
     Client c = connect("/echo");
     assertEquals("open /echo null", endpoint.next());
-    c.ws.sendText("héllo ✓", true);
+    c.ws.sendText("héllo ✓", true).join();
     assertEquals("héllo ✓", c.next());
   }
 
   @Test
   public void echoesBinary() throws Exception {
     Client c = connect("/echo");
-    c.ws.sendBinary(ByteBuffer.wrap(new byte[]{1, 2, 3}), true);
+    c.ws.sendBinary(ByteBuffer.wrap(new byte[]{1, 2, 3}), true).join();
     assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) c.next());
   }
 
@@ -123,12 +123,12 @@ public class WebSocketTest {
     Client c = connect("/echo");
     for (int size : new int[]{125, 126, 65535, 65536, 1_000_000}) {
       String text = "x".repeat(size);
-      c.ws.sendText(text, true);
+      c.ws.sendText(text, true).join();
       assertEquals(text, c.next());
     }
 
     c.ws.sendText("frag", false).join();
-    c.ws.sendText("mented", true);
+    c.ws.sendText("mented", true).join();
     assertEquals("fragmented", c.next());
   }
 
@@ -136,14 +136,14 @@ public class WebSocketTest {
   public void attachesThePathVariable() throws Exception {
     Client c = connect("/room/lobby?nick=bob");
     assertEquals("open /room/lobby?nick=bob lobby", endpoint.next());
-    c.ws.sendText("attachment", true);
+    c.ws.sendText("attachment", true).join();
     assertEquals("lobby", c.next());
   }
 
   @Test
   public void serverCloses() throws Exception {
     Client c = connect("/echo");
-    c.ws.sendText("close:bye", true);
+    c.ws.sendText("close:bye", true).join();
     assertEquals("close 4000 bye", c.next());
     endpoint.skip("open");
     assertEquals("close 4000 bye false", endpoint.next());
@@ -152,7 +152,7 @@ public class WebSocketTest {
   @Test
   public void clientCloses() throws Exception {
     Client c = connect("/echo");
-    c.ws.sendClose(1000, "done");
+    c.ws.sendClose(1000, "done").join();
     endpoint.skip("open");
     assertEquals("close 1000 done true", endpoint.next());
     // the echo of the server
@@ -162,7 +162,7 @@ public class WebSocketTest {
   @Test
   public void answersPings() throws Exception {
     Client c = connect("/echo");
-    c.ws.sendPing(ByteBuffer.wrap("hi".getBytes(UTF_8)));
+    c.ws.sendPing(ByteBuffer.wrap("hi".getBytes(UTF_8))).join();
     assertEquals("pong hi", c.next());
   }
 
@@ -182,10 +182,10 @@ public class WebSocketTest {
   @Test
   public void aFailingCallbackLeavesTheWebSocketOpen() throws Exception {
     Client c = connect("/echo");
-    c.ws.sendText("throw", true);
+    c.ws.sendText("throw", true).join();
     endpoint.skip("open");
     assertEquals("error boom", endpoint.next());
-    c.ws.sendText("still there", true);
+    c.ws.sendText("still there", true).join();
     assertEquals("still there", c.next());
   }
 
@@ -193,11 +193,11 @@ public class WebSocketTest {
   public void closesOnATooBigMessage() throws Exception {
     endpoint.setMaxMessageSize(10);
     Client c = connect("/echo");
-    c.ws.sendText("0123456789", true);
+    c.ws.sendText("0123456789", true).join();
     assertEquals("0123456789", c.next());
 
     c.ws.sendText("01234", false).join();
-    c.ws.sendText("56789X", true);
+    c.ws.sendText("56789X", true).join();
     assertEquals("close 1009 Message bigger than 10 bytes", c.next());
   }
 
@@ -244,7 +244,7 @@ public class WebSocketTest {
     assertEquals("hello", http.get("/hello"));
     for (int i = 0; i < 20; i++) {
       Client c = connect("/echo");
-      c.ws.sendText("close:" + i, true);
+      c.ws.sendText("close:" + i, true).join();
       assertEquals("close 4000 " + i, c.next());
       assertEquals("hello", http.get("/hello"));
     }
@@ -265,9 +265,9 @@ public class WebSocketTest {
 
       // closed by either side
       if (i % 2 == 0)
-        c.ws.sendText("close:" + i, true);
+        c.ws.sendText("close:" + i, true).join();
       else
-        c.ws.sendClose(1000, "");
+        c.ws.sendClose(1000, "").join();
       endpoint.skip("close");
 
       long deadline = System.currentTimeMillis() + 5000;
@@ -314,7 +314,7 @@ public class WebSocketTest {
     endpoint.skip("open");
     // the client of the JDK answers pings on its own
     Thread.sleep(TIMEOUT.multipliedBy(7).dividedBy(2).toMillis());
-    c.ws.sendText("still there", true);
+    c.ws.sendText("still there", true).join();
     assertEquals("still there", c.next());
     assertEquals(null, endpoint.events.poll());
   }
@@ -328,9 +328,9 @@ public class WebSocketTest {
     endpoint.setConnectionLostTimeout(TIMEOUT);
     Client c = connect("/echo");
     endpoint.skip("open");
-    c.ws.sendText("sleep:" + TIMEOUT.multipliedBy(7).dividedBy(2).toMillis(), true);
+    c.ws.sendText("sleep:" + TIMEOUT.multipliedBy(7).dividedBy(2).toMillis(), true).join();
     assertEquals("slept", c.next());
-    c.ws.sendText("still there", true);
+    c.ws.sendText("still there", true).join();
     assertEquals("still there", c.next());
     assertEquals(null, endpoint.events.poll());
   }
@@ -400,7 +400,7 @@ public class WebSocketTest {
                     .get(5, TimeUnit.SECONDS);
 
     assertEquals("v1.chat", client.ws.getSubprotocol());
-    client.ws.sendText("protocol", true);
+    client.ws.sendText("protocol", true).join();
     assertEquals("v1.chat", client.next());
   }
 
