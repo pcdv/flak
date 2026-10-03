@@ -39,10 +39,10 @@ repositories {
 }
 
 dependencies {
-  implementation "com.github.pcdv.flak:flak-api:3.0.0"
+  implementation "com.github.pcdv.flak:flak-api:3.1.0"
 
   // the backend, see Backends for the netty alternative
-  runtimeOnly "com.github.pcdv.flak:flak-backend-jdk:3.0.0"
+  runtimeOnly "com.github.pcdv.flak:flak-backend-jdk:3.1.0"
 }
 ```
 
