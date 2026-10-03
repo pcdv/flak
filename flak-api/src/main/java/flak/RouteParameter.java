@@ -45,6 +45,13 @@ public record RouteParameter(Kind kind,
      */
     QUERY_OBJECT,
     /**
+     * An object built from the fields of a form posted in the body, see
+     * {@link flak.annotations.FormParams}.
+     *
+     * @since 3.2.0
+     */
+    FORM_OBJECT,
+    /**
      * The body of the request: a {@link Form}, or an object read by the
      * input parser of the handler, e.g. from JSON.
      */

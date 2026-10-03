@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import flak.Form;
 import flak.HttpException;
 import flak.InputParser;
 import flak.Request;
@@ -71,7 +72,7 @@ public class JsonQueryReader implements InputParser<Object> {
     Map<String, Property> props = properties.computeIfAbsent(type, this::introspect);
 
     ObjectNode node = reader.getConfig().getNodeFactory().objectNode();
-    for (Map.Entry<String, String> param : req.getQuery().parameters()) {
+    for (Map.Entry<String, String> param : source(req).parameters()) {
       String name = param.getKey();
       String value = param.getValue();
       Property prop = props.get(name);
@@ -89,7 +90,7 @@ public class JsonQueryReader implements InputParser<Object> {
 
     props.forEach((name, prop) -> {
       if (prop.required() && !node.has(name))
-        throw new HttpException(400, "Missing query parameter " + name);
+        throw new HttpException(400, "Missing " + parameter() + " " + name);
     });
 
     try {
@@ -98,6 +99,33 @@ public class JsonQueryReader implements InputParser<Object> {
     catch (MismatchedInputException | ValueInstantiationException e) {
       throw new HttpException(400, message(e, node));
     }
+  }
+
+  /**
+   * Where the values are read from: the query string.
+   *
+   * @since 3.2.0
+   */
+  protected Form source(Request req) {
+    return req.getQuery();
+  }
+
+  /**
+   * What a value is called in error messages, e.g. "query parameter".
+   *
+   * @since 3.2.0
+   */
+  protected String parameter() {
+    return "query parameter";
+  }
+
+  /**
+   * What the values come from, in error messages, e.g. "query string".
+   *
+   * @since 3.2.0
+   */
+  protected String origin() {
+    return "query string";
   }
 
   private Map<String, Property> introspect(Class<?> type) {
@@ -117,17 +145,17 @@ public class JsonQueryReader implements InputParser<Object> {
   /**
    * Names the parameter that could not be bound, when Jackson tells which.
    */
-  private static String message(JsonMappingException e, ObjectNode node) {
+  private String message(JsonMappingException e, ObjectNode node) {
     List<JsonMappingException.Reference> path = e.getPath();
     String name = path.isEmpty() ? null : path.get(0).getFieldName();
     if (name == null)
-      return "Invalid query string: " + e.getOriginalMessage();
+      return "Invalid " + origin() + ": " + e.getOriginalMessage();
 
     Object value = e instanceof InvalidFormatException
       ? ((InvalidFormatException) e).getValue()
       : node.get(name);
     if (value instanceof JsonNode && ((JsonNode) value).isTextual())
       value = ((JsonNode) value).asText();
-    return "Invalid value for query parameter " + name + (value == null ? "" : ": " + value);
+    return "Invalid value for " + parameter() + " " + name + (value == null ? "" : ": " + value);
   }
 }

@@ -10,6 +10,7 @@ import flak.RouteParameter;
 import flak.RouteParameter.Kind;
 import flak.annotations.Compress;
 import flak.annotations.Delete;
+import flak.annotations.FormParams;
 import flak.annotations.Head;
 import flak.annotations.InputFormat;
 import flak.annotations.KeepPlus;
@@ -105,9 +106,9 @@ public final class FlakAnnotations {
   }
 
   /**
-   * Binds the parameters: those with a custom extractor, then @QueryParams
-   * and @QueryParam, then by type. A String or int is the next variable of
-   * the route, anything not recognized is the body.
+   * Binds the parameters: those with a custom extractor, then @QueryParams,
+   * @FormParams and @QueryParam, then by type. A String or int is the next
+   * variable of the route, anything not recognized is the body.
    */
   private static List<RouteParameter> parameters(String route,
                                                  Method m,
@@ -120,14 +121,20 @@ public final class FlakAnnotations {
       Class<?> type = p.getType();
       QueryParam query = p.getAnnotation(QueryParam.class);
 
-      if (query != null && p.isAnnotationPresent(QueryParams.class))
+      int annotations = (query != null ? 1 : 0)
+                        + (p.isAnnotationPresent(QueryParams.class) ? 1 : 0)
+                        + (p.isAnnotationPresent(FormParams.class) ? 1 : 0);
+      if (annotations > 1)
         throw new IllegalArgumentException("Parameter " + p + " of method " + m.getName()
-                                           + "() cannot have both @QueryParam and @QueryParams");
+                                           + "() can only have one of @QueryParam, @QueryParams"
+                                           + " and @FormParams");
 
       if (hasCustomExtractor.test(type))
         res.add(new RouteParameter(Kind.OTHER, null, p, null, false, null));
       else if (p.isAnnotationPresent(QueryParams.class))
         res.add(new RouteParameter(Kind.QUERY_OBJECT, null, p, null, false, null));
+      else if (p.isAnnotationPresent(FormParams.class))
+        res.add(new RouteParameter(Kind.FORM_OBJECT, null, p, null, false, null));
       else if (query != null)
         res.add(new RouteParameter(Kind.QUERY,
                                    query.value(),
@@ -151,6 +158,12 @@ public final class FlakAnnotations {
 
     if (bound < variables.size())
       throw new IllegalArgumentException("Not enough method parameters");
+
+    // the form is the body, and there is only one
+    if (res.stream().anyMatch(p -> p.kind() == Kind.FORM_OBJECT)
+        && res.stream().filter(p -> p.kind() == Kind.FORM_OBJECT || p.kind() == Kind.BODY).count() > 1)
+      throw new IllegalArgumentException("Method " + m.getName()
+                                         + "() reads the body with @FormParams, and cannot read it again");
 
     return res;
   }

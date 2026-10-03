@@ -25,6 +25,8 @@ public class JacksonPlugin implements SPPlugin {
   private final Map<Class<?>, InputParser<?>> parsers = new Hashtable<>();
   private final Map<String, JsonQueryReader> queryReaders = new Hashtable<>();
 
+  private final Map<String, JsonFormReader> formReaders = new Hashtable<>();
+
   private MapperProvider mapperProvider = new DefaultMapperProvider(OBJECT_MAPPER);
 
   JacksonPlugin() {
@@ -64,6 +66,15 @@ public class JacksonPlugin implements SPPlugin {
       String id = json == null ? "" : json.value();
       handler.setQueryObjectParser(queryReaders.computeIfAbsent(
         id, i -> new JsonQueryReader(mapperProvider.getMapper(i))));
+    }
+
+    // and from a form
+    if (handler.getParameters()
+               .stream()
+               .anyMatch(p -> p.kind() == RouteParameter.Kind.FORM_OBJECT)) {
+      String id = json == null ? "" : json.value();
+      handler.setFormObjectParser(formReaders.computeIfAbsent(
+        id, i -> new JsonFormReader(mapperProvider.getMapper(i))));
     }
 
     Parameter body = handler.getParameters()

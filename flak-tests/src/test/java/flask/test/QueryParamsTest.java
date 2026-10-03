@@ -229,6 +229,6 @@ public class QueryParamsTest extends AbstractAppTest {
       public String both(@QueryParams @QueryParam("s") Search s) {
         return "";
       }
-    }), "cannot have both @QueryParam and @QueryParams");
+    }), "can only have one of @QueryParam, @QueryParams and @FormParams");
   }
 }

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pcdv.flak.swagger.OpenApiGenerator;
 import flak.annotations.Head;
 import flak.Form;
+import flak.annotations.FormParams;
 import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.QueryParam;
@@ -384,6 +385,42 @@ public class SwaggerTest extends AbstractAppTest {
     assertEquals("object", schema.getType());
     assertEquals("string",
                  ((io.swagger.v3.oas.models.media.Schema<?>) schema.getAdditionalProperties()).getType());
+  }
+
+  public static class SignupForm {
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Where to write")
+    public String email;
+    public int age = 18;
+    public List<String> topic;
+  }
+
+  public static class FormParamsHandler {
+    @Route("/signup")
+    @Post
+    public void signup(@FormParams SignupForm form) {
+    }
+  }
+
+  @Test
+  public void testFormParams() {
+    OpenApiGenerator gen = new OpenApiGenerator();
+    gen.scan(FormParamsHandler.class);
+    io.swagger.v3.oas.models.Operation post = gen.getAPI().getPaths().get("/signup").getPost();
+    assertNull(post.getParameters());
+
+    io.swagger.v3.oas.models.media.Schema<?> schema
+      = post.getRequestBody().getContent().get("application/x-www-form-urlencoded").getSchema();
+    assertEquals("object", schema.getType());
+    assertEquals(new TreeSet<>(List.of("email", "age", "topic")),
+                 new TreeSet<>(schema.getProperties().keySet()));
+    assertEquals(List.of("email"), schema.getRequired());
+
+    io.swagger.v3.oas.models.media.Schema<?> email = schema.getProperties().get("email");
+    assertEquals("string", email.getType());
+    assertEquals("Where to write", email.getDescription());
+    assertEquals(18, ((Number) schema.getProperties().get("age").getDefault()).intValue());
+    assertEquals("array", schema.getProperties().get("topic").getType());
   }
 
   @Test

@@ -23,7 +23,7 @@ Flak components      | Description
 `flak-backend-jdk`   | Binding for the web server included in the JDK
 `flak-backend-netty` | Binding for [Netty](https://netty.io/), see [Backends](docs/backends.md)
 `flak-login`         | Add-on for managing authentication, see [Authentication](docs/login.md)
-`flak-jackson`       | Add-on for conversion to/from JSON using Jackson, and for `@QueryParams`, see [JSON](docs/json.md)
+`flak-jackson`       | Add-on for conversion to/from JSON using Jackson, and for `@QueryParams` and `@FormParams`, see [JSON](docs/json.md)
 `flak-swagger`       | Add-on to generate OpenAPI specifications, see [OpenAPI](docs/openapi.md)
 `flak-websocket`     | Experimental add-on for websockets with the JDK backend, see [WebSockets](docs/websocket.md)
 `flak-util`          | Misc utilities (e.g. route dumper)
@@ -108,8 +108,9 @@ The [documentation](docs/README.md) covers each of them in detail.
   prefixes, and the routes of an app listed at runtime
 - **[Handler arguments](docs/arguments.md)**: path variables, typed
   `@QueryParam` with defaults, objects built from the whole query string
-  with `@QueryParams`, `Query`, `Form`, `Request`, and arguments of your own
-  types built by custom extractors
+  with `@QueryParams`, `Query`, `Form` and objects built from it with
+  `@FormParams`, `Request`, and arguments of your own types built by custom
+  extractors
 - **[Responses](docs/responses.md)**: return a `String`, bytes, a stream or
   any object through a formatter, set the status and headers, redirect,
   stream chunked output or Server-Sent Events

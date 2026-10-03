@@ -64,6 +64,8 @@ public List<Item> search(@QueryParams Search search) { ... }
 ```
 
 See [Objects built from the query string](arguments.md#objects-built-from-the-query-string).
+Since 3.2.0, it builds those annotated with `@FormParams` from the fields of
+a form the same way, see [Objects built from a form](arguments.md#objects-built-from-a-form).
 
 ## Configuring Jackson
 

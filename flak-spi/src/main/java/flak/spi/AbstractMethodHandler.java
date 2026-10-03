@@ -98,6 +98,12 @@ public abstract class AbstractMethodHandler
    */
   protected InputParser<?> queryObjectParser;
 
+  /**
+   * Builds the objects of the @FormParams parameters, set by a plugin, e.g.
+   * flak-jackson.
+   */
+  protected InputParser<?> formObjectParser;
+
   protected int splatIndex = -1;
 
   /**
@@ -212,6 +218,12 @@ public abstract class AbstractMethodHandler
             "Method " + javaMethod.getName() + "() uses @QueryParams, which requires flak-jackson");
         return new ParsedInputExtractor(i, queryObjectParser, type);
 
+      case FORM_OBJECT:
+        if (formObjectParser == null)
+          throw new IllegalArgumentException(
+            "Method " + javaMethod.getName() + "() uses @FormParams, which requires flak-jackson");
+        return new ParsedInputExtractor(i, formObjectParser, type);
+
       case BODY:
         if (type == Form.class)
           return new ParsedInputExtractor(i, new FormParser(), type);
@@ -275,6 +287,22 @@ public abstract class AbstractMethodHandler
 
   public InputParser<?> getQueryObjectParser() {
     return queryObjectParser;
+  }
+
+  /**
+   * Sets what builds the arguments annotated with
+   * {@link flak.annotations.FormParams} from the request, reading the form
+   * posted in its body. Like {@link #setInputParser(InputParser)}, it must
+   * be called before {@link #init()}.
+   *
+   * @since 3.2.0
+   */
+  public void setFormObjectParser(InputParser<?> formObjectParser) {
+    this.formObjectParser = formObjectParser;
+  }
+
+  public InputParser<?> getFormObjectParser() {
+    return formObjectParser;
   }
 
   public static boolean isNotBasic(Class<?> type) {

@@ -312,19 +312,20 @@ public class OpenApiGenerator {
   private RequestBody defaultRequestBody(Endpoint e) {
     RouteParameter body = e.parameters()
                            .stream()
-                           .filter(p -> p.kind() == RouteParameter.Kind.BODY)
+                           .filter(p -> p.kind() == RouteParameter.Kind.BODY
+                                        || p.kind() == RouteParameter.Kind.FORM_OBJECT)
                            .findFirst()
                            .orElse(null);
+
+    if (body != null && body.kind() == RouteParameter.Kind.FORM_OBJECT)
+      return formRequestBody(formSchema(body.type()));
 
     if (body == null)
       return null;
 
     // its fields are read by name, so that only their type is known
     if (body.type() == Form.class)
-      return new RequestBody().content(
-        new Content().addMediaType("application/x-www-form-urlencoded",
-                                   new MediaType().schema(
-                                     new ObjectSchema().additionalProperties(new StringSchema()))));
+      return formRequestBody(new ObjectSchema().additionalProperties(new StringSchema()));
 
     Class<?> type = body.type();
     Schema<?> schema = new Schema<>();
@@ -462,9 +463,10 @@ public class OpenApiGenerator {
 
   /**
    * The query parameters that an object annotated with @QueryParams is built
-   * from: the properties Jackson binds, as flak-jackson does, with their
-   * description, e.g. from @JsonPropertyDescription, and the value they are
-   * initialized with as default.
+   * from, or the fields of the form of one annotated with @FormParams: the
+   * properties Jackson binds, as flak-jackson does, with their description,
+   * e.g. from @JsonPropertyDescription, and the value they are initialized
+   * with as default.
    */
   private List<Parameter> queryObjectParameters(Class<?> type) {
     ObjectMapper mapper = objectMapper == null ? DEFAULT_MAPPER : objectMapper;
@@ -491,8 +493,31 @@ public class OpenApiGenerator {
     return res;
   }
 
+  private static RequestBody formRequestBody(Schema<?> schema) {
+    return new RequestBody().content(
+      new Content().addMediaType("application/x-www-form-urlencoded",
+                                 new MediaType().schema(schema)));
+  }
+
   /**
-   * The schema of a property bound from the query string: an array for a
+   * The fields of the form an object annotated with @FormParams is built
+   * from, as the properties of an object.
+   */
+  private Schema<?> formSchema(Class<?> type) {
+    ObjectSchema res = new ObjectSchema();
+    for (Parameter p : queryObjectParameters(type)) {
+      Schema<?> schema = p.getSchema();
+      if (p.getDescription() != null)
+        schema.setDescription(p.getDescription());
+      res.addProperties(p.getName(), schema);
+      if (Boolean.TRUE.equals(p.getRequired()))
+        res.addRequiredItem(p.getName());
+    }
+    return res;
+  }
+
+  /**
+   * The schema of a property bound from the query string or a form: an array for a
    * repeated parameter, which swagger does not describe out of a bean.
    */
   private static Schema<?> schemaOf(JavaType type) {

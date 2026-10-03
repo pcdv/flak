@@ -10,6 +10,7 @@ in any order:
 | annotated with `@QueryParams` | an [object built from the query string](#objects-built-from-the-query-string), requires [flak-jackson](json.md), since 3.1.0 |
 | `Query` | the whole [query string](#the-query-string) |
 | `Form` | a [form](#forms) sent in the body |
+| annotated with `@FormParams` | an [object built from a form](#objects-built-from-a-form), requires [flak-jackson](json.md), since 3.2.0 |
 | `Request`, `Response` | [the request](#the-request), and its response |
 | `FlakUser`, `SessionManager` | the logged-in user and the session manager, with [flak-login](login.md) |
 | a type registered with `addCustomExtractor()` | whatever the [extractor](#custom-arguments) builds from the request |
@@ -183,6 +184,32 @@ body, which can only be read once (see [Request bodies](request-bodies.md)).
 Malformed data, such as `%zz`, is rejected with 400.
 
 `request.getForm()` gives the same object.
+
+## Objects built from a form
+
+*Since Flak 3.2.0, and requires [flak-jackson](json.md).*
+
+`@FormParams` builds an object from the fields of a form, as
+[`@QueryParams`](#objects-built-from-the-query-string) does from the query
+string, with the same rules: properties named as Jackson names them, values
+converted as it converts strings, a repeated field for a collection, an
+empty value absent except for a `String`, unknown fields ignored, and 400
+for a missing required field or a value that cannot be converted.
+
+```java
+public class Signup {
+  @JsonProperty(required = true)
+  public String email;
+  public boolean newsletter;
+}
+
+@Route("/signup")
+@Post
+public void signup(@FormParams Signup signup) { ... }
+```
+
+The form is the body of the request, so that the handler cannot also take a
+`Form` or another body. It can take `@QueryParams`.
 
 ## The request
 
