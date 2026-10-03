@@ -23,7 +23,7 @@ Flak components      | Description
 `flak-backend-jdk`   | Binding for the web server included in the JDK
 `flak-backend-netty` | Binding for [Netty](https://netty.io/), see [Backends](docs/backends.md)
 `flak-login`         | Add-on for managing authentication, see [Authentication](docs/login.md)
-`flak-jackson`       | Add-on for conversion to/from JSON using Jackson, see [JSON](docs/json.md)
+`flak-jackson`       | Add-on for conversion to/from JSON using Jackson, and for `@QueryParams`, see [JSON](docs/json.md)
 `flak-swagger`       | Add-on to generate OpenAPI specifications, see [OpenAPI](docs/openapi.md)
 `flak-websocket`     | Experimental add-on for websockets with the JDK backend, see [WebSockets](docs/websocket.md)
 `flak-util`          | Misc utilities (e.g. route dumper)

@@ -20,6 +20,7 @@ import flak.annotations.Patch;
 import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.QueryParam;
+import flak.annotations.QueryParams;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -104,9 +105,9 @@ public final class FlakAnnotations {
   }
 
   /**
-   * Binds the parameters: those with a custom extractor, then @QueryParam,
-   * then by type. A String or int is the next variable of the route, anything
-   * not recognized is the body.
+   * Binds the parameters: those with a custom extractor, then @QueryParams
+   * and @QueryParam, then by type. A String or int is the next variable of
+   * the route, anything not recognized is the body.
    */
   private static List<RouteParameter> parameters(String route,
                                                  Method m,
@@ -119,8 +120,14 @@ public final class FlakAnnotations {
       Class<?> type = p.getType();
       QueryParam query = p.getAnnotation(QueryParam.class);
 
+      if (query != null && p.isAnnotationPresent(QueryParams.class))
+        throw new IllegalArgumentException("Parameter " + p + " of method " + m.getName()
+                                           + "() cannot have both @QueryParam and @QueryParams");
+
       if (hasCustomExtractor.test(type))
         res.add(new RouteParameter(Kind.OTHER, null, p, null, false, null));
+      else if (p.isAnnotationPresent(QueryParams.class))
+        res.add(new RouteParameter(Kind.QUERY_OBJECT, null, p, null, false, null));
       else if (query != null)
         res.add(new RouteParameter(Kind.QUERY,
                                    query.value(),

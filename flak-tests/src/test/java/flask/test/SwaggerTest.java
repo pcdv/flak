@@ -1,11 +1,15 @@
 package flask.test;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pcdv.flak.swagger.OpenApiGenerator;
 import flak.annotations.Head;
 import flak.annotations.Post;
 import flak.annotations.Put;
 import flak.annotations.QueryParam;
+import flak.annotations.QueryParams;
 import flak.annotations.Route;
 import flak.jackson.JSON;
 import flak.login.FlakUser;
@@ -302,6 +306,60 @@ public class SwaggerTest extends AbstractAppTest {
     assertNotNull(typed.getHead());
     assertEquals("headTyped", typed.getHead().getOperationId());
     assertEquals("getTyped", typed.getGet().getOperationId());
+  }
+
+  public static class SearchQuery {
+    @JsonPropertyDescription("Search terms")
+    @JsonProperty(required = true)
+    public String q;
+
+    @JsonProperty("max")
+    public int limit = 50;
+
+    public List<String> tag;
+
+    public Color color = Color.GREEN;
+
+    @JsonIgnore
+    public String internal;
+  }
+
+  public static class SearchHandler {
+    @Route("/search")
+    public void search(@QueryParams SearchQuery query) {
+    }
+  }
+
+  @Test
+  public void testQueryParams() {
+    OpenApiGenerator gen = new OpenApiGenerator();
+    gen.scan(SearchHandler.class);
+    PathItem search = gen.getAPI().getPaths().get("/search");
+
+    Map<String, io.swagger.v3.oas.models.parameters.Parameter> params = new HashMap<>();
+    search.getGet().getParameters().forEach(p -> params.put(p.getName(), p));
+    assertEquals(new TreeSet<>(List.of("q", "max", "tag", "color")), new TreeSet<>(params.keySet()));
+    params.values().forEach(p -> assertEquals("query", p.getIn()));
+
+    io.swagger.v3.oas.models.parameters.Parameter q = params.get("q");
+    assertEquals("Search terms", q.getDescription());
+    assertEquals(Boolean.TRUE, q.getRequired());
+    assertEquals("string", q.getSchema().getType());
+
+    io.swagger.v3.oas.models.parameters.Parameter max = params.get("max");
+    assertNull(max.getRequired());
+    assertEquals("integer", max.getSchema().getType());
+    assertEquals(50, ((Number) max.getSchema().getDefault()).intValue());
+
+    assertEquals("array", params.get("tag").getSchema().getType());
+    assertEquals("string", ((ArraySchema) params.get("tag").getSchema()).getItems().getType());
+
+    io.swagger.v3.oas.models.media.Schema<?> color = params.get("color").getSchema();
+    assertEquals("[RED, GREEN]", String.valueOf(color.getEnum()));
+    assertEquals("GREEN", color.getDefault());
+
+    // no body
+    assertNull(search.getGet().getRequestBody());
   }
 
   @Test

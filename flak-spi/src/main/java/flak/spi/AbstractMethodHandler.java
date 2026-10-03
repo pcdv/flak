@@ -92,6 +92,12 @@ public abstract class AbstractMethodHandler
 
   protected InputParser<?> inputParser;
 
+  /**
+   * Builds the objects of the @QueryParams parameters, set by a plugin, e.g.
+   * flak-jackson.
+   */
+  protected InputParser<?> queryObjectParser;
+
   protected int splatIndex = -1;
 
   /**
@@ -200,6 +206,12 @@ public abstract class AbstractMethodHandler
           return new SplatExtractor(i, path);
         return new StringExtractor(i, token);
 
+      case QUERY_OBJECT:
+        if (queryObjectParser == null)
+          throw new IllegalArgumentException(
+            "Method " + javaMethod.getName() + "() uses @QueryParams, which requires flak-jackson");
+        return new ParsedInputExtractor(i, queryObjectParser, type);
+
       case BODY:
         if (type == Form.class)
           return new ParsedInputExtractor(i, new FormParser(), type);
@@ -247,6 +259,22 @@ public abstract class AbstractMethodHandler
    */
   public void setInputParser(InputParser<?> inputParser) {
     this.inputParser = inputParser;
+  }
+
+  /**
+   * Sets what builds the arguments annotated with
+   * {@link flak.annotations.QueryParams} from the request, reading its
+   * query string. Like {@link #setInputParser(InputParser)}, it must be
+   * called before {@link #init()}.
+   *
+   * @since 3.1.0
+   */
+  public void setQueryObjectParser(InputParser<?> queryObjectParser) {
+    this.queryObjectParser = queryObjectParser;
+  }
+
+  public InputParser<?> getQueryObjectParser() {
+    return queryObjectParser;
   }
 
   public static boolean isNotBasic(Class<?> type) {

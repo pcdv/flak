@@ -7,6 +7,7 @@ in any order:
 | --------- | ----- |
 | `String`, `int` | a [path variable](routing.md#path-variables) |
 | annotated with `@QueryParam` | a [query parameter](#query-parameters), converted to the type of the parameter |
+| annotated with `@QueryParams` | an [object built from the query string](#objects-built-from-the-query-string), requires [flak-jackson](json.md), since 3.1.0 |
 | `Query` | the whole [query string](#the-query-string) |
 | `Form` | a [form](#forms) sent in the body |
 | `Request`, `Response` | [the request](#the-request), and its response |
@@ -95,6 +96,73 @@ string, as it was sent, is available from `request.getQueryString()`.
 
 Unlike `@QueryParam`, `Query.getInt()` does not reject a value that is not a
 number: it throws a `NumberFormatException`, which gives a 500.
+
+## Objects built from the query string
+
+*Since Flak 3.1.0, and requires [flak-jackson](json.md).*
+
+When a handler takes many query parameters, or the same ones as other
+handlers, gather them in a class, and annotate the parameter with
+`@QueryParams`. Each query parameter sets the property of the same name. For
+`/items?q=shoes&limit=20&tag=a&tag=b`:
+
+```java
+public class Search {
+  public String q;
+  public int limit = 50;     // when absent
+  public List<String> tag;   // all occurrences
+  public Color color;
+}
+
+@Route("/items")
+public String search(@QueryParams Search search) { ... }
+```
+
+[flak-jackson](json.md) builds the object: the query string is turned into a
+JSON object, one string per parameter or an array of them for a repeated
+one, which Jackson binds as it binds a body. So the class needs no annotation
+from Flak, and can stay in a module that does not depend on it, e.g. one
+shared with a client. Public fields, setters, records and `@JsonCreator`
+constructors all work, and the values are converted as Jackson converts
+strings: numbers, `true`/`false`, enums by name, and so on. Without
+flak-jackson, `scan()` rejects the handler, so that a missing dependency
+shows at startup.
+
+Jackson's annotations, when the class needs any, also apply here:
+
+- `@JsonProperty("user.name")` gives the parameter another name than the
+  property
+- `@JsonProperty(required = true)` rejects a request without the parameter
+  with **400** "Missing query parameter user.name"
+- `@JsonIgnore` leaves a property out
+
+As with `@QueryParam`, an empty value (`?limit=`) counts as absent, except
+for a `String`, and a value that cannot be converted, such as `limit=abc`,
+is rejected with **400** and a message naming the parameter. So is a
+repeated parameter bound to a property that is not a collection or an
+array. Parameters that match no property are ignored.
+
+The mapper is that of the handler, the default one or the one named by its
+`@JSON("id")` (see [Configuring Jackson](json.md#configuring-jackson)). So an
+application can teach it its own annotations, rather than adding Jackson's
+to its classes, with an `AnnotationIntrospector`:
+
+```java
+// names the properties after an annotation of the application, e.g. the one
+// that also names the options of its command line
+public class OptIntrospector extends JacksonAnnotationIntrospector {
+  @Override
+  public PropertyName findNameForDeserialization(Annotated a) {
+    Opt opt = a.getAnnotation(Opt.class);
+    return opt != null ? PropertyName.construct(opt.name())
+                       : super.findNameForDeserialization(a);
+  }
+}
+```
+
+The [OpenAPI generator](openapi.md) lists each property as a query
+parameter, with its type, its initial value as default, whether it is
+required and its description, e.g. from `@JsonPropertyDescription`.
 
 ## Forms
 

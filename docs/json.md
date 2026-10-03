@@ -49,6 +49,22 @@ The body is read like any other, so the [size limit](request-bodies.md#size-limi
 applies. JSON responses are compressed when
 [compression](compression.md) is allowed.
 
+## Objects built from the query string
+
+*Since Flak 3.1.0.*
+
+flak-jackson also builds the parameters annotated with `@QueryParams` from
+the query string, binding its parameters to the properties of a class as
+Jackson binds those of a JSON object:
+
+```java
+@Route("/api/items")
+@JSON
+public List<Item> search(@QueryParams Search search) { ... }
+```
+
+See [Objects built from the query string](arguments.md#objects-built-from-the-query-string).
+
 ## Configuring Jackson
 
 By default, a plain `ObjectMapper` is used. To change its settings, register

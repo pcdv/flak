@@ -23,6 +23,7 @@ public class JacksonPlugin implements SPPlugin {
 
   private final Map<String, JsonOutputFormatter<?>> formatters = new Hashtable<>();
   private final Map<Class<?>, InputParser<?>> parsers = new Hashtable<>();
+  private final Map<String, JsonQueryReader> queryReaders = new Hashtable<>();
 
   private MapperProvider mapperProvider = new DefaultMapperProvider(OBJECT_MAPPER);
 
@@ -54,6 +55,15 @@ public class JacksonPlugin implements SPPlugin {
                                                                 mapperProvider.getMapper(
                                                                   id).writer()));
       handler.setOutputFormatter(fmt);
+    }
+
+    // the objects built from the query string, with the same mapper
+    if (handler.getParameters()
+               .stream()
+               .anyMatch(p -> p.kind() == RouteParameter.Kind.QUERY_OBJECT)) {
+      String id = json == null ? "" : json.value();
+      handler.setQueryObjectParser(queryReaders.computeIfAbsent(
+        id, i -> new JsonQueryReader(mapperProvider.getMapper(i))));
     }
 
     Parameter body = handler.getParameters()

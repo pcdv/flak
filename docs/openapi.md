@@ -72,6 +72,11 @@ For each route handler, static resources excepted:
     `integer`
   - every [`@QueryParam`](arguments.md#query-parameters), with its type,
     default value, description, and whether it is required
+  - every property of a [`@QueryParams`](arguments.md#objects-built-from-the-query-string)
+    object, as Jackson binds it, with its type, the value it is initialized
+    with as default, its description, e.g. from `@JsonPropertyDescription`,
+    and whether it is required, e.g. with `@JsonProperty(required = true)`
+    (since 3.1.0)
   - those declared with `@Parameter` on the method, which take precedence
     over a path variable of the same name
 

@@ -2,7 +2,12 @@ package com.github.pcdv.flak.swagger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
+import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import flak.App;
 import flak.Form;
 import flak.RouteHandler;
@@ -15,6 +20,7 @@ import flak.jackson.JsonOutputFormatter;
 import flak.spi.FlakAnnotations;
 import flak.spi.HandlerSpec;
 import flak.spi.util.IO;
+import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.jackson.ModelResolver;
 import io.swagger.v3.core.util.AnnotationsUtils;
@@ -43,6 +49,7 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -66,6 +73,11 @@ import java.util.TreeMap;
  * Jackson settings are taken into account).
  */
 public class OpenApiGenerator {
+
+  /**
+   * Describes the objects built from the query string when no mapper is set.
+   */
+  private static final ObjectMapper DEFAULT_MAPPER = new ObjectMapper();
 
   private final OpenAPI api = new OpenAPI();
 
@@ -411,6 +423,8 @@ public class OpenApiGenerator {
                                                      .schema(schema),
                                       p, ann));
       }
+      else if (p.kind() == RouteParameter.Kind.QUERY_OBJECT)
+        queryObjectParameters(p.type()).forEach(op::addParametersItem);
       // e.g. a header read from the Request: the annotation says it all
       else if (ann != null && p.kind() != RouteParameter.Kind.PATH)
         op.addParametersItem(annotate(null, null, ann));
@@ -434,6 +448,85 @@ public class OpenApiGenerator {
       }
     }
 
+  }
+
+  /**
+   * The query parameters that an object annotated with @QueryParams is built
+   * from: the properties Jackson binds, as flak-jackson does, with their
+   * description, e.g. from @JsonPropertyDescription, and the value they are
+   * initialized with as default.
+   */
+  private List<Parameter> queryObjectParameters(Class<?> type) {
+    ObjectMapper mapper = objectMapper == null ? DEFAULT_MAPPER : objectMapper;
+    DeserializationConfig config = mapper.getDeserializationConfig();
+    BeanDescription desc = config.introspect(config.constructType(type));
+    Object instance = newInstance(type);
+
+    List<Parameter> res = new ArrayList<>();
+    for (BeanPropertyDefinition prop : desc.findProperties()) {
+      if (!prop.couldDeserialize())
+        continue;
+
+      Schema<?> schema = schemaOf(prop.getPrimaryType());
+      Object def = defaultValue(prop, instance);
+      if (def != null)
+        schema.setDefault(def);
+
+      res.add(new Parameter().in("query")
+                             .name(prop.getName())
+                             .description(prop.getMetadata().getDescription())
+                             .required(prop.isRequired() ? true : null)
+                             .schema(schema));
+    }
+    return res;
+  }
+
+  /**
+   * The schema of a property bound from the query string: an array for a
+   * repeated parameter, which swagger does not describe out of a bean.
+   */
+  private static Schema<?> schemaOf(JavaType type) {
+    if (type.isCollectionLikeType() || type.isArrayType())
+      return new ArraySchema().items(schemaOf(type.getContentType()));
+    Schema<?> schema = ModelConverters.getInstance()
+                                      .resolveAsResolvedSchema(new AnnotatedType(type))
+                                      .schema;
+    return schema == null ? new Schema<>() : schema;
+  }
+
+  /**
+   * An instance built with the constructor without arguments, if any, to
+   * read the default values of its properties.
+   */
+  private static Object newInstance(Class<?> type) {
+    try {
+      Constructor<?> c = type.getDeclaredConstructor();
+      c.setAccessible(true);
+      return c.newInstance();
+    }
+    catch (ReflectiveOperationException | RuntimeException e) {
+      return null;
+    }
+  }
+
+  /**
+   * The value a property is initialized with, if it is a simple one.
+   */
+  private static Object defaultValue(BeanPropertyDefinition prop, Object instance) {
+    AnnotatedMember accessor = prop.getAccessor();
+    if (instance == null || accessor == null)
+      return null;
+    try {
+      accessor.fixAccess(true);
+      Object value = accessor.getValue(instance);
+      if (value instanceof Enum)
+        return ((Enum<?>) value).name();
+      if (value instanceof Number || value instanceof Boolean || value instanceof String)
+        return value;
+    }
+    catch (RuntimeException ignored) {
+    }
+    return null;
   }
 
   private static io.swagger.v3.oas.annotations.Parameter parameterAnnotation(RouteParameter p) {
