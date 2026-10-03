@@ -28,6 +28,18 @@ allprojects {
     options.encoding = 'UTF-8'
   }
 
+  // -PtestJdk=21 runs the tests on another JDK than the one that compiles,
+  // as CI does for each JDK supported: flak-websocket relies on internals of
+  // the JDK, which a new release may break
+  def testJdk = providers.gradleProperty('testJdk')
+  if (testJdk.present) {
+    tasks.withType(Test).configureEach {
+      javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(testJdk.get())
+      }
+    }
+  }
+
   dependencies {
     testImplementation "junit:junit:4.13.2"
   }

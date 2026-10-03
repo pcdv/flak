@@ -15,18 +15,28 @@ concurrency:
 
 jobs:
   build:
-    name: Build and test (JDK 17)
+    name: Build and test (JDK ${{ matrix.jdk }})
     runs-on: ubuntu-latest
+
+    # the code is compiled for 17, and tested on each LTS since and on the
+    # latest release: flak-websocket relies on internals of the JDK
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [17, 21, 25, 27]
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
 
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ matrix.jdk }}, and 17 for Gradle
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 17
+          # the last one is the default, the one Gradle runs and compiles on
+          java-version: |
+            ${{ matrix.jdk }}
+            17
 
       # caches dependencies and build outputs between runs, and validates the
       # checksum of the committed wrapper jar
@@ -34,12 +44,17 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Build
-        run: ./gradlew build
+        # setup-java gives each JDK a variable, e.g. JAVA_HOME_21_X64, from
+        # which Gradle takes the one to run the tests on
+        run: >-
+          ./gradlew build
+          -PtestJdk=${{ matrix.jdk }}
+          -Porg.gradle.java.installations.fromEnv=JAVA_HOME_${{ matrix.jdk }}_X64
 
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: test-reports
+          name: test-reports-jdk${{ matrix.jdk }}
           path: '**/build/reports/tests/'
           retention-days: 7
