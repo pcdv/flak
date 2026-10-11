@@ -188,7 +188,9 @@ The token travels in a cookie:
 - with the path of the app, so that two apps on one server have separate
   sessions
 - `HttpOnly` and `SameSite=Strict` by default. Change them per session with
-  `setHttpOnly()` and `setSameSite()` on `DefaultFlakSession`.
+  `setHttpOnly()` and `setSameSite()` on `DefaultFlakSession`. `SameSite`
+  does not stop the pages of other hosts of the same domain from using the
+  session, see [CSRF](csrf.md).
 - with `Expires` when the session expires
 - `Secure` when the app is served over HTTPS, so that browsers never send
   the token in clear

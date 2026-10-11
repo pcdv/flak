@@ -21,6 +21,7 @@ app. These pages cover each feature in detail.
 - [Static resources](static-resources.md): serving files from a directory
   or the classpath
 - [CORS](cors.md): letting pages of other origins call the app
+- [CSRF](csrf.md): refusing the requests that other sites make browsers send
 
 **Add-ons**
 

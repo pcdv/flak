@@ -72,4 +72,5 @@ goes with the requests of the page:
   `Authorization` header there.
 
 CORS restricts what pages can read, not who calls the app: a request from an
-origin that is not allowed is still served, merely without the headers.
+origin that is not allowed is still served, merely without the headers. To refuse the requests that
+other sites make browsers send, see [CSRF](csrf.md).

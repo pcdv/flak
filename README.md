@@ -26,7 +26,7 @@ Flak components      | Description
 `flak-jackson`       | Add-on for conversion to/from JSON using Jackson, and for `@QueryParams` and `@FormParams`, see [JSON](docs/json.md)
 `flak-swagger`       | Add-on to generate OpenAPI specifications, see [OpenAPI](docs/openapi.md)
 `flak-websocket`     | Experimental add-on for websockets with the JDK backend, see [WebSockets](docs/websocket.md)
-`flak-util`          | Misc utilities: CORS, route dumper
+`flak-util`          | Misc utilities: CORS, CSRF, route dumper
 
 ## Getting started
 
@@ -135,6 +135,8 @@ The [documentation](docs/README.md) covers each of them in detail.
   dropped when the client is lost
 - **[CORS](docs/cors.md)**: let the pages of other origins call the app,
   preflight requests answered before routing and login checks
+- **[CSRF](docs/csrf.md)**: refuse the requests that other sites make
+  browsers send, with no token for front ends to handle
 - **[OpenAPI](docs/openapi.md)**: generate a specification from the handlers
 - **[Plugins](docs/plugins.md)**: installed automatically or listed
   explicitly, and easy to write
