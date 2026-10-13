@@ -16,7 +16,8 @@ app. These pages cover each feature in detail.
   redirects, streaming
 - [Request bodies](request-bodies.md): streaming uploads, size limits
 - [Errors and hooks](errors-and-hooks.md): error statuses, error and success
-  handlers, unknown URLs, hooks that run before every request
+  handlers, request listeners, unknown URLs, hooks that run before every
+  request
 - [Compression](compression.md): gzip
 - [Static resources](static-resources.md): serving files from a directory
   or the classpath

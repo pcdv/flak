@@ -107,14 +107,23 @@ Error handlers are not called for unknown URLs.
 
 A success handler is notified after each handler that returns normally, with
 the arguments it received and the value it returned. It's a convenient place
-for auditing or metrics:
+for auditing:
 
 ```java
 app.addSuccessHandler((request, method, args, result) ->
   audit.log(currentUser(), method.getName(), args));
 ```
 
-It runs before the response is written.
+It runs before the response is written. For metrics, prefer a request
+listener: it also sees the requests that fail or match no route, and their
+status and duration.
+
+## Request listeners
+
+A request listener is told when each request begins, once it matched a
+route, and when it ends, once the response is finished, whatever happened in
+between. It gets the route, the status, the duration and the bytes read and
+sent. See [Monitoring](monitoring.md#request-listeners).
 
 ## Hooks before every request
 
