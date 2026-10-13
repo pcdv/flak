@@ -4,12 +4,15 @@
 
 1. The hooks registered with `addBeforeAllHook()` run.
 2. The request is matched against the routes. If none matches, the unknown
-   page handler serves it, or it gets a 404.
+   page handler serves it, or it gets a 404. Otherwise the
+   [request listeners](monitoring.md) are told that the request begins.
 3. The hooks of the handler run. This is where [flak-login](login.md)
    checks sessions and permissions.
 4. The arguments are extracted: path variables, query parameters, body…
 5. The handler runs. The success handlers are then notified.
 6. What the handler returned is written into the response.
+7. Once the response is finished, the [request listeners](monitoring.md)
+   are told that the request ended, whatever happened before.
 
 An `HttpException` thrown at any of these steps sets the status of the
 response. Any other exception gives a 500 and is passed to the error

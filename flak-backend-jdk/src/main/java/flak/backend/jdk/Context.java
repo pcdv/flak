@@ -11,6 +11,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import flak.HttpException;
 import flak.spi.HandlerSpec;
+import flak.spi.RequestTracker;
 import flak.spi.SPRequest;
 import flak.spi.util.Log;
 
@@ -71,6 +72,7 @@ public class Context implements HttpHandler {
   }
 
   public void handle(HttpExchange r) throws IOException {
+    RequestTracker tracker = new RequestTracker();
     String path = r.getRequestURI().getPath();
     JdkRequest req =
       new JdkRequest(app, app.relativePath(path), makeRelativePath(path), r);
@@ -86,7 +88,12 @@ public class Context implements HttpHandler {
       });
     }
     finally {
-      req.finish();
+      try {
+        req.finish();
+      }
+      finally {
+        app.fireEnd(req, tracker);
+      }
     }
   }
 

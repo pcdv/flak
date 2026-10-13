@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,6 +48,8 @@ public abstract class AbstractApp implements App {
   private final List<SPPlugin> plugins = new ArrayList<>();
 
   private final List<BeforeHook> beforeHooks = new Vector<>();
+
+  private final List<RequestListener> requestListeners = new CopyOnWriteArrayList<>();
 
   private final ThreadLocal<Request> localRequest = new ThreadLocal<>();
 
@@ -503,6 +506,47 @@ public abstract class AbstractApp implements App {
   protected void onBefore(SPRequest request) throws BeforeHook.StopProcessingException {
     for (BeforeHook hook : beforeHooks) {
       hook.execute(request);
+    }
+  }
+
+  @Override
+  public void addRequestListener(RequestListener listener) {
+    requestListeners.add(listener);
+  }
+
+  @Override
+  public void removeRequestListener(RequestListener listener) {
+    requestListeners.remove(listener);
+  }
+
+  /**
+   * Called once the request matched a route, before its handler runs.
+   */
+  public void fireBegin(SPRequest req) {
+    for (RequestListener listener : requestListeners) {
+      try {
+        listener.onBegin(req);
+      }
+      catch (Exception e) {
+        Log.error(e, e);
+      }
+    }
+  }
+
+  /**
+   * Called by the backend once the response is finished, for every request
+   * served by the app.
+   */
+  public void fireEnd(SPRequest req, RequestTracker tracker) {
+    tracker.end(this, req);
+
+    for (RequestListener listener : requestListeners) {
+      try {
+        listener.onEnd(req, tracker);
+      }
+      catch (Exception e) {
+        Log.error(e, e);
+      }
     }
   }
 }

@@ -59,4 +59,12 @@ public interface Request {
   String getCookie(String name);
 
   Method getHandler();
+
+  /**
+   * Returns the template of the route that matched the request, as declared
+   * in its @Route, e.g. "/user/:id", or null while no route matched yet.
+   *
+   * @since 3.4.0
+   */
+  String getRoute();
 }

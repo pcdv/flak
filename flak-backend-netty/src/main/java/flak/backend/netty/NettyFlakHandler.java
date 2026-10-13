@@ -17,6 +17,7 @@ package flak.backend.netty;
 
 import java.net.URI;
 
+import flak.spi.RequestTracker;
 import flak.spi.util.Log;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -146,6 +147,7 @@ public class NettyFlakHandler extends ChannelInboundHandlerAdapter {
       return;
     }
 
+    RequestTracker tracker = new RequestTracker();
     String appRelativePath = path.substring(app.getPath().length());
     NettyRequest r =
       new NettyRequest(app, ctx, req, body, appRelativePath, uri.getRawQuery());
@@ -158,7 +160,12 @@ public class NettyFlakHandler extends ChannelInboundHandlerAdapter {
       Log.error("Could not serve " + path, t);
     }
 
-    r.finish();
+    try {
+      r.finish();
+    }
+    finally {
+      app.fireEnd(r, tracker);
+    }
   }
 
   private static void send(ChannelHandlerContext ctx,

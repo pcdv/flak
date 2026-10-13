@@ -119,6 +119,20 @@ public interface App {
   void addBeforeAllHook(BeforeHook hook);
 
   /**
+   * Adds a listener notified at the beginning and at the end of each request.
+   *
+   * @since 3.4.0
+   */
+  void addRequestListener(RequestListener listener);
+
+  /**
+   * Removes a listener added with {@link #addRequestListener}.
+   *
+   * @since 3.4.0
+   */
+  void removeRequestListener(RequestListener listener);
+
+  /**
    * Returns the request being served by the current thread, so that code
    * called by a route handler can reach it without it being passed around.
    */

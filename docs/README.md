@@ -22,6 +22,8 @@ app. These pages cover each feature in detail.
   or the classpath
 - [CORS](cors.md): letting pages of other origins call the app
 - [CSRF](csrf.md): refusing the requests that other sites make browsers send
+- [Monitoring](monitoring.md): request listeners, and the JFR event that
+  lets profilers tell which route each sample belongs to
 
 **Add-ons**
 

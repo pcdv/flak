@@ -137,6 +137,9 @@ The [documentation](docs/README.md) covers each of them in detail.
   preflight requests answered before routing and login checks
 - **[CSRF](docs/csrf.md)**: refuse the requests that other sites make
   browsers send, with no token for front ends to handle
+- **[Monitoring](docs/monitoring.md)**: listeners told when each request
+  begins and ends, with its route, status, size and duration, and a JFR
+  event per request for profilers
 - **[OpenAPI](docs/openapi.md)**: generate a specification from the handlers
 - **[Plugins](docs/plugins.md)**: installed automatically or listed
   explicitly, and easy to write

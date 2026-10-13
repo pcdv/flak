@@ -25,4 +25,14 @@ public interface SPResponse extends Response {
    */
   void abort();
 
+  /**
+   * The status of the response: 200 unless set otherwise.
+   */
+  int getStatus();
+
+  /**
+   * The number of bytes of the body sent so far, after compression.
+   */
+  long getBytesOut();
+
 }

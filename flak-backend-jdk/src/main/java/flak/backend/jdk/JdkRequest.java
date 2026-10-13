@@ -20,6 +20,8 @@ import flak.spi.SPRequest;
 import flak.spi.SPResponse;
 import flak.spi.util.BufferedOutputStream;
 import flak.spi.util.Cookies;
+import flak.spi.util.CountingInputStream;
+import flak.spi.util.CountingOutputStream;
 import flak.annotations.MaxBodySize;
 import flak.HttpException;
 import flak.spi.util.IO;
@@ -54,7 +56,15 @@ public class JdkRequest implements SPRequest, SPResponse {
   private boolean statusFlushed;
 
   private Method handler;
+  private String route;
   private boolean compressionAllowed;
+
+  /**
+   * The body as it comes from and goes to the exchange, counted. Null until
+   * first used.
+   */
+  private CountingInputStream in;
+  private CountingOutputStream out;
 
   public JdkRequest(App app,
                     String appRelativePath,
@@ -90,6 +100,16 @@ public class JdkRequest implements SPRequest, SPResponse {
   @Override
   public void setHandler(Method handler) {
     this.handler = handler;
+  }
+
+  @Override
+  public void setRoute(String route) {
+    this.route = route;
+  }
+
+  @Override
+  public String getRoute() {
+    return route;
   }
 
   @Override
@@ -172,7 +192,14 @@ public class JdkRequest implements SPRequest, SPResponse {
   }
 
   public InputStream getInputStream() {
-    return LimitedInputStream.limit(exchange.getRequestBody(), maxBodySize);
+    if (in == null)
+      in = new CountingInputStream(exchange.getRequestBody());
+    return LimitedInputStream.limit(in, maxBodySize);
+  }
+
+  @Override
+  public long getBytesIn() {
+    return in == null ? 0 : in.getCount();
   }
 
   /**
@@ -224,9 +251,20 @@ public class JdkRequest implements SPRequest, SPResponse {
     return status != 0;
   }
 
+  @Override
+  public int getStatus() {
+    return status == 0 ? 200 : status;
+  }
+
+  @Override
+  public long getBytesOut() {
+    return out == null ? 0 : out.getCount();
+  }
+
   public OutputStream getOutputStream() {
     if (outputStream == null) {
-      this.outputStream = new BufferedOutputStream(exchange.getResponseBody(), 8192) {
+      out = new CountingOutputStream(exchange.getResponseBody());
+      this.outputStream = new BufferedOutputStream(out, 8192) {
         @Override
         public void close() throws IOException {
           super.flush();

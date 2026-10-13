@@ -11,6 +11,7 @@ import flak.spi.SPRequest;
 import flak.spi.SPResponse;
 import flak.spi.util.BufferedOutputStream;
 import flak.spi.util.Cookies;
+import flak.spi.util.CountingInputStream;
 import flak.spi.util.IO;
 import flak.spi.util.LimitedInputStream;
 import flak.spi.util.Log;
@@ -57,8 +58,8 @@ public class NettyRequest implements SPRequest, SPResponse {
   private final ChannelHandlerContext ctx;
   private final HttpRequest req;
 
-  /** The body, as it arrives from the network. */
-  private final RequestBodyStream body;
+  /** The body, as it arrives from the network, counted as it is read. */
+  private final CountingInputStream body;
 
   /**
    * Path of the request relative to the root of the app, without the query
@@ -81,6 +82,7 @@ public class NettyRequest implements SPRequest, SPResponse {
   private final String queryString;
 
   private Method handler;
+  private String route;
   private Form form;
   private Cookies cookies;
   /**
@@ -115,6 +117,9 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   private boolean aborted;
 
+  /** Bytes of the body sent, in chunks or in one message. */
+  private long bytesOut;
+
   public NettyRequest(NettyApp app,
                       ChannelHandlerContext ctx,
                       HttpRequest req,
@@ -124,7 +129,7 @@ public class NettyRequest implements SPRequest, SPResponse {
     this.app = app;
     this.ctx = ctx;
     this.req = req;
-    this.body = body;
+    this.body = new CountingInputStream(body);
     this.path = appRelativePath;
     this.queryString = queryString;
     this.tokens = appRelativePath.isEmpty() || appRelativePath.equals("/")
@@ -184,6 +189,11 @@ public class NettyRequest implements SPRequest, SPResponse {
     return LimitedInputStream.limit(body, maxBodySize);
   }
 
+  @Override
+  public long getBytesIn() {
+    return body.getCount();
+  }
+
   /**
    * Rejects the request straight away when it announces a body bigger than
    * the handler accepts: no point reading megabytes only to refuse them.
@@ -237,6 +247,16 @@ public class NettyRequest implements SPRequest, SPResponse {
   @Override
   public void setHandler(Method handler) {
     this.handler = handler;
+  }
+
+  @Override
+  public void setRoute(String route) {
+    this.route = route;
+  }
+
+  @Override
+  public String getRoute() {
+    return route;
   }
 
   /**
@@ -295,8 +315,14 @@ public class NettyRequest implements SPRequest, SPResponse {
     return statusSet;
   }
 
+  @Override
   public int getStatus() {
     return status;
+  }
+
+  @Override
+  public long getBytesOut() {
+    return bytesOut;
   }
 
   @Override
@@ -386,6 +412,7 @@ public class NettyRequest implements SPRequest, SPResponse {
                                   HttpResponseStatus.valueOf(status),
                                   content);
     r.headers().add(headers);
+    bytesOut += content.readableBytes();
     r.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes());
     r.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
     ctx.writeAndFlush(r).addListener(ChannelFutureListener.CLOSE);
@@ -431,6 +458,7 @@ public class NettyRequest implements SPRequest, SPResponse {
       // faster than the client consumes is slowed down rather than piling up
       ctx.writeAndFlush(new DefaultHttpContent(Unpooled.copiedBuffer(b, off, len)))
          .awaitUninterruptibly();
+      bytesOut += len;
     }
   };
 
