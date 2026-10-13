@@ -9,7 +9,7 @@ the user. That is cross-site request forgery (CSRF). The page cannot read
 the response, but the harm is done if the request changes something.
 
 ```groovy
-implementation "com.github.pcdv.flak:flak-util:3.3.0"
+implementation "com.github.pcdv.flak:flak-util:3.4.0"
 ```
 
 `CrossOriginProtection` is a [hook that runs before every request](errors-and-hooks.md#hooks-before-every-request).
