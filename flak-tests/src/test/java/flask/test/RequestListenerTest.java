@@ -192,7 +192,8 @@ public class RequestListenerTest extends AbstractAppTest {
                                                 .collect(Collectors.toList());
       Assert.assertEquals(2, events.size());
 
-      RecordedEvent hello = events.get(0);
+      // events are not in chronological order: each thread has its own buffer
+      RecordedEvent hello = eventWithPath(events, "/hello/jfr");
       Assert.assertEquals(app.getPath(), hello.getString("app"));
       Assert.assertEquals("GET", hello.getString("method"));
       Assert.assertEquals("/hello/:name", hello.getString("route"));
@@ -203,13 +204,20 @@ public class RequestListenerTest extends AbstractAppTest {
       Assert.assertTrue(hello.getDuration().toNanos() > 0);
       Assert.assertNotNull(hello.getThread());
 
-      RecordedEvent unknown = events.get(1);
+      RecordedEvent unknown = eventWithPath(events, "/unknown");
       Assert.assertNull(unknown.getString("route"));
       Assert.assertEquals(404, unknown.getInt("status"));
     }
     finally {
       Files.deleteIfExists(file);
     }
+  }
+
+  private static RecordedEvent eventWithPath(List<RecordedEvent> events, String path) {
+    return events.stream()
+                 .filter(e -> path.equals(e.getString("path")))
+                 .findFirst()
+                 .orElseThrow(() -> new AssertionError("No event for " + path));
   }
 
   /**
