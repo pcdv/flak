@@ -104,7 +104,10 @@ For each route handler, static resources excepted:
 
 Schemas are derived from the Java types with swagger-core. Call
 `setObjectMapper()` before scanning, so that they follow the Jackson settings
-of the application, e.g. ignored properties or naming strategies.
+of the application, e.g. ignored properties or naming strategies. The
+examples set on schemas are values of the application, so this mapper also
+writes them in `toJSON()` and `toYaml()`; the rest of the document is written
+by the mapper of swagger-core.
 `scanSchema(type)` adds the schema of a type that no handler mentions
 directly, such as a subtype listed in `@Schema(oneOf = ...)`.
 

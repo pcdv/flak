@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyName;
 import com.fasterxml.jackson.databind.introspect.Annotated;
@@ -23,6 +24,8 @@ import flak.jackson.JSON;
 import flak.jackson.JacksonPlugin;
 import flak.login.FlakUser;
 import flak.login.SessionManager;
+import io.swagger.v3.core.util.Json;
+import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -31,6 +34,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -513,6 +518,73 @@ public class SwaggerTest extends AbstractAppTest {
     }
     finally {
       other.stop();
+    }
+  }
+
+  /**
+   * The JSON is the specification, as the YAML: enums by their value, and an
+   * empty list of scopes, required by a scheme that is not OAuth.
+   */
+  @Test
+  public void testJsonSecurity() throws IOException {
+    OpenApiGenerator gen = new OpenApiGenerator();
+    gen.scan(ItemHandler.class);
+    OpenAPI api = gen.getAPI();
+    api.getComponents().addSecuritySchemes("BasicAuth", new SecurityScheme()
+      .type(SecurityScheme.Type.HTTP).scheme("basic"));
+    api.getPaths().get("/items/{id}").getPut()
+       .addSecurityItem(new SecurityRequirement().addList("BasicAuth"));
+
+    JsonNode json = new ObjectMapper().readTree(gen.toJSON());
+
+    JsonNode basic = json.at("/components/securitySchemes/BasicAuth");
+    assertEquals("http", basic.path("type").asText());
+    assertEquals("basic", basic.path("scheme").asText());
+    JsonNode scopes = json.at("/paths/~1items~1{id}/put/security/0/BasicAuth");
+    assertTrue(json.at("/paths/~1items~1{id}/put/security").toString(), scopes.isArray());
+    assertEquals(0, scopes.size());
+    // nor the internals of the model
+    assertTrue(json.at("/components/schemas/Item").has("properties"));
+    assertTrue(json.at("/components/schemas/Item").toString(),
+               json.at("/components/schemas/Item").path("exampleSetFlag").isMissingNode());
+  }
+
+  public static class Rule {
+    public String id = "tick";
+
+    public int getInternal() {
+      return 42;
+    }
+  }
+
+  /** How the application hides what it does not send. */
+  public abstract static class RuleMixin {
+    @JsonIgnore
+    public abstract int getInternal();
+  }
+
+  /**
+   * The examples are values of the application, written by its mapper; the
+   * rest is the specification.
+   */
+  @Test
+  public void testJsonExampleOfApp() throws IOException {
+    ObjectMapper mapper = Json.mapper().copy().addMixIn(Rule.class, RuleMixin.class);
+    OpenApiGenerator gen = new OpenApiGenerator();
+    gen.setObjectMapper(mapper);
+    gen.scan(ItemHandler.class);
+    OpenAPI api = gen.getAPI();
+    api.getComponents().getSchemas().get("Item").example(new Rule());
+    api.getComponents().addSecuritySchemes("BasicAuth", new SecurityScheme()
+      .type(SecurityScheme.Type.HTTP).scheme("basic"));
+
+    for (String text : List.of(gen.toJSON(), gen.toYaml())) {
+      JsonNode doc = text.startsWith("{") ? new ObjectMapper().readTree(text)
+                                          : Yaml.mapper().readTree(text);
+      JsonNode item = doc.at("/components/schemas/Item");
+      assertEquals(text, "{\"id\":\"tick\"}", item.path("example").toString());
+      assertTrue(item.path("exampleSetFlag").isMissingNode());
+      assertEquals("http", doc.at("/components/securitySchemes/BasicAuth/type").asText());
     }
   }
 

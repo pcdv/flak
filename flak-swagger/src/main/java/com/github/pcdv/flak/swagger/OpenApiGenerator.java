@@ -1,11 +1,14 @@
 package com.github.pcdv.flak.swagger;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import flak.App;
@@ -26,7 +29,9 @@ import flak.spi.util.IO;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.jackson.ModelResolver;
+import io.swagger.v3.core.jackson.mixin.SchemaMixin;
 import io.swagger.v3.core.util.AnnotationsUtils;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.ParameterProcessor;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -677,11 +682,8 @@ public class OpenApiGenerator {
   }
 
   public String toYaml() {
-    ObjectMapper mapper = Yaml.mapper();
-
     try {
-      mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-      return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(api);
+      return write(Yaml.mapper());
     }
     catch (JsonProcessingException e) {
       e.printStackTrace();
@@ -690,9 +692,38 @@ public class OpenApiGenerator {
   }
 
   public String toJSON() throws JsonProcessingException {
-    ObjectMapper mapper = objectMapper == null ? new ObjectMapper() : objectMapper.copy();
-    mapper.setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
-    return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(api);
+    return write(Json.mapper());
+  }
+
+  /**
+   * The specification is written by the mapper of Swagger, which knows how the
+   * model maps to it (enum values, empty security scopes, extensions). The
+   * examples of schemas are values of the application: the mapper of
+   * {@link #setObjectMapper} writes them, as the application would.
+   */
+  private String write(ObjectMapper swagger) throws JsonProcessingException {
+    if (objectMapper == null)
+      return swagger.writerWithDefaultPrettyPrinter().writeValueAsString(api);
+    ObjectMapper mapper = swagger.copy();
+    mapper.addMixIn(Schema.class, AppExampleMixin.class);
+    return mapper.writerWithDefaultPrettyPrinter()
+                 .withAttribute(AppExampleSerializer.class, objectMapper)
+                 .writeValueAsString(api);
+  }
+
+  abstract static class AppExampleMixin extends SchemaMixin {
+    @Override
+    @JsonSerialize(using = AppExampleSerializer.class)
+    public abstract Object getExample();
+  }
+
+  static class AppExampleSerializer extends JsonSerializer<Object> {
+    @Override
+    public void serialize(Object value, JsonGenerator gen, SerializerProvider provider)
+      throws IOException {
+      ObjectMapper mapper = (ObjectMapper) provider.getAttribute(AppExampleSerializer.class);
+      gen.writeTree(mapper.valueToTree(value));
+    }
   }
 
   public OpenAPI getAPI() {
