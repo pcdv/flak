@@ -300,7 +300,12 @@ public class WebSocketTest {
     app.stop();
     app = null;
 
-    assertEquals("close 1006  true", endpoint.next());
+    // the reason is the message of the IOException that ended the read: none
+    // when the reader was blocked in read(), "Stream closed" when it got there
+    // after the server closed the stream
+    String closed = endpoint.next();
+    assertTrue(closed, closed.equals("close 1006  true")
+                       || closed.equals("close 1006 Stream closed true"));
     // the client of JDK 17 reports an error, that of JDK 21 a closure
     String last = String.valueOf(c.next());
     assertTrue(last, last.startsWith("error") || last.startsWith("close 1006"));
