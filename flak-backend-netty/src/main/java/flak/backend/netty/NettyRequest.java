@@ -17,6 +17,7 @@ import flak.spi.util.LimitedInputStream;
 import flak.spi.util.Log;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -448,7 +449,7 @@ public class NettyRequest implements SPRequest, SPResponse {
     }
 
     @Override
-    public void write(byte[] b, int off, int len) {
+    public void write(byte[] b, int off, int len) throws IOException {
       if (len == 0)
         return;
 
@@ -456,8 +457,13 @@ public class NettyRequest implements SPRequest, SPResponse {
 
       // wait for the chunk to reach the socket, so that a handler producing
       // faster than the client consumes is slowed down rather than piling up
-      ctx.writeAndFlush(new DefaultHttpContent(Unpooled.copiedBuffer(b, off, len)))
-         .awaitUninterruptibly();
+      ChannelFuture f =
+        ctx.writeAndFlush(new DefaultHttpContent(Unpooled.copiedBuffer(b, off, len)))
+           .awaitUninterruptibly();
+      // like the JDK backend, tell a handler streaming to a client that went
+      // away, rather than letting it write into the void
+      if (!f.isSuccess())
+        throw new IOException("Could not send the response", f.cause());
       bytesOut += len;
     }
   };

@@ -21,6 +21,8 @@ app. These pages cover each feature in detail.
 - [Compression](compression.md): gzip
 - [Static resources](static-resources.md): serving files from a directory
   or the classpath
+- [Server-Sent Events](sse.md): pushing events to pages, with
+  `EventSource`
 - [CORS](cors.md): letting pages of other origins call the app
 - [CSRF](csrf.md): refusing the requests that other sites make browsers send
 - [Monitoring](monitoring.md): request listeners, and the JFR event that

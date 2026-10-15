@@ -113,7 +113,7 @@ The [documentation](docs/README.md) covers each of them in detail.
   extractors
 - **[Responses](docs/responses.md)**: return a `String`, bytes, a stream or
   any object through a formatter, set the status and headers, redirect,
-  stream chunked output or Server-Sent Events
+  stream chunked output
 - **[Request bodies](docs/request-bodies.md)**: streamed to the handler,
   with a size limit per app or per handler
 - **[Errors and hooks](docs/errors-and-hooks.md)**: throw an
@@ -130,6 +130,8 @@ The [documentation](docs/README.md) covers each of them in detail.
 - **[Static resources](docs/static-resources.md)**: `app.serveDir()` and
   `app.serveClasspath()` serve files, optionally restricted to logged-in
   users
+- **[Server-Sent Events](docs/sse.md)**: push events to every connected
+  page, clients that went away or fall behind dropped
 - **[WebSockets](docs/websocket.md)**, experimental: served on the routes
   of an app with the JDK backend, so that hooks and login apply to them, and
   dropped when the client is lost

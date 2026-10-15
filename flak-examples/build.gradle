@@ -2,6 +2,7 @@ version = 'unspecified'
 
 dependencies {
   implementation project(":flak-api")
+  implementation project(":flak-util")
   implementation project(":flak-websocket")
   runtimeOnly project(":flak-backend-jdk")
 }

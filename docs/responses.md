@@ -118,10 +118,14 @@ public void events(Response r) throws Exception {
 }
 ```
 
-This is how the Server-Sent Events
-[example](../flak-examples/src/main/java/flak/util/sse/SSEExample.java) works.
 Each open stream holds a thread for as long as it lasts, so
-[size the executor](apps-and-servers.md#threads) accordingly.
+[size the executor](apps-and-servers.md#threads) accordingly. Once the
+client is gone, `write()` or `flush()` throws an `IOException`, though not
+necessarily the first one after it left.
+
+For Server-Sent Events, flak-util encodes the events, sends them to every
+connected client and drops the clients that went away: see
+[Server-Sent Events](sse.md).
 
 ## HEAD
 
