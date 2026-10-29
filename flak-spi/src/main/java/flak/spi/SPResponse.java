@@ -1,5 +1,6 @@
 package flak.spi;
 
+import flak.App;
 import flak.Response;
 
 import java.io.OutputStream;
@@ -34,5 +35,11 @@ public interface SPResponse extends Response {
    * The number of bytes of the body sent so far, after compression.
    */
   long getBytesOut();
+
+  /**
+   * The app that handles the request, whose settings apply to the response
+   * (e.g. its compression).
+   */
+  App getApp();
 
 }

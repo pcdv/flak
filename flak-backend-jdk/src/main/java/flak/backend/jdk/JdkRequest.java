@@ -335,4 +335,9 @@ public class JdkRequest implements SPRequest, SPResponse {
   public void setOutputStream(OutputStream out) {
     this.outputStream = out;
   }
+
+  @Override
+  public App getApp() {
+    return app;
+  }
 }

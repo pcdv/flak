@@ -1,5 +1,6 @@
 package flak.backend.netty;
 
+import flak.App;
 import flak.Form;
 import flak.HttpException;
 import flak.Query;
@@ -492,5 +493,10 @@ public class NettyRequest implements SPRequest, SPResponse {
       // the connection is closed by finish(), not here
       flush();
     }
+  }
+
+  @Override
+  public App getApp() {
+    return app;
   }
 }

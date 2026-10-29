@@ -15,6 +15,7 @@ import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
+import java.util.zip.Deflater;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,6 +57,10 @@ public abstract class AbstractApp implements App {
   private long maxBodySize = DEFAULT_MAX_BODY_SIZE;
 
   private volatile boolean keepPlus;
+
+  private volatile int compressionLevel = Deflater.DEFAULT_COMPRESSION;
+
+  private volatile int compressionBufferSize = DEFAULT_COMPRESSION_BUFFER_SIZE;
 
   public AbstractApp(String rootUrl) {
     this.rootUrl = rootUrl;
@@ -330,6 +335,30 @@ public abstract class AbstractApp implements App {
   @Override
   public boolean isKeepPlus() {
     return keepPlus;
+  }
+
+  @Override
+  public void setCompressionLevel(int level) {
+    if (level != Deflater.DEFAULT_COMPRESSION && (level < Deflater.BEST_SPEED || level > Deflater.BEST_COMPRESSION))
+      throw new IllegalArgumentException("Invalid compression level: " + level);
+    this.compressionLevel = level;
+  }
+
+  @Override
+  public int getCompressionLevel() {
+    return compressionLevel;
+  }
+
+  @Override
+  public void setCompressionBufferSize(int size) {
+    if (size <= 0)
+      throw new IllegalArgumentException("Invalid compression buffer size: " + size);
+    this.compressionBufferSize = size;
+  }
+
+  @Override
+  public int getCompressionBufferSize() {
+    return compressionBufferSize;
   }
 
   public void addPlugin(FlakPlugin plugin) {

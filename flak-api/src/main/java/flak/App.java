@@ -15,6 +15,8 @@ public interface App {
    */
   long DEFAULT_MAX_BODY_SIZE = 16L * 1024 * 1024;
 
+  int DEFAULT_COMPRESSION_BUFFER_SIZE = 512;
+
   /**
    * Scans specified object for route handlers, i.e. public methods with @Route
    * annotation.
@@ -191,6 +193,30 @@ public interface App {
   void setKeepPlus(boolean keepPlus);
 
   boolean isKeepPlus();
+
+  /**
+   * Sets the level of the gzip compression of the responses of this app: from
+   * 1, fastest, to 9, smallest, or -1 for the default of
+   * {@link java.util.zip.Deflater}, 6. Fast levels suit an app on a local
+   * network, where a response's size matters less than the CPU spent on it.
+   * <p>
+   * Defaults to {@link java.util.zip.Deflater#DEFAULT_COMPRESSION}.
+   */
+  void setCompressionLevel(int level);
+
+  int getCompressionLevel();
+
+  /**
+   * Sets the size, in bytes, of the buffer through which gzip compresses the
+   * responses of this app. Larger buffers mean fewer, larger calls to the
+   * compressor.
+   * <p>
+   * Defaults to {@link #DEFAULT_COMPRESSION_BUFFER_SIZE}, that of
+   * {@link java.util.zip.GZIPOutputStream}.
+   */
+  void setCompressionBufferSize(int size);
+
+  int getCompressionBufferSize();
 
   /**
    * All the route handlers scanned by this app, in no particular order.

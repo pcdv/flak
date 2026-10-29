@@ -1,9 +1,11 @@
 package flak.spi;
 
+import flak.App;
 import flak.Response;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -28,8 +30,23 @@ public class CompressionHelper {
       && acceptEncoding != null && acceptEncoding.contains("gzip")
       && !resp.hasResponseHeader("Content-Encoding")) {
       resp.addHeader("Content-Encoding", "gzip");
-      ((SPResponse) resp).setOutputStream(new GZIPOutputStream(resp.getOutputStream()));
+      SPResponse r = (SPResponse) resp;
+      r.setOutputStream(gzip(r.getOutputStream(), r.getApp()));
     }
     return resp.getOutputStream();
+  }
+
+  /**
+   * Wraps the output stream in a gzip one, with the level and buffer size of
+   * the app.
+   */
+  static OutputStream gzip(OutputStream out, App app) throws IOException {
+    int level = app.getCompressionLevel();
+    return new GZIPOutputStream(out, app.getCompressionBufferSize()) {
+      {
+        if (level != Deflater.DEFAULT_COMPRESSION)
+          def.setLevel(level);
+      }
+    };
   }
 }
