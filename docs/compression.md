@@ -15,6 +15,21 @@ yet.
 public String report() { ... }
 ```
 
+## Level and buffer size
+
+*Since Flak 3.6.0.*
+
+An app compresses with the default level of the JDK, 6. An app on a local network cares less about
+the size of a response than about the CPU spent on it, and can pick a faster level, from 1 to 9:
+
+```java
+app.setCompressionLevel(1);
+app.setCompressionBufferSize(8192);
+```
+
+The buffer, 512 bytes by default, is the one through which gzip compresses. A larger one means
+fewer calls to the compressor.
+
 ## What gets compressed
 
 | Response | Compressed when allowed |
