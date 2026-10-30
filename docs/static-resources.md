@@ -47,6 +47,7 @@ app.serveClasspath("/ui", "/webapp", new ResourceOptions()
 | `restricted()` | only logged-in users get the files, see below |
 | `classLoader(loader)` | the class loader to look classpath resources up with |
 | `contentTypes(provider)` | decides the content type of each file, and whether it is compressed |
+| `cacheControl(value)` | the `Cache-Control` header of the files served, see below |
 
 ### Content types
 
@@ -77,6 +78,22 @@ A user who is not logged in is redirected to the login page, which can
 itself be a static file served from a public path. Without flak-login,
 nothing would keep anyone away from the files, so serving them fails
 instead.
+
+### Caching
+
+Files are served without a `Cache-Control` header by default, so a browser
+decides on its own how long to keep them. Files whose name holds a hash of
+their content, as a bundler such as Vite outputs, never change under the same
+name, and can be kept for good:
+
+```java
+app.serveClasspath("/assets", "/webapp/assets", new ResourceOptions()
+  .cacheControl("public, max-age=31536000, immutable"));
+```
+
+Keep such a value off the `index.html` that refers to them: it must be fetched
+again to pick up the new names after an upgrade. The header is not sent with a
+404.
 
 ### Class loader
 

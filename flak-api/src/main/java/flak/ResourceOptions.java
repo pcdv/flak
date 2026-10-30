@@ -17,6 +17,8 @@ public class ResourceOptions {
 
   private ContentTypeProvider contentTypes = new DefaultContentTypeProvider();
 
+  private String cacheControl;
+
   /**
    * Restricts the resources to logged-in users, which requires flak-login:
    * serving them fails if it is not installed, rather than leaving them open.
@@ -45,6 +47,16 @@ public class ResourceOptions {
     return this;
   }
 
+  /**
+   * The Cache-Control header of the files served, e.g.
+   * "public, max-age=31536000, immutable" for files whose name holds a hash
+   * of their content, as a bundler outputs. None by default.
+   */
+  public ResourceOptions cacheControl(String cacheControl) {
+    this.cacheControl = cacheControl;
+    return this;
+  }
+
   public boolean isRestricted() {
     return restricted;
   }
@@ -55,5 +67,9 @@ public class ResourceOptions {
 
   public ContentTypeProvider getContentTypes() {
     return contentTypes;
+  }
+
+  public String getCacheControl() {
+    return cacheControl;
   }
 }

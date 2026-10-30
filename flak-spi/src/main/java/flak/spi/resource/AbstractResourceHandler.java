@@ -29,6 +29,8 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
 
   private final ContentTypeProvider mime;
 
+  private String cacheControl;
+
   AbstractResourceHandler(ContentTypeProvider mime,
                           String rootURI,
                           boolean restricted) {
@@ -39,6 +41,13 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
 
   public boolean isRestricted() {
     return restricted;
+  }
+
+  /**
+   * The Cache-Control header of the files served, or null for none.
+   */
+  public void setCacheControl(String cacheControl) {
+    this.cacheControl = cacheControl;
   }
 
   public void doGet(Request r, String ignored) throws Exception {
@@ -79,6 +88,8 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
     }
 
     if (in != null) {
+      if (cacheControl != null)
+        r.getResponse().addHeader("Cache-Control", cacheControl);
       r.getResponse().setStatus(200);
       try {
         IO.pipe(in, out, true);

@@ -137,6 +137,7 @@ public abstract class AbstractApp implements App {
       throw new IllegalStateException("Restricted resources require a plugin checking logins, "
                                       + "e.g. flak-login: without it, " + path
                                       + " would be open to anyone");
+    h.setCacheControl(options.getCacheControl());
     try {
       addHandler0(path + "/*splat",
                   h.getClass().getMethod("doGet", Request.class, String.class),
