@@ -81,6 +81,8 @@ instead.
 
 ### Caching
 
+*Since Flak 3.7.0.*
+
 Files are served without a `Cache-Control` header by default, so a browser
 decides on its own how long to keep them. Files whose name holds a hash of
 their content, as a bundler such as Vite outputs, never change under the same
