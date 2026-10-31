@@ -97,6 +97,22 @@ Keep such a value off the `index.html` that refers to them: it must be fetched
 again to pick up the new names after an upgrade. The header is not sent with a
 404.
 
+Files that do change, such as those of a directory edited during development, are
+better served with `no-cache`. Despite its name, it does not stop the browser from
+storing the file: it makes it ask the server before each reuse.
+
+```java
+app.serveDir("/ui", uiDir, new ResourceOptions().cacheControl("no-cache"));
+```
+
+*Since Flak 3.8.0.* Every file carries a `Last-Modified` header, the modification time
+of the file or, for the classpath, of its jar entry. A browser that holds a copy sends
+that date back in `If-Modified-Since`, and gets a `304 Not Modified` without a body if
+the file has not changed since. With `no-cache`, an unchanged file thus costs one short
+request, and an edited one is fetched at once. With `max-age`, the same check only
+happens once the copy has expired. Without `Cache-Control`, a browser may reuse the copy
+for a while without asking, so set one whenever the files can change.
+
 ### Class loader
 
 By default, classpath resources are looked up with the class loader of Flak.

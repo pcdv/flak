@@ -51,6 +51,10 @@ public class ResourceOptions {
    * The Cache-Control header of the files served, e.g.
    * "public, max-age=31536000, immutable" for files whose name holds a hash
    * of their content, as a bundler outputs. None by default.
+   * <p>
+   * "no-cache" does not stop the browser from storing the files: it makes it
+   * check with the server before each reuse, which costs a 304 response with
+   * no body for a file that has not changed (see Last-Modified).
    */
   public ResourceOptions cacheControl(String cacheControl) {
     this.cacheControl = cacheControl;

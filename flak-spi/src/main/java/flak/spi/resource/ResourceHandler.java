@@ -3,7 +3,10 @@ package flak.spi.resource;
 import flak.ContentTypeProvider;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 
 import flak.spi.SPResponse;
 import flak.spi.util.Log;
@@ -31,15 +34,41 @@ public class ResourceHandler extends AbstractResourceHandler {
     this.loader = loader;
   }
 
-  @Override
-  protected InputStream openPath(String p, SPResponse resp) throws FileNotFoundException {
+  private String fullPath(String p) {
     p = localPath + p;
 
     if (!p.startsWith("/"))
       p = "/" + p;
 
     // getResourceAsStream() fails when reading from a jar if a / is doubled!
-    p = p.replace("//", "/");
+    return p.replace("//", "/");
+  }
+
+  /**
+   * The time of the file in the classpath directory, or of the entry in the
+   * jar: it only changes with the build, unlike the start time of the app.
+   */
+  @Override
+  protected long lastModified(String p) {
+    p = fullPath(p);
+    URL url = loader == null ? getClass().getResource(p) : loader.getResource(p.substring(1));
+    if (url == null)
+      return 0;
+    try {
+      URLConnection con = url.openConnection();
+      long time = con.getLastModified();
+      // a file: connection opens the file to read its headers
+      con.getInputStream().close();
+      return time;
+    }
+    catch (IOException e) {
+      return 0;
+    }
+  }
+
+  @Override
+  protected InputStream openPath(String p, SPResponse resp) throws FileNotFoundException {
+    p = fullPath(p);
 
     if (Log.DEBUG)
       Log.debug("Trying to open " + p + " with loader " + loader);

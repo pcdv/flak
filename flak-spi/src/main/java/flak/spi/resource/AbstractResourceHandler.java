@@ -6,6 +6,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import flak.HttpException;
 import flak.Request;
@@ -22,6 +27,10 @@ import flak.spi.util.Log;
  * @author pcdv
  */
 public abstract class AbstractResourceHandler implements RestrictedTarget {
+
+  private static final DateTimeFormatter HTTP_DATE =
+      DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US)
+                       .withZone(ZoneOffset.UTC);
 
   private final String rootURI;
 
@@ -69,6 +78,19 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
     if (!r.getPath().endsWith("/") && isDirectory(path)) {
       redirectToDirectory(r);
       return;
+    }
+
+    // the browser sends back the date it was given, and gets no body if the
+    // file has not changed since
+    long modified = lastModified(path) / 1000 * 1000;
+    if (modified > 0) {
+      r.getResponse().addHeader("Last-Modified", HTTP_DATE.format(Instant.ofEpochMilli(modified)));
+      if (notModifiedSince(r, modified)) {
+        if (cacheControl != null)
+          r.getResponse().addHeader("Cache-Control", cacheControl);
+        r.getResponse().setStatus(304);
+        return;
+      }
     }
 
     InputStream in;
@@ -143,6 +165,31 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
         return true;
     }
     return false;
+  }
+
+  /**
+   * Tells whether the If-Modified-Since header of the request, if valid, is
+   * not older than the modification time of the resource.
+   */
+  private static boolean notModifiedSince(Request r, long modified) {
+    String since = r.getHeader("If-Modified-Since");
+    if (since == null)
+      return false;
+    try {
+      return Instant.from(HTTP_DATE.parse(since)).toEpochMilli() >= modified;
+    }
+    catch (DateTimeException e) {
+      return false;
+    }
+  }
+
+  /**
+   * The last modification time of the resource at specified path, relative to
+   * the root of the resources, in milliseconds since the epoch, or 0 if
+   * unknown.
+   */
+  protected long lastModified(String path) {
+    return 0;
   }
 
   protected abstract InputStream openPath(String p, SPResponse resp) throws IOException;

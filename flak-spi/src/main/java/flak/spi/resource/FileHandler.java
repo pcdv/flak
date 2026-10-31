@@ -52,6 +52,19 @@ public class FileHandler extends AbstractResourceHandler {
   }
 
   @Override
+  protected long lastModified(String p) {
+    Path file = resolve(p);
+    if (file == null)
+      return 0;
+    try {
+      return Files.getLastModifiedTime(file).toMillis();
+    }
+    catch (IOException e) {
+      return 0;
+    }
+  }
+
+  @Override
   protected InputStream openPath(String p, SPResponse resp) throws IOException {
     Path file = resolve(p);
     if (file == null)
