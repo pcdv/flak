@@ -70,8 +70,10 @@ public class NettyFlakHandler extends ChannelInboundHandlerAdapter {
         RequestBodyStream body = ctx.channel().attr(BODY).get();
         if (body != null) {
           body.offer(((HttpContent) msg).content());
-          if (msg instanceof LastHttpContent)
+          if (msg instanceof LastHttpContent) {
             body.complete();
+            ctx.channel().attr(BODY).set(null);
+          }
         }
       }
     }
@@ -99,8 +101,9 @@ public class NettyFlakHandler extends ChannelInboundHandlerAdapter {
       }
       finally {
         // whatever the handler did or did not read must not be left behind
+        // the handler may be done before the last chunk of the body arrives:
+        // the reference is kept until then, to complete the body
         body.discard();
-        ctx.channel().attr(BODY).set(null);
       }
     });
   }
