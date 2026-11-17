@@ -21,6 +21,11 @@ public final class BodyLimit {
 
   public static final String PROPERTY = "flak.maxBodySize";
 
+  /** Sets the most that is drained from the unread body of a request. */
+  public static final String DRAIN_PROPERTY = "flak.maxDrain";
+
+  public static final long DEFAULT_DRAIN_LIMIT = 4L * 1024 * 1024;
+
   /**
    * The last value of the property and what it parsed to, so that it is not
    * parsed on every request. Replaced as a whole, never mutated.
@@ -40,6 +45,45 @@ public final class BodyLimit {
     if (floor < 0)
       return floor;
     return Math.max(limit, floor);
+  }
+
+  /**
+   * Returns how many bytes of the request body a backend reads and drops after
+   * the handler is done, when the handler left part of it unread. Closing a
+   * connection with unread data makes the TCP stack reset it, which can make
+   * the client lose the end of the response.
+   * <p>
+   * The limit is what the handler accepts, minus what it read, and never more
+   * than {@value #DEFAULT_DRAIN_LIMIT} bytes, or the value of the system
+   * property {@value #DRAIN_PROPERTY} (same format as {@value #PROPERTY},
+   * 0 to drain nothing). Nothing is drained from a request rejected for its
+   * size. What remains unread is the client's problem: the connection is
+   * closed, which can make the client lose the end of the response.
+   *
+   * @param maxBodySize the limit that applied to the request, negative for none
+   * @param bytesRead   the bytes of the body the handler read
+   * @param status      the status of the response
+   */
+  public static long drainLimit(long maxBodySize, long bytesRead, int status) {
+    if (status == 413)
+      return 0;
+    long cap = drainCap();
+    return maxBodySize >= 0 ? Math.min(cap, Math.max(0, maxBodySize - bytesRead)) : cap;
+  }
+
+  private static long drainCap() {
+    String raw = System.getProperty(DRAIN_PROPERTY);
+    if (raw == null)
+      return DEFAULT_DRAIN_LIMIT;
+    try {
+      long n = parse(raw);
+      return n < 0 ? Long.MAX_VALUE : n;
+    }
+    catch (NumberFormatException | ArithmeticException e) {
+      System.err.println("flak: ignoring invalid -D" + DRAIN_PROPERTY + "=" + raw +
+                         ", expected a number of bytes, optionally followed by k, m or g");
+      return DEFAULT_DRAIN_LIMIT;
+    }
   }
 
   /**

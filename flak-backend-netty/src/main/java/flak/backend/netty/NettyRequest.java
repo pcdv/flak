@@ -7,6 +7,7 @@ import flak.Query;
 import flak.Request;
 import flak.Response;
 import flak.annotations.MaxBodySize;
+import flak.spi.BodyLimit;
 import flak.spi.FormImpl;
 import flak.spi.SPRequest;
 import flak.spi.SPResponse;
@@ -62,6 +63,8 @@ public class NettyRequest implements SPRequest, SPResponse {
 
   /** The body, as it arrives from the network, counted as it is read. */
   private final CountingInputStream body;
+
+  private final RequestBodyStream rawBody;
 
   /**
    * Path of the request relative to the root of the app, without the query
@@ -131,6 +134,7 @@ public class NettyRequest implements SPRequest, SPResponse {
     this.app = app;
     this.ctx = ctx;
     this.req = req;
+    this.rawBody = body;
     this.body = new CountingInputStream(body);
     this.path = appRelativePath;
     this.queryString = queryString;
@@ -392,6 +396,10 @@ public class NettyRequest implements SPRequest, SPResponse {
       return;
     }
 
+    // the handler is done: the rest of its body is read and dropped before the
+    // connection is closed, see RequestBodyStream.closeWhenDrained()
+    rawBody.skipRest(BodyLimit.drainLimit(maxBodySize, getBytesIn(), status));
+
     if (headersSent) {
       try {
         responseStream.flush();
@@ -401,7 +409,7 @@ public class NettyRequest implements SPRequest, SPResponse {
         return;
       }
       ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT)
-         .addListener(ChannelFutureListener.CLOSE);
+         .addListener((ChannelFutureListener) this::closeWhenBodyDrained);
       return;
     }
 
@@ -417,7 +425,14 @@ public class NettyRequest implements SPRequest, SPResponse {
     bytesOut += content.readableBytes();
     r.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes());
     r.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-    ctx.writeAndFlush(r).addListener(ChannelFutureListener.CLOSE);
+    ctx.writeAndFlush(r).addListener((ChannelFutureListener) this::closeWhenBodyDrained);
+  }
+
+  private void closeWhenBodyDrained(ChannelFuture written) {
+    if (written.isSuccess())
+      rawBody.closeWhenDrained();
+    else
+      ctx.close();
   }
 
   /**
