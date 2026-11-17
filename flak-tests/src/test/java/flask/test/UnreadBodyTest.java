@@ -40,6 +40,17 @@ public class UnreadBodyTest extends AbstractAppTest {
     return "ok";
   }
 
+  /** Like a ZipInputStream wrapped in a try-with-resources: closes the body. */
+  @Route("/closed")
+  @Post
+  @MaxBodySize(2 * BODY_SIZE)
+  public String closed(Request r) throws IOException {
+    try (InputStream in = r.getInputStream()) {
+      in.read();
+    }
+    return "ok";
+  }
+
   @Route("/fail")
   @Post
   @MaxBodySize(2 * BODY_SIZE)
@@ -50,6 +61,11 @@ public class UnreadBodyTest extends AbstractAppTest {
   @Test
   public void connectionSurvivesPartiallyReadBody() throws Exception {
     assertConnectionSurvives("/partial", 200);
+  }
+
+  @Test
+  public void connectionSurvivesClosedBody() throws Exception {
+    assertConnectionSurvives("/closed", 200);
   }
 
   @Test
