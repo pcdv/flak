@@ -194,7 +194,17 @@ public class JdkRequest implements SPRequest, SPResponse {
 
   public InputStream getInputStream() {
     if (in == null)
-      in = new CountingInputStream(exchange.getRequestBody());
+      in = new CountingInputStream(exchange.getRequestBody()) {
+        /**
+         * Closing the body of the JDK server drains 64 KiB at most, then makes
+         * the rest unreadable. A handler that closes it (e.g. through a
+         * ZipInputStream in a try-with-resources) would defeat
+         * drainRequestBody(), which reads the rest at the end of the request.
+         */
+        @Override
+        public void close() {
+        }
+      };
     return LimitedInputStream.limit(in, maxBodySize);
   }
 
