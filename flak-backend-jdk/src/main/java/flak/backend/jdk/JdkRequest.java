@@ -13,6 +13,7 @@ import flak.App;
 import flak.Form;
 import flak.Query;
 import flak.spi.AbstractApp;
+import flak.spi.BodyLimit;
 import flak.spi.FormImpl;
 import flak.Request;
 import flak.Response;
@@ -303,7 +304,34 @@ public class JdkRequest implements SPRequest, SPResponse {
     if (outputStream != null) {
       outputStream.close();
     }
+    drainRequestBody();
     exchange.getResponseBody().close();
+  }
+
+  /**
+   * The JDK server drains at most 64 KiB of the request body left unread by the
+   * handler (sun.net.httpserver.drainAmount), then closes the connection with
+   * data pending. The resulting reset can make the client lose the end of the
+   * response ("Premature EOF"). A handler that stops reading early, such as one
+   * using a ZipInputStream, which never reads the zip central directory, or one
+   * that fails before reading, triggers this.
+   * <p>
+   * The remainder is read here, up to {@link BodyLimit#drainLimit}.
+   */
+  private void drainRequestBody() {
+    long left = BodyLimit.drainLimit(maxBodySize, getBytesIn(), status);
+    byte[] buf = new byte[8192];
+    try (InputStream body = exchange.getRequestBody()) {
+      while (left > 0) {
+        int n = body.read(buf, 0, (int) Math.min(buf.length, left));
+        if (n < 0)
+          break;
+        left -= n;
+      }
+    }
+    catch (IOException e) {
+      // the client is gone or the body is malformed: nothing more to drain
+    }
   }
 
   private void flushStatus() throws IOException {

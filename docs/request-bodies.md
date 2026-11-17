@@ -76,3 +76,17 @@ or a handler, and never lowers one. The value is a number of bytes,
 optionally followed by `k`, `m` or `g` (powers of 1024). It is read on every
 request, so it can also be changed in a running JVM. An invalid value is
 ignored, with a message on the standard error.
+
+## Body left unread by a handler
+
+A handler does not have to read the whole body, for example one that reads a
+zip with a `ZipInputStream` stops before the central directory, and one that
+fails before reading it reads nothing. When the handler is done, flak reads
+and drops the rest of the body before it closes the connection. Otherwise the
+connection is closed with unread data, the TCP stack resets it, and the client
+can lose the end of the response (for example "Premature EOF").
+
+At most 4MiB are dropped, and never more than the limit of the handler allows.
+Nothing is dropped from a request rejected with 413. The system property
+`flak.maxDrain` changes the 4MiB (same format as `flak.maxBodySize`, `0` to
+drop nothing, `-1` for no cap).

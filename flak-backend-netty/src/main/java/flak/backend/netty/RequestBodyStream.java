@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.netty.buffer.ByteBuf;
@@ -32,6 +33,8 @@ class RequestBodyStream extends InputStream {
 
   private static final long HIGH_WATER = 256 * 1024;
 
+  private static final int DRAIN_TIMEOUT_SECONDS = 30;
+
   private final BlockingQueue<Object> chunks = new LinkedBlockingQueue<>();
 
   private final Channel channel;
@@ -44,6 +47,20 @@ class RequestBodyStream extends InputStream {
   private boolean done;
 
   private volatile boolean discarded;
+
+  /** Set by skipRest(), before the body is discarded. */
+  private volatile long dropLimit;
+
+  // the next three are only used by the event loop
+
+  /** The bytes dropped, after the handler discarded the body. */
+  private long dropped;
+
+  /** The last chunk of the body has arrived. */
+  private boolean bodyDone;
+
+  /** The response is written and the channel waits for the end of the body. */
+  private boolean closing;
 
   private volatile IOException failure;
 
@@ -60,8 +77,12 @@ class RequestBodyStream extends InputStream {
    * is queued here is retained separately and released once read.
    */
   void offer(ByteBuf content) {
-    if (discarded)
+    if (discarded) {
+      dropped += content.readableBytes();
+      if (closing && dropped > dropLimit)
+        channel.close();
       return;
+    }
 
     content.retain();
     if (queued.addAndGet(content.readableBytes()) > HIGH_WATER)
@@ -70,7 +91,30 @@ class RequestBodyStream extends InputStream {
   }
 
   void complete() {
+    bodyDone = true;
     chunks.add(EOF);
+    if (closing)
+      channel.close();
+  }
+
+  /**
+   * Closes the channel once the rest of the body, which {@link #skipRest}
+   * drops, has arrived. Closing a connection with unread data makes the TCP
+   * stack reset it, which can make the client lose the end of the response.
+   * The channel is closed anyway when more than the drain limit arrives, or
+   * after {@value #DRAIN_TIMEOUT_SECONDS} seconds.
+   * <p>
+   * Called when the response has been written, from any thread.
+   */
+  void closeWhenDrained() {
+    channel.eventLoop().execute(() -> {
+      if (bodyDone || dropLimit <= 0 || dropped > dropLimit || !channel.isActive()) {
+        channel.close();
+        return;
+      }
+      closing = true;
+      channel.eventLoop().schedule((Runnable) channel::close, DRAIN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    });
   }
 
   /**
@@ -89,6 +133,19 @@ class RequestBodyStream extends InputStream {
    * Releases what the handler did not read. Anything offered afterwards is
    * dropped, so that ignoring a body cannot leak it.
    */
+  /**
+   * Discards the rest of the body, which the handler is done with, and lets
+   * the channel read it so that {@link #closeWhenDrained} can wait for it.
+   * Called from the thread running the route handler.
+   *
+   * @param limit the number of bytes that are worth waiting for
+   */
+  void skipRest(long limit) {
+    dropLimit = limit;
+    discard();
+    channel.config().setAutoRead(true);
+  }
+
   void discard() {
     discarded = true;
     if (current != null) {
