@@ -117,9 +117,13 @@ public abstract class AbstractResourceHandler implements RestrictedTarget {
         IO.pipe(in, out, true);
       }
       catch (IOException e) {
-        // avoid log pollution when the client abruptly closes the socket
+        // the file could not be read to its end, or the client went away. The
+        // status is already sent: the client must see a broken response, not
+        // a short one that looks complete (a browser would cache it). Nothing
+        // is logged, a client closing the connection being common
         if (Log.DEBUG)
           e.printStackTrace();
+        ((SPResponse) r.getResponse()).abort();
       }
     }
     else {

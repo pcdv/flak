@@ -113,6 +113,13 @@ request, and an edited one is fetched at once. With `max-age`, the same check on
 happens once the copy has expired. Without `Cache-Control`, a browser may reuse the copy
 for a while without asking, so set one whenever the files can change.
 
+*Since Flak 3.8.2.* A file that cannot be sent in full gives a broken response, which a
+browser does not keep. This covers a read error, and a file of `serveDir()` that gets
+shorter while it is sent, e.g. rewritten in place by a build. A file that grows in the
+meantime is sent with the size it had when it was opened. Flak cannot tell that a file is
+wrong when it is already empty or half written at that moment: it serves it as is. Keep
+`immutable` for files that never change in place.
+
 ### Class loader
 
 By default, classpath resources are looked up with the class loader of Flak.

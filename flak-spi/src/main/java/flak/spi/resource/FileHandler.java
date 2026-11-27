@@ -5,10 +5,13 @@ import flak.ContentTypeProvider;
 import flak.spi.CompressionHelper;
 import flak.spi.SPResponse;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.NoSuchFileException;
@@ -70,14 +73,71 @@ public class FileHandler extends AbstractResourceHandler {
     if (file == null)
       throw new FileNotFoundException(p);
     try {
-      if (Files.size(file) > CompressionHelper.COMPRESS_THRESHOLD)
+      // the size is the one of the file opened, not of the file at that path
+      // a moment before or after, which may have been replaced in between
+      FileChannel channel = FileChannel.open(file);
+      long size;
+      try {
+        size = channel.size();
+      }
+      catch (IOException e) {
+        channel.close();
+        throw e;
+      }
+      if (size > CompressionHelper.COMPRESS_THRESHOLD)
         resp.setCompressionAllowed(true);
-      return Files.newInputStream(file);
+      return new SizedInputStream(Channels.newInputStream(channel), size, p);
     }
     catch (NoSuchFileException e) {
       // unlike the File API, NIO does not throw FileNotFoundException, which
       // is what tells AbstractResourceHandler to answer 404 rather than 500
       throw new FileNotFoundException(p);
+    }
+  }
+
+  /**
+   * Reads a file up to the size it had when opened. A file that grows in the
+   * meantime is cut at that size, as a snapshot of when it was opened. A file
+   * that gets shorter, e.g. rewritten in place, fails with an EOFException:
+   * the response must then be broken, not short.
+   */
+  static class SizedInputStream extends InputStream {
+
+    private final InputStream in;
+
+    private final String path;
+
+    private long left;
+
+    SizedInputStream(InputStream in, long size, String path) {
+      this.in = in;
+      this.left = size;
+      this.path = path;
+    }
+
+    @Override
+    public int read() throws IOException {
+      byte[] b = new byte[1];
+      return read(b, 0, 1) < 0 ? -1 : b[0] & 0xff;
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+      if (len == 0)
+        return 0;
+      if (left == 0)
+        return -1;
+      int n = in.read(b, off, (int) Math.min(len, left));
+      if (n < 0)
+        throw new EOFException(path + " got shorter while being read: "
+                               + left + " bytes missing");
+      left -= n;
+      return n;
+    }
+
+    @Override
+    public void close() throws IOException {
+      in.close();
     }
   }
 }
