@@ -9,7 +9,7 @@ simpler than a [websocket](websocket.md) when only the server talks, and it
 works with both backends.
 
 ```groovy
-implementation "com.github.pcdv.flak:flak-util:3.8.1"
+implementation "com.github.pcdv.flak:flak-util:3.8.2"
 ```
 
 ## Sending the same events to every client
